@@ -1,0 +1,21 @@
+{
+  "name": "terminl",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mint site for TERMINL — 2048 generative CRT terminals, stored permanently on Arweave.",
+  "scripts": {
+    "dev": "next dev -p 4000",
+    "build": "next build",
+    "start": "next start -p 4000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.35"
+  }
+}
