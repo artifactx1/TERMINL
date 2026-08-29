@@ -97,10 +97,9 @@ function Site({ data }) {
   const upNext = [1, 2, 3, 4, 5].map((n) => shown[(heroIndex + n) % shown.length]);
   const hidden = data.supply - shown.length;
 
-  /* One sentence, reused by every scraper. Kept under ~200 chars: X truncates
-     around there and Discord clips harder still. */
-  const blurb = `${data.supply} pixel machines, the memes on their screens, and the `
-    + `${data.traitTotals.Companion} regulars still holding. ${data.outcomes.rekt} are already rekt. `
+  /* Reused by every scraper. Three short facts ending on the hook — X truncates
+     around 200 characters and Discord clips harder still. */
+  const blurb = `${data.supply} pixel machines. ${data.outcomes.rekt} already rekt. `
     + `Only ${shown.length} have ever been shown.`;
 
   return (

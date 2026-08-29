@@ -70,9 +70,11 @@ async function card() {
     <text x="56" y="268" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">WAGMI.</text>
     <text x="56" y="330" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">Allegedly.</text>
     <text x="56" y="392" font-family="monospace" font-size="20" fill="#9aa89f">${esc(
-      `${site.supply} pixel machines · ${site.outcomes.rekt} already rekt`,
+      `${site.supply} machines. ${site.outcomes.rekt} already rekt.`,
     )}</text>
-    <text x="56" y="424" font-family="monospace" font-size="20" fill="#7dff5c" letter-spacing="2">MINTING ON OPENSEA</text>
+    <text x="56" y="424" font-family="monospace" font-size="20" fill="#7dff5c" letter-spacing="2">${esc(
+      `ONLY ${site.showcase.length} SHOWN · MINTING ON OPENSEA`,
+    )}</text>
   </svg>`);
 
   await sharp({ create: { width: W, height: H, channels: 3, background: "#060907" } })
