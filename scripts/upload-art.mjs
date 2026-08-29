@@ -21,6 +21,7 @@ import { Storage } from "@google-cloud/storage";
 const BUCKET = process.env.GCS_BUCKET_NAME || "curent-marketplace";
 const PREFIX = process.env.TERMINL_ART_PREFIX || "terminl/art";
 const LOCAL = path.join("public", "art");
+const DEGENS = path.join("public", "degens");
 const CHECK = process.argv.includes("--check");
 
 /** Matches how ElementServer loads the same credential: raw JSON or base64. */
@@ -49,6 +50,17 @@ async function main() {
   const extras = fs.existsSync("public/og.jpg")
     ? [{ local: "public/og.jpg", object: `${path.dirname(PREFIX)}/og.jpg`, type: "image/jpeg" }]
     : [];
+
+  // Cast portraits sit beside the art under the same prefix root.
+  if (fs.existsSync(DEGENS)) {
+    for (const name of fs.readdirSync(DEGENS).filter((f) => f.endsWith(".webp")).sort()) {
+      extras.push({
+        local: path.join(DEGENS, name),
+        object: `${path.dirname(PREFIX)}/degens/${name}`,
+        type: "image/webp",
+      });
+    }
+  }
 
   console.log(`bucket   gs://${BUCKET}/${PREFIX}`);
   console.log(`local    ${files.length} images in ${LOCAL}\n`);
@@ -91,7 +103,13 @@ async function main() {
       destination: e.object,
       resumable: false,
       // The card changes when the showcase does, so it must not be cached forever.
-      metadata: { contentType: e.type, cacheControl: "public, max-age=3600" },
+      metadata: {
+        contentType: e.type,
+        // The card changes with the showcase; the portraits do not.
+        cacheControl: e.local.endsWith("og.jpg")
+          ? "public, max-age=3600"
+          : "public, max-age=31536000, immutable",
+      },
     });
     console.log(`  uploaded  ${e.object}`);
   }

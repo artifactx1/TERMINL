@@ -16,7 +16,7 @@
 import fs from "fs";
 import path from "path";
 import sharp from "sharp";
-import { SHOWCASE, STORY_ART, REGULARS_TEASE, slugFor } from "../lib/showcase.js";
+import { SHOWCASE, STORY_ART, slugFor } from "../lib/showcase.js";
 
 const ROOT = path.resolve(
   process.cwd(),
@@ -24,11 +24,24 @@ const ROOT = path.resolve(
     || "../ELEMENT/nft-projects/tickerbots/v2/output/collection-2048-terminl",
 );
 
+/** Character sprites, for the cast portraits. Transparent PNGs, one per name. */
+const LAYERS = path.resolve(
+  process.cwd(),
+  process.env.TERMINL_LAYERS_DIR || path.join(ROOT, "..", "..", "layers"),
+);
+
 /** Rows published per trait category in "The tape". */
 const TAPE_ROWS = 10;
 /** Master width. The hero is the largest render; everything else derives from it. */
 const ART_WIDTH = 1200;
 const ART_QUALITY = 80;
+/*
+ * Portraits render onto one fixed canvas rather than keeping each sprite's own
+ * aspect. Every figure then sits on the same baseline so the row reads as a
+ * line-up, and a single width/height pair covers all of them downstream.
+ */
+const DEGEN_W = 340;
+const DEGEN_H = 560;
 
 const readJson = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), "utf8"));
 const SECRET = /1\/1 Grail/;
@@ -93,6 +106,16 @@ async function main() {
     process.stdout.write(`  ${slug}.webp  ${(fs.statSync(out).size / 1024).toFixed(0)} kB\n`);
   }
 
+  /*
+   * Cast portraits, cropped from the character sprites.
+   *
+   * Only the degens who already appear in the sixteen published pieces are
+   * built, so this reveals nothing new — you can already see every one of them
+   * standing in the gallery. Anyone not on that list stays unpublished.
+   */
+  fs.mkdirSync("public/degens", { recursive: true });
+  const degens = await portraits(showcase);
+
   const site = {
     name: lock.collection,
     symbol: lock.symbol,
@@ -107,7 +130,7 @@ async function main() {
     traitCategories: Object.fromEntries(
       Object.entries(traits).map(([k, v]) => [k, v.slice(0, TAPE_ROWS)]),
     ),
-    regulars: REGULARS_TEASE,
+    degens,
     showcase,
     storyArt: STORY_ART.map(slugFor),
     generatedAt: new Date().toISOString(),
@@ -116,6 +139,51 @@ async function main() {
   fs.writeFileSync("data/site.json", `${JSON.stringify(site, null, 2)}\n`);
   console.log(`\ndata/site.json  ${(fs.statSync("data/site.json").size / 1024).toFixed(0)} kB`);
   console.log(`${showcase.length} pieces published, ${lock.supply - showcase.length} withheld`);
+}
+
+const nameSlug = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+async function portraits(showcase) {
+  const seen = new Map();
+  for (const piece of showcase) {
+    if (piece.companion && !seen.has(piece.companion)) seen.set(piece.companion, piece.companion);
+  }
+
+  const out = [];
+  for (const name of seen.keys()) {
+    const file = path.join(LAYERS, "companion", `${nameSlug(name)}.png`);
+    if (!fs.existsSync(file)) {
+      console.warn(`  ! no sprite for ${name}`);
+      continue;
+    }
+    const slug = nameSlug(name);
+    // trim() drops the transparent margin so the figure is framed on itself
+    // rather than on whatever padding its sprite happened to carry.
+    const figure = await sharp(file)
+      .trim()
+      .resize({ width: DEGEN_W, height: DEGEN_H, fit: "inside", withoutEnlargement: true })
+      .toBuffer();
+    const meta = await sharp(figure).metadata();
+
+    await sharp({
+      create: {
+        width: DEGEN_W, height: DEGEN_H, channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .composite([{
+        input: figure,
+        left: Math.round((DEGEN_W - meta.width) / 2),
+        top: DEGEN_H - meta.height,
+      }])
+      .webp({ quality: 78, effort: 6, alphaQuality: 80 })
+      .toFile(path.join("public", "degens", `${slug}.webp`));
+    out.push({ slug, name });
+  }
+  const kb = out.reduce((n, d) =>
+    n + fs.statSync(path.join("public", "degens", `${d.slug}.webp`)).size, 0) / 1024;
+  console.log(`\n${out.length} cast portraits  ${DEGEN_W}x${DEGEN_H}  ${kb.toFixed(0)} kB total`);
+  return out;
 }
 
 main().catch((e) => {

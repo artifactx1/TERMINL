@@ -19,6 +19,9 @@ const OPENSEA = process.env.NEXT_PUBLIC_OPENSEA_URL || "https://opensea.io/colle
 const ART_BASE = (process.env.NEXT_PUBLIC_ART_BASE_URL || "/art").replace(/\/$/, "");
 const img = (slug) => `${ART_BASE}/${slug}.webp`;
 
+/* Portraits sit beside the art, wherever that is. */
+const DEGEN_BASE = ART_BASE.replace(/\/art$/, "/degens");
+
 /*
  * Sharing metadata.
  *
@@ -139,7 +142,7 @@ function Site({ data }) {
         <link rel="manifest" href="/site.webmanifest" />
       </Head>
 
-      <main className={styles.shell}>
+      <main className={viewing !== null ? `${styles.shell} ${styles.frozen}` : styles.shell}>
         <div className={styles.scanlines} />
 
         <nav className={styles.nav}>
@@ -147,7 +150,7 @@ function Site({ data }) {
           <div className={styles.navRight}>
             <a href="#story">STORY</a>
             <a href="#art">ART</a>
-            <a href="#regulars">REGULARS</a>
+            <a href="#degens">DEGENS</a>
             <a href="#tape">TAPE</a>
             <a className={styles.os} href={OPENSEA} target="_blank" rel="noreferrer">OPENSEA ↗</a>
           </div>
@@ -202,7 +205,7 @@ function Site({ data }) {
             </dl>
 
             <a className={styles.cta} href={OPENSEA} target="_blank" rel="noreferrer">MINT ON OPENSEA ↗</a>
-            <p className={styles.note}>{data.supply} pieces · art stored permanently on Arweave</p>
+            <p className={styles.note}>{data.supply} pieces · stored on Arweave, forever</p>
           </div>
         </section>
 
@@ -224,7 +227,7 @@ function Site({ data }) {
           <div className={styles.sectionHead}>
             <h2>{shown.length} of {data.supply}</h2>
             <p>
-              That is all you get. The other {hidden} stay in the dark until somebody mints
+              That&rsquo;s all you get. The other {hidden} stay dark until somebody mints
               them. No preview, no reveal page, no peeking at the metadata.
             </p>
           </div>
@@ -247,7 +250,7 @@ function Site({ data }) {
           </div>
         </section>
 
-        <Regulars data={data} />
+        <Degens data={data} />
         <Tape data={data} />
 
         <section className={styles.section}>
@@ -261,18 +264,25 @@ function Site({ data }) {
             </p>
             <p>
               There might be more later. Depends how the mint goes, honestly. If that
-              changes we will just say so.
+              changes we&rsquo;ll say so.
             </p>
             <p>
               What you get today: {data.supply} pieces of pixel art, every trait published,
-              stored on Arweave forever, and {data.traitTotals.Companion} people who are all
+              stored on Arweave forever, and {data.traitTotals.Companion} degens who are all
               down bad.
             </p>
           </div>
         </section>
 
         {viewing !== null && (
-          <Lightbox item={shown[viewing]} at={viewing} total={shown.length} onClose={close} onStep={step} />
+          <Lightbox
+            item={shown[viewing]}
+            at={viewing}
+            total={shown.length}
+            onClose={close}
+            onStep={step}
+            neighbours={[shown[(viewing + 1) % shown.length], shown[(viewing - 1 + shown.length) % shown.length]]}
+          />
         )}
 
         <footer className={styles.foot}>
@@ -290,7 +300,7 @@ function Site({ data }) {
  * PNG and losing the page. This keeps them here, and keeps the piece next to
  * the traits that describe it.
  */
-function Lightbox({ item, at, total, onClose, onStep }) {
+function Lightbox({ item, at, total, onClose, onStep, neighbours }) {
   const closeButton = useRef(null);
 
   useEffect(() => {
@@ -348,6 +358,13 @@ function Lightbox({ item, at, total, onClose, onStep }) {
             <Spec k="STANDING THERE" v={item.companion} />
           </dl>
           <p className={styles.lightboxHint}>← → TO BROWSE · ESC TO CLOSE</p>
+          {/* Warms the next and previous pieces so arrow navigation does not
+              wait on a cold image request. */}
+          <div hidden>
+            {neighbours.map((n) => (
+              <Image key={n.slug} src={img(n.slug)} alt="" width={1080} height={1080} quality={80} />
+            ))}
+          </div>
           <div className={styles.lightboxNav}>
             <button type="button" onClick={() => onStep(-1)} aria-label="Previous piece">←</button>
             <button type="button" onClick={() => onStep(1)} aria-label="Next piece">→</button>
@@ -380,21 +397,19 @@ function Story({ data }) {
         <h2>Where they came from</h2>
         <p>Nobody knows where the first one came from.</p>
         <p>
-          A market never actually closes. When the exchange dies the order book keeps
-          matching — it just moves somewhere with worse lighting. A dead mall. An empty
-          office. A motel breezeway at 4am. And wherever it lands it needs something to
-          run on.
+          A market never really closes. The exchange dies, the order book keeps matching, it
+          just moves somewhere with worse lighting. A dead mall. An empty office. A motel
+          breezeway at 4am. Wherever it lands, it needs something to run on.
         </p>
         <p>
-          So it takes whatever is in the room. A boombox. A payphone. A handheld somebody
-          left in a drawer in 1997. By morning the thing is bolted to the floor, warm to
-          the touch, and showing a chart nobody asked for.
+          So it takes whatever&rsquo;s in the room. A boombox. A payphone. A handheld
+          somebody left in a drawer in 1997. By morning it&rsquo;s bolted to the floor, warm
+          to the touch, showing a chart nobody asked for.
         </p>
         <p>
-          Then the regulars turn up. Somebody who bought the top and stayed. Somebody who
-          sold the bottom and came back to watch anyway. They stand there with a bong, a
-          rolling tray and a gas fee receipt they are never getting back, waiting on a green
-          candle like it is weather.
+          Then the degens turn up. Bought the top and stayed. Sold the bottom and came back
+          to watch anyway. They stand there with a bong, a rolling tray and a gas fee receipt
+          they&rsquo;re never getting back, waiting on a green candle like it&rsquo;s weather.
         </p>
         <p className={styles.storyLast}>
           Nobody has turned one off. Nobody has really tried.
@@ -405,29 +420,33 @@ function Story({ data }) {
 }
 
 /**
- * A name wall, not a grid — the joke is the roster, and it reads faster as type
- * than as art. Teased, not published: the full cast is withheld for the same
- * reason the full gallery is.
+ * The cast, as portraits.
+ *
+ * Only the degens standing in the sixteen published pieces are here, so this
+ * reveals nothing new — you can already see every one of them in the gallery.
+ * Everyone else stays behind the mint.
  */
-function Regulars({ data }) {
-  const named = data.regulars.length;
-  const rest = data.traitTotals.Companion - named;
+function Degens({ data }) {
+  const rest = data.traitTotals.Companion - data.degens.length;
 
   return (
-    <section className={styles.section} id="regulars">
+    <section className={styles.section} id="degens">
       <div className={styles.sectionHead}>
-        <h2>The regulars</h2>
+        <h2>The degens</h2>
         <p>
-          {data.traitTotals.Companion} people show up in this collection. They stand next to
-          the machine, hold something stupid, and refuse to leave. Here are {named} of them.
-          You know at least one of these people personally.
+          Every machine comes with one. They stand there holding something stupid and they
+          don&rsquo;t leave. There are {data.traitTotals.Companion} of them and you probably
+          know a few personally.
         </p>
       </div>
-      <div className={styles.wall}>
-        {data.regulars.map((name) => (
-          <span key={name} className={styles.name}>{name}</span>
+      <div className={styles.cast}>
+        {data.degens.map((d) => (
+          <figure key={d.slug} className={styles.degen}>
+            <Image src={`${DEGEN_BASE}/${d.slug}.webp`} alt={d.name} width={340} height={560} quality={80} />
+            <b>{d.name}</b>
+          </figure>
         ))}
-        <span className={styles.nameRest}>+ {rest} you have not met</span>
+        <div className={styles.castRest}>+ {rest} more<br />you meet by minting</div>
       </div>
     </section>
   );

@@ -13,7 +13,7 @@
   background: repeating-linear-gradient(0deg, rgba(0,0,0,.3) 0 1px, transparent 1px 3px); }
 
 .nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between;
-  padding: 13px 28px; border-bottom: 1px solid var(--line); background: rgba(6,9,7,.92); backdrop-filter: blur(10px); }
+  padding: 13px 28px; border-bottom: 1px solid var(--line); background: rgba(6,9,7,.97); }
 .wordmark { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
 .wordmark b { font-size: 19px; letter-spacing: .36em; color: #fff; }
 .wordmark span { font-size: 9px; letter-spacing: .2em; color: var(--green); }
@@ -66,6 +66,7 @@
 .note { margin: -8px 0 0; font-size: 9px; color: var(--muted); text-align: center; letter-spacing: .06em; }
 
 /* ---- marquee ---- */
+/* Paused while the lightbox is open — see .frozen. */
 .stripWrap { overflow: hidden; border-bottom: 1px solid var(--line); background: #040605; }
 .strip { display: flex; gap: 10px; padding: 10px; width: max-content; animation: slide 90s linear infinite; }
 .strip img { width: 210px; height: 210px; object-fit: cover; flex: 0 0 auto;
@@ -175,21 +176,40 @@
   .tierRow { grid-template-columns: repeat(2,1fr); }
   .navRight a:not(.os) { display: none; }
 }
+/*
+ * Set on the shell while the lightbox is open. The marquee and the CRT sweep
+ * are invisible behind it but still drive compositing on every frame.
+ */
+.frozen .strip, .frozen .sweep { animation-play-state: paused; }
+
 @media (prefers-reduced-motion: reduce) {
   .strip, .sweep, .stageFade { animation: none; }
 }
 
 /* ---- lightbox ---- */
+/*
+ * No backdrop-filter here. Blurring a full viewport forces the compositor to
+ * re-render everything behind the overlay every frame, and what is behind it is
+ * a ~7000px marquee on an infinite transform plus a fixed scanline layer — it
+ * janked hard enough to lock the renderer. The background is 97% opaque, so the
+ * blur was buying nothing visible anyway.
+ */
 .lightbox { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center;
-  padding: 24px; background: rgba(3,5,4,.93); backdrop-filter: blur(6px);
+  padding: 24px; background: rgba(3,5,4,.97);
   animation: lbin .18s ease both; }
 @keyframes lbin { from { opacity: 0; } to { opacity: 1; } }
 .lightboxPanel { display: grid; grid-template-columns: minmax(0,1fr) 320px;
   gap: 0; width: min(1180px, 100%); max-height: calc(100vh - 48px);
   border: 1px solid #2c382f; background: #070a08; }
-.lightboxArt { display: grid; place-items: center; min-width: 0; background: #050706; overflow: hidden; }
-.lightboxArt img { display: block; width: 100%; height: auto;
-  max-height: calc(100vh - 50px); object-fit: contain; }
+/*
+ * min-height:0 lets this grid cell shrink below its content. Without it the
+ * square art forced the row taller than the panel and overflow:hidden clipped
+ * the top and bottom of the piece on any short window.
+ */
+.lightboxArt { display: grid; place-items: center; min-width: 0; min-height: 0;
+  background: #050706; overflow: hidden; }
+.lightboxArt img { display: block; width: auto; height: auto;
+  max-width: 100%; max-height: 100%; object-fit: contain; }
 .lightboxSide { display: flex; flex-direction: column; gap: 14px; padding: 20px;
   border-left: 1px solid var(--line); overflow-y: auto; }
 .lightboxHead { display: flex; align-items: baseline; justify-content: space-between; }
@@ -214,4 +234,24 @@
     width: 100%; max-height: 100vh; height: 100vh; }
   .lightboxSide { border-left: 0; border-top: 1px solid var(--line); }
   .lightboxArt img { max-height: 52vh; }
+  .lightboxPanel { max-height: 100vh; }
+}
+
+/* ---- the degens ---- */
+.cast { max-width: 1400px; margin: 0 auto; display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.degen { display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 14px 10px 0; border: 1px solid #1d2721; background: linear-gradient(180deg, #0d1310, #070a08);
+  overflow: hidden; transition: border-color .18s; }
+.degen:hover { border-color: var(--green); }
+.degen img { display: block; width: auto; height: 168px; object-fit: contain; object-position: bottom; }
+.degen b { display: block; width: 100%; margin-top: 10px; padding: 8px 4px;
+  border-top: 1px solid #1c2620; font-size: 10px; font-weight: 500; text-align: center;
+  color: #b6c2ba; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.castRest { display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 20px 12px; border: 1px dashed #2c3a32; font-size: 11px; line-height: 1.7; color: var(--green); }
+
+@media (max-width: 620px) {
+  .cast { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .degen img { height: 120px; }
 }

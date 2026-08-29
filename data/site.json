@@ -389,31 +389,67 @@
       }
     ]
   },
-  "regulars": [
-    "Margin Call Max",
-    "Paper Hands Paul",
-    "Bagholder Barry",
-    "Chain-Smoking Pigeon",
-    "Buy-High Brian",
-    "Rug-Pull Gremlin",
-    "Liquidation Vulture",
-    "HODL Hank",
-    "Leverage Larry",
-    "McRugged Mike",
-    "Exit Liquidity Chad",
-    "Smokin' Pepe",
-    "Gas Fee Gary",
-    "Laser-Eye Maxi",
-    "Top-Tick Tony",
-    "FOMO Felicia",
-    "Down-Only Donna",
-    "Tax-Loss Trevor",
-    "Cycle Top Cyrus",
-    "Seed Phrase Steve",
-    "Jeet Sheet Jay",
-    "Phishing Phoebe",
-    "Bag Funeral Bea",
-    "Dead Cat Dave"
+  "degens": [
+    {
+      "slug": "liquidation-vulture",
+      "name": "Liquidation Vulture"
+    },
+    {
+      "slug": "margin-call-max",
+      "name": "Margin Call Max"
+    },
+    {
+      "slug": "buy-high-brian",
+      "name": "Buy-High Brian"
+    },
+    {
+      "slug": "mev-mia",
+      "name": "MEV Mia"
+    },
+    {
+      "slug": "early-mint-maya",
+      "name": "Early Mint Maya"
+    },
+    {
+      "slug": "short-squeeze-simone",
+      "name": "Short Squeeze Simone"
+    },
+    {
+      "slug": "bridge-burn-bernie",
+      "name": "Bridge Burn Bernie"
+    },
+    {
+      "slug": "stablecoin-stella",
+      "name": "Stablecoin Stella"
+    },
+    {
+      "slug": "presale-victor",
+      "name": "Presale Victor"
+    },
+    {
+      "slug": "rug-baron-rex",
+      "name": "Rug Baron Rex"
+    },
+    {
+      "slug": "cold-storage-chloe",
+      "name": "Cold Storage Chloe"
+    },
+    {
+      "slug": "diamond-hands-pepe",
+      "name": "Diamond Hands Pepe"
+    },
+    {
+      "slug": "mev-marlon",
+      "name": "Mev Marlon"
+    },
+    {
+      "slug": "airdrop-ava",
+      "name": "Airdrop Ava"
+    },
+    {
+      "slug": "oracle-olivia",
+      "name": "Oracle Olivia"
+    }
   ],
   "showcase": [
     {
@@ -427,7 +463,7 @@
     },
     {
       "slug": "d466f9bcb42e88c1",
-      "screen": "PROBABLY NOTHING",
+      "screen": "Bitcoin",
       "chassis": "Night Desk",
       "finish": "Industrial Grey",
       "room": "After-Hours Video Store",
@@ -445,7 +481,7 @@
     },
     {
       "slug": "2c4ab743c2315576",
-      "screen": "COPE",
+      "screen": "EXIT LIQUIDITY",
       "chassis": "Cold Call",
       "finish": "Terminal Green",
       "room": "Vapor Rooftop",
@@ -454,7 +490,7 @@
     },
     {
       "slug": "2152d143d86c4703",
-      "screen": "NGMI",
+      "screen": "JEET",
       "chassis": "Reel Deck",
       "finish": "Cobalt",
       "room": "Warehouse Loading Bay",
@@ -526,7 +562,7 @@
     },
     {
       "slug": "ce26e6ae12adc34d",
-      "screen": "Optimism",
+      "screen": "Polygon",
       "chassis": "Coin-Op",
       "finish": "Chrome",
       "room": "Ticker Tunnel",
@@ -565,5 +601,5 @@
     "2c4ab743c2315576",
     "5bd1525b1227c04d"
   ],
-  "generatedAt": "2026-08-29T12:44:17.813Z"
+  "generatedAt": "2026-08-29T16:23:46.676Z"
 }

@@ -43,7 +43,7 @@ every trait table and refuses outright if one ever appears in `SHOWCASE`.
 TERMINL_COLLECTION_DIR=../path/to/collection npm run snapshot
 npm run og                                              # card uses the new set
 node --env-file=../ElementServer/.env scripts/upload-art.mjs
-git add data/site.json public/art public/og.jpg && git commit
+git add data/site.json public/art public/degens public/og.jpg && git commit
 ```
 
 Worth rerunning afterwards — no token ids in the markup, one slug per piece:
@@ -134,12 +134,13 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 ## Structure
 
 ```
-lib/showcase.js        the sixteen published ids, the teased names, the slug hash
+lib/showcase.js        the sixteen published ids and the slug hash
 scripts/snapshot.mjs   the only code that reads the locked collection
 scripts/og.mjs         share card + icons, built from the published art
 scripts/upload-art.mjs pushes the snapshot and the card to the ELEMENT bucket
 data/site.json         every number and string the page renders (12 kB)
 public/art/            the sixteen published images
+public/degens/         portraits of the cast who appear in them
 pages/index.jsx        the site
 styles/                CRT/terminal treatment
 ```
@@ -149,10 +150,14 @@ styles/                CRT/terminal treatment
 - **The art is the page.** Hero, marquee, story and gallery, in that order.
   Copy comes from the collection's own vocabulary — rooms, props and companion
   names are real trait values.
-- **The roster is teased, not published.** Twenty-four named regulars out of
-  150, and trait tables are trimmed by the snapshot to the rows actually
-  rendered. Shipping every variant and slicing in the component had put all 150
-  companion names and all 93 screen names in the markup.
+- **The cast is teased, not published.** "The degens" shows portraits for the
+  15 characters who already stand in the sixteen published pieces, so it reveals
+  nothing new — you can see every one of them in the gallery. The other 135 stay
+  behind the mint. Portraits are cropped from the character sprites by the
+  snapshot, normalised onto one 340×560 canvas so every figure shares a baseline.
+- **Trait tables are trimmed server-side** to the rows actually rendered.
+  Shipping every variant and slicing in the component had put all 150 companion
+  names and all 93 screen names in the markup.
 - **No roadmap section, stated plainly.** No utility, no staking, no token; more
   may follow depending on the mint. Written as an honest position rather than a
   promise, so nothing has to be walked back.
@@ -165,6 +170,16 @@ styles/                CRT/terminal treatment
   animation, so its tiles never reliably satisfy the lazy-loading observer.
 - **No `image-rendering: pixelated`.** The sources are 2048px renders being
   scaled *down*, where it only causes aliasing.
+- **No `backdrop-filter` anywhere.** The lightbox had one over the full
+  viewport, which forces the compositor to re-render everything behind it every
+  frame — and behind it sat a ~7000px marquee on an infinite transform plus a
+  fixed scanline layer. Its background is 97% opaque, so the blur was buying
+  nothing. The sticky nav had the same problem for the same non-gain.
+- **The lightbox pauses what is behind it.** `.frozen` stops the marquee and the
+  CRT sweep while the overlay is up; nothing invisible should be driving frames.
+- **`min-height: 0` on the lightbox art cell.** Without it the square piece
+  forced its grid row taller than the panel and `overflow: hidden` clipped the
+  top and bottom of the art on any short window.
 - **Trait counts exclude `None`.** The rarity report has a `None` row per
   optional slot. Counting it published "159 companions" when there are 150.
 
