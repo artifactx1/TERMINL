@@ -41,8 +41,9 @@ every trait table and refuses outright if one ever appears in `SHOWCASE`.
 ```bash
 # edit lib/showcase.js, then:
 TERMINL_COLLECTION_DIR=../path/to/collection npm run snapshot
+npm run og                                              # card uses the new set
 node --env-file=../ElementServer/.env scripts/upload-art.mjs
-git add data/site.json public/art && git commit
+git add data/site.json public/art public/og.jpg && git commit
 ```
 
 Worth rerunning afterwards — no token ids in the markup, one slug per piece:
@@ -82,6 +83,40 @@ node --env-file=../ElementServer/.env scripts/upload-art.mjs
 The canonical art for the tokens themselves is Arweave, per the collection's
 metadata. These are display copies for the website and nothing more.
 
+## Sharing
+
+`npm run og` builds `public/og.jpg` (1200×630) and the icon set from the
+published art — no runtime rendering. Scrapers do not run JavaScript, time out
+aggressively and cache hard, so a static file on a stable URL is what actually
+survives being pasted somewhere.
+
+The card is **served from the bucket**, not the site:
+
+```
+https://storage.googleapis.com/curent-marketplace/terminl/og.jpg
+```
+
+`og:image` must be absolute — every scraper rejects a relative URL — and a
+Vercel preview domain changes on each deploy, so pointing at the bucket means
+previews work before the site has a domain. Override with
+`NEXT_PUBLIC_OG_IMAGE` once the real hostname is settled.
+
+A few details that decide whether a platform renders the wide card at all:
+
+- **JPEG, not PNG.** The same card is 1.1 MB as PNG; WhatsApp skips previews
+  over roughly 300 kB and every other scraper just gets slower. 157 kB now.
+- **`og:image:width`/`height` are declared.** They let a scraper commit to the
+  wide layout before the image finishes downloading; without them some fall
+  back to a small square thumbnail.
+- **`twitter:card` is set explicitly.** X reads its own namespace and will not
+  infer `summary_large_image` from `og:*`.
+- **The description is one sentence under ~200 characters,** because X truncates
+  around there and Discord clips harder still.
+
+Covers X, Discord, Telegram, Slack, iMessage, LinkedIn, Facebook and WhatsApp.
+Check a deploy with X's Card Validator, Facebook's Sharing Debugger, or by
+pasting the link into a Discord DM to yourself.
+
 ## Deploying
 
 Import the repo on Vercel. Nothing else is required. Two optional variables:
@@ -90,6 +125,8 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 |---|---|
 | `NEXT_PUBLIC_ART_BASE_URL` | serves the committed images from `/art` |
 | `NEXT_PUBLIC_OPENSEA_URL` | falls back to a guessed `opensea.io` slug — **set this** |
+| `NEXT_PUBLIC_SITE_URL` | `og:url` and `canonical` are omitted; set to the production domain |
+| `NEXT_PUBLIC_OG_IMAGE` | card is served from the bucket, which is correct |
 
 `TERMINL_COLLECTION_DIR` is *not* needed to build or deploy. It is only read by
 `npm run snapshot`, on whichever machine holds the collection.
@@ -99,7 +136,8 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 ```
 lib/showcase.js        the sixteen published ids, the teased names, the slug hash
 scripts/snapshot.mjs   the only code that reads the locked collection
-scripts/upload-art.mjs pushes the snapshot to the ELEMENT bucket
+scripts/og.mjs         share card + icons, built from the published art
+scripts/upload-art.mjs pushes the snapshot and the card to the ELEMENT bucket
 data/site.json         every number and string the page renders (12 kB)
 public/art/            the sixteen published images
 pages/index.jsx        the site
@@ -133,6 +171,7 @@ styles/                CRT/terminal treatment
 ## Still to wire
 
 1. `NEXT_PUBLIC_OPENSEA_URL` — currently defaults to a guessed slug.
-2. OG image + favicon.
+2. `NEXT_PUBLIC_SITE_URL` once the domain is settled, so `og:url` and the
+   canonical link are emitted.
 3. Revisit `SHOWCASE` once the mint sells out — no reason to keep the rest
    hidden when every piece has an owner.

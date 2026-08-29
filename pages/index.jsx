@@ -19,6 +19,23 @@ const OPENSEA = process.env.NEXT_PUBLIC_OPENSEA_URL || "https://opensea.io/colle
 const ART_BASE = (process.env.NEXT_PUBLIC_ART_BASE_URL || "/art").replace(/\/$/, "");
 const img = (slug) => `${ART_BASE}/${slug}.webp`;
 
+/*
+ * Sharing metadata.
+ *
+ * og:image has to be an absolute URL — every scraper rejects a relative one,
+ * and a Vercel preview domain changes on each deploy. So the card is served
+ * from the bucket by default, which is stable before the site even has a
+ * domain. Override either value once the real hostname is settled.
+ */
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL
+  || (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "")
+).replace(/\/$/, "");
+
+const OG_IMAGE = process.env.NEXT_PUBLIC_OG_IMAGE
+  || "https://storage.googleapis.com/curent-marketplace/terminl/og.jpg";
+
+const OG_TITLE = "TERMINL — WAGMI. Allegedly.";
+
 /** Alt text without giving away which piece it is. */
 const describe = (t) => ["TERMINL", t.screen && `— ${t.screen} on a ${t.chassis}`]
   .filter(Boolean).join(" ");
@@ -80,16 +97,47 @@ function Site({ data }) {
   const upNext = [1, 2, 3, 4, 5].map((n) => shown[(heroIndex + n) % shown.length]);
   const hidden = data.supply - shown.length;
 
+  /* One sentence, reused by every scraper. Kept under ~200 chars: X truncates
+     around there and Discord clips harder still. */
+  const blurb = `${data.supply} pixel machines, the memes on their screens, and the `
+    + `${data.traitTotals.Companion} regulars still holding. ${data.outcomes.rekt} are already rekt. `
+    + `Only ${shown.length} have ever been shown.`;
+
   return (
     <>
       <Head>
-        <title>TERMINL — WAGMI. Allegedly.</title>
-        <meta
-          name="description"
-          content={`${data.supply} machines still running in dead malls and empty offices, and the ${data.traitTotals.Companion} degenerates who never left. A celebration of art, memes and degenerate behavior.`}
-        />
-        <meta property="og:title" content="TERMINL" />
-        <meta property="og:description" content={`${data.supply} machines. ${data.outcomes.rekt} of them already rekt. Only ${shown.length} have been shown.`} />
+        <title>{OG_TITLE}</title>
+        <meta name="description" content={blurb} />
+        <meta name="theme-color" content="#060907" />
+        {SITE_URL && <link rel="canonical" href={SITE_URL} />}
+
+        {/* Open Graph — Discord, Telegram, Slack, iMessage, LinkedIn, Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="TERMINL" />
+        <meta property="og:title" content={OG_TITLE} />
+        <meta property="og:description" content={blurb} />
+        {SITE_URL && <meta property="og:url" content={SITE_URL} />}
+        <meta property="og:image" content={OG_IMAGE} />
+        {/* Declared dimensions let a scraper reserve the wide card before it
+            has finished downloading the image; without them some fall back to
+            a small thumbnail. */}
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:alt" content="TERMINL — pixel art terminals" />
+        <meta property="og:locale" content="en_US" />
+
+        {/* X/Twitter reads its own namespace and ignores og:* for card type */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={OG_TITLE} />
+        <meta name="twitter:description" content={blurb} />
+        <meta name="twitter:image" content={OG_IMAGE} />
+        <meta name="twitter:image:alt" content="TERMINL — pixel art terminals" />
+
+        <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+        <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
       </Head>
 
       <main className={styles.shell}>

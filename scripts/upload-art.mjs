@@ -41,6 +41,15 @@ async function main() {
   const files = fs.readdirSync(LOCAL).filter((f) => f.endsWith(".webp")).sort();
   if (!files.length) throw new Error(`No images in ${LOCAL}. Run "npm run snapshot" first.`);
 
+  /*
+   * The share card ships too. It has to live on an absolute, stable URL —
+   * scrapers resolve og:image before the site has a domain, and a Vercel
+   * preview URL changes on every deploy.
+   */
+  const extras = fs.existsSync("public/og.jpg")
+    ? [{ local: "public/og.jpg", object: `${path.dirname(PREFIX)}/og.jpg`, type: "image/jpeg" }]
+    : [];
+
   console.log(`bucket   gs://${BUCKET}/${PREFIX}`);
   console.log(`local    ${files.length} images in ${LOCAL}\n`);
 
@@ -54,6 +63,10 @@ async function main() {
     for (const name of files) {
       const [there] = await bucket.file(`${PREFIX}/${name}`).exists();
       console.log(`  ${there ? "present" : "MISSING"}  ${name}`);
+    }
+    for (const e of extras) {
+      const [there] = await bucket.file(e.object).exists();
+      console.log(`  ${there ? "present" : "MISSING"}  ${e.object}`);
     }
     console.log("\n--check only, nothing written");
     return;
@@ -71,6 +84,16 @@ async function main() {
       },
     });
     console.log(`  uploaded  ${object}`);
+  }
+
+  for (const e of extras) {
+    await bucket.upload(e.local, {
+      destination: e.object,
+      resumable: false,
+      // The card changes when the showcase does, so it must not be cached forever.
+      metadata: { contentType: e.type, cacheControl: "public, max-age=3600" },
+    });
+    console.log(`  uploaded  ${e.object}`);
   }
 
   console.log(`\nSet this on Vercel and locally:\n  NEXT_PUBLIC_ART_BASE_URL=https://storage.googleapis.com/${BUCKET}/${PREFIX}`);
