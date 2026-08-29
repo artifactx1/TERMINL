@@ -1,5 +1,28 @@
+# dependencies
 node_modules
+
+# build output
 .next
 out
+next-env.d.ts
+
+# the locked collection lives outside this repo and must never be committed —
+# it is multiple gigabytes of art owned by the generator project
+/collection
+*.png
+!public/**/*.png
+
+# local env (.env.example is committed on purpose)
+.env
 .env*.local
+
+# deploy + tooling
+.vercel
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# os / editor
 .DS_Store
+.idea
+.vscode
