@@ -1,0 +1,569 @@
+{
+  "name": "TERMINL",
+  "symbol": "TERMINL",
+  "supply": 2048,
+  "storage": "arweave",
+  "counts": {
+    "uniqueDna": 2048
+  },
+  "tiers": [
+    {
+      "name": "Mythic",
+      "target": 10,
+      "assigned": 8,
+      "percent": 0.391
+    },
+    {
+      "name": "Legendary",
+      "target": 42,
+      "assigned": 37,
+      "percent": 1.807
+    },
+    {
+      "name": "Epic",
+      "target": 102,
+      "assigned": 93,
+      "percent": 4.541
+    },
+    {
+      "name": "Rare",
+      "target": 256,
+      "assigned": 229,
+      "percent": 11.182
+    },
+    {
+      "name": "Uncommon",
+      "target": 614,
+      "assigned": 627,
+      "percent": 30.615
+    },
+    {
+      "name": "Standard",
+      "target": 1024,
+      "assigned": 1054,
+      "percent": 51.465
+    }
+  ],
+  "outcomes": {
+    "open": 919,
+    "winner": 373,
+    "rekt": 756
+  },
+  "traitTotals": {
+    "Background": 16,
+    "Chassis": 7,
+    "Chassis Finish": 17,
+    "Screen / Face": 93,
+    "Primary Prop": 18,
+    "Companion": 150,
+    "Effect": 6
+  },
+  "traitCategories": {
+    "Background": [
+      {
+        "name": "Midnight Garage",
+        "count": 267,
+        "percent": 13.037
+      },
+      {
+        "name": "Off-Air Studio",
+        "count": 234,
+        "percent": 11.426
+      },
+      {
+        "name": "After Hours Office",
+        "count": 213,
+        "percent": 10.4
+      },
+      {
+        "name": "Warehouse Loading Bay",
+        "count": 195,
+        "percent": 9.521
+      },
+      {
+        "name": "Dead Mall Corridor",
+        "count": 192,
+        "percent": 9.375
+      },
+      {
+        "name": "Motel Breezeway",
+        "count": 191,
+        "percent": 9.326
+      },
+      {
+        "name": "Blue Hour Platform",
+        "count": 179,
+        "percent": 8.74
+      },
+      {
+        "name": "Neon Laundromat",
+        "count": 170,
+        "percent": 8.301
+      },
+      {
+        "name": "After-Hours Video Store",
+        "count": 163,
+        "percent": 7.959
+      },
+      {
+        "name": "Desert Truck Stop",
+        "count": 159,
+        "percent": 7.764
+      }
+    ],
+    "Chassis": [
+      {
+        "name": "Reel Deck",
+        "count": 423,
+        "percent": 20.654
+      },
+      {
+        "name": "Night Desk",
+        "count": 393,
+        "percent": 19.189
+      },
+      {
+        "name": "Block Party",
+        "count": 318,
+        "percent": 15.527
+      },
+      {
+        "name": "Pocket Scout",
+        "count": 312,
+        "percent": 15.234
+      },
+      {
+        "name": "Coin-Op",
+        "count": 302,
+        "percent": 14.746
+      },
+      {
+        "name": "Cold Call",
+        "count": 151,
+        "percent": 7.373
+      },
+      {
+        "name": "Hash Hauler",
+        "count": 149,
+        "percent": 7.275
+      }
+    ],
+    "Chassis Finish": [
+      {
+        "name": "Industrial Grey",
+        "count": 720,
+        "percent": 35.156
+      },
+      {
+        "name": "Bone",
+        "count": 292,
+        "percent": 14.258
+      },
+      {
+        "name": "Matte Black",
+        "count": 225,
+        "percent": 10.986
+      },
+      {
+        "name": "Terminal Green",
+        "count": 213,
+        "percent": 10.4
+      },
+      {
+        "name": "Cobalt",
+        "count": 168,
+        "percent": 8.203
+      },
+      {
+        "name": "Emergency Red",
+        "count": 135,
+        "percent": 6.592
+      },
+      {
+        "name": "Oxidized Copper",
+        "count": 97,
+        "percent": 4.736
+      },
+      {
+        "name": "Rust Zombie",
+        "count": 70,
+        "percent": 3.418
+      },
+      {
+        "name": "Chrome",
+        "count": 34,
+        "percent": 1.66
+      },
+      {
+        "name": "Platinum",
+        "count": 19,
+        "percent": 0.928
+      }
+    ],
+    "Screen / Face": [
+      {
+        "name": "Bitcoin",
+        "count": 99,
+        "percent": 4.834
+      },
+      {
+        "name": "Pepe Coin",
+        "count": 88,
+        "percent": 4.297
+      },
+      {
+        "name": "Ethereum",
+        "count": 74,
+        "percent": 3.613
+      },
+      {
+        "name": "Solana",
+        "count": 72,
+        "percent": 3.516
+      },
+      {
+        "name": "Dogecoin",
+        "count": 67,
+        "percent": 3.271
+      },
+      {
+        "name": "REKT",
+        "count": 63,
+        "percent": 3.076
+      },
+      {
+        "name": "Shiba Inu",
+        "count": 60,
+        "percent": 2.93
+      },
+      {
+        "name": "Bonk",
+        "count": 58,
+        "percent": 2.832
+      },
+      {
+        "name": "HODL",
+        "count": 56,
+        "percent": 2.734
+      },
+      {
+        "name": "SPX6900",
+        "count": 56,
+        "percent": 2.734
+      }
+    ],
+    "Primary Prop": [
+      {
+        "name": "Glass Bong",
+        "count": 247,
+        "percent": 12.061
+      },
+      {
+        "name": "Loaded Rolling Tray",
+        "count": 240,
+        "percent": 11.719
+      },
+      {
+        "name": "Smug Frog Pouch Tin",
+        "count": 192,
+        "percent": 9.375
+      },
+      {
+        "name": "Diamond Hand",
+        "count": 162,
+        "percent": 7.91
+      },
+      {
+        "name": "Rocket Cartridge",
+        "count": 139,
+        "percent": 6.787
+      },
+      {
+        "name": "Liquidation Button",
+        "count": 101,
+        "percent": 4.932
+      },
+      {
+        "name": "Banana Hotline",
+        "count": 68,
+        "percent": 3.32
+      },
+      {
+        "name": "Alpha Pouches",
+        "count": 61,
+        "percent": 2.979
+      },
+      {
+        "name": "Battered VHS",
+        "count": 61,
+        "percent": 2.979
+      },
+      {
+        "name": "Overclock Can",
+        "count": 49,
+        "percent": 2.393
+      }
+    ],
+    "Companion": [
+      {
+        "name": "Margin Call Max",
+        "count": 78,
+        "percent": 3.809
+      },
+      {
+        "name": "Cyber Rat",
+        "count": 66,
+        "percent": 3.223
+      },
+      {
+        "name": "Paper Hands Paul",
+        "count": 63,
+        "percent": 3.076
+      },
+      {
+        "name": "Chain-Smoking Pigeon",
+        "count": 58,
+        "percent": 2.832
+      },
+      {
+        "name": "Bagholder Barry",
+        "count": 54,
+        "percent": 2.637
+      },
+      {
+        "name": "Buy-High Brian",
+        "count": 51,
+        "percent": 2.49
+      },
+      {
+        "name": "Liquidation Vulture",
+        "count": 47,
+        "percent": 2.295
+      },
+      {
+        "name": "Rug-Pull Gremlin",
+        "count": 46,
+        "percent": 2.246
+      },
+      {
+        "name": "HODL Hank",
+        "count": 42,
+        "percent": 2.051
+      },
+      {
+        "name": "Leverage Larry",
+        "count": 41,
+        "percent": 2.002
+      }
+    ],
+    "Effect": [
+      {
+        "name": "Orderflow Codefall",
+        "count": 156,
+        "percent": 7.617
+      },
+      {
+        "name": "Pixel Sparks",
+        "count": 141,
+        "percent": 6.885
+      },
+      {
+        "name": "Liquidation Fire",
+        "count": 120,
+        "percent": 5.859
+      },
+      {
+        "name": "Leverage Arcs",
+        "count": 89,
+        "percent": 4.346
+      },
+      {
+        "name": "Rug-Pull Glitch",
+        "count": 62,
+        "percent": 3.027
+      },
+      {
+        "name": "Analog Tracking Tear",
+        "count": 61,
+        "percent": 2.979
+      }
+    ]
+  },
+  "regulars": [
+    "Margin Call Max",
+    "Paper Hands Paul",
+    "Bagholder Barry",
+    "Chain-Smoking Pigeon",
+    "Buy-High Brian",
+    "Rug-Pull Gremlin",
+    "Liquidation Vulture",
+    "HODL Hank",
+    "Leverage Larry",
+    "McRugged Mike",
+    "Exit Liquidity Chad",
+    "Smokin' Pepe",
+    "Gas Fee Gary",
+    "Laser-Eye Maxi",
+    "Top-Tick Tony",
+    "FOMO Felicia",
+    "Down-Only Donna",
+    "Tax-Loss Trevor",
+    "Cycle Top Cyrus",
+    "Seed Phrase Steve",
+    "Jeet Sheet Jay",
+    "Phishing Phoebe",
+    "Bag Funeral Bea",
+    "Dead Cat Dave"
+  ],
+  "showcase": [
+    {
+      "slug": "b7d2bf1b7fd6540c",
+      "screen": "Bitcoin",
+      "chassis": "Hash Hauler",
+      "finish": "Gold",
+      "room": "Memecoin Casino",
+      "prop": "Glass Bong",
+      "companion": "Liquidation Vulture"
+    },
+    {
+      "slug": "d466f9bcb42e88c1",
+      "screen": "PROBABLY NOTHING",
+      "chassis": "Night Desk",
+      "finish": "Industrial Grey",
+      "room": "After-Hours Video Store",
+      "prop": null,
+      "companion": "Margin Call Max"
+    },
+    {
+      "slug": "4b8ac4791a5855a4",
+      "screen": "Neon Brawler",
+      "chassis": "Hash Hauler",
+      "finish": "Matte Black",
+      "room": "Lunar Dark Pool",
+      "prop": "Battered VHS",
+      "companion": "Buy-High Brian"
+    },
+    {
+      "slug": "2c4ab743c2315576",
+      "screen": "COPE",
+      "chassis": "Cold Call",
+      "finish": "Terminal Green",
+      "room": "Vapor Rooftop",
+      "prop": "Loaded Rolling Tray",
+      "companion": "MEV Mia"
+    },
+    {
+      "slug": "2152d143d86c4703",
+      "screen": "NGMI",
+      "chassis": "Reel Deck",
+      "finish": "Cobalt",
+      "room": "Warehouse Loading Bay",
+      "prop": "Loaded Rolling Tray",
+      "companion": "Early Mint Maya"
+    },
+    {
+      "slug": "25be53696f600633",
+      "screen": "Ethereum",
+      "chassis": "Night Desk",
+      "finish": "Toxic Neon",
+      "room": "Liquidation Foundry",
+      "prop": "Glass Bong",
+      "companion": "Short Squeeze Simone"
+    },
+    {
+      "slug": "bd9c6fa1b045b51c",
+      "screen": "Bitcoin",
+      "chassis": "Pocket Scout",
+      "finish": "Bone",
+      "room": "Vapor Rooftop",
+      "prop": "Smug Frog Pouch Tin",
+      "companion": "Bridge Burn Bernie"
+    },
+    {
+      "slug": "cc8620b1fb031dea",
+      "screen": "JEET",
+      "chassis": "Cold Call",
+      "finish": "Hologram",
+      "room": "Midnight Garage",
+      "prop": "Rocket Cartridge",
+      "companion": "Stablecoin Stella"
+    },
+    {
+      "slug": "a1ff75d986fb9a81",
+      "screen": "Seinfeld",
+      "chassis": "Reel Deck",
+      "finish": "Diamond Ice",
+      "room": "Midnight Garage",
+      "prop": "Banana Hotline",
+      "companion": "Short Squeeze Simone"
+    },
+    {
+      "slug": "f30ef48e99986461",
+      "screen": "GM",
+      "chassis": "Pocket Scout",
+      "finish": "Hologram",
+      "room": "Dead Mall Corridor",
+      "prop": "Liquidation Button",
+      "companion": "Presale Victor"
+    },
+    {
+      "slug": "765916d39e7e4dcf",
+      "screen": "Dogecoin",
+      "chassis": "Coin-Op",
+      "finish": "Platinum",
+      "room": "Degen Basement",
+      "prop": null,
+      "companion": "Rug Baron Rex"
+    },
+    {
+      "slug": "da91ce04aea4ff4f",
+      "screen": "Atari Centipede",
+      "chassis": "Block Party",
+      "finish": "Terminal Green",
+      "room": "Off-Air Studio",
+      "prop": "Loaded Rolling Tray",
+      "companion": "Cold Storage Chloe"
+    },
+    {
+      "slug": "ce26e6ae12adc34d",
+      "screen": "Optimism",
+      "chassis": "Coin-Op",
+      "finish": "Chrome",
+      "room": "Ticker Tunnel",
+      "prop": null,
+      "companion": "Diamond Hands Pepe"
+    },
+    {
+      "slug": "e1112ace99e958a5",
+      "screen": "Ethereum",
+      "chassis": "Reel Deck",
+      "finish": "Toxic Neon",
+      "room": "Dead Mall Corridor",
+      "prop": "Smug Frog Pouch Tin",
+      "companion": "Mev Marlon"
+    },
+    {
+      "slug": "98fd1cc538b2d851",
+      "screen": "Chainlink",
+      "chassis": "Block Party",
+      "finish": "Diamond Ice",
+      "room": "Neon Laundromat",
+      "prop": null,
+      "companion": "Airdrop Ava"
+    },
+    {
+      "slug": "5bd1525b1227c04d",
+      "screen": "Dogecoin",
+      "chassis": "Coin-Op",
+      "finish": "Emergency Red",
+      "room": "After-Hours Video Store",
+      "prop": "Glass Bong",
+      "companion": "Oracle Olivia"
+    }
+  ],
+  "storyArt": [
+    "2c4ab743c2315576",
+    "5bd1525b1227c04d"
+  ],
+  "generatedAt": "2026-08-29T12:44:17.813Z"
+}

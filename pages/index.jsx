@@ -9,10 +9,15 @@ const OPENSEA = process.env.NEXT_PUBLIC_OPENSEA_URL || "https://opensea.io/colle
 
 /*
  * Art is addressed by opaque slug, never by token id — the numbers are part of
- * the surprise. `/api/art/[slug]` resolves the 32 published pieces and nothing
- * else, and proxies Arweave once the upload is done.
+ * the surprise. The files themselves are produced by `npm run snapshot`, which
+ * is the only thing that ever reads the locked collection; the deployed app has
+ * no path back to the pieces it did not publish.
+ *
+ * Unset, this serves the copies committed under public/art. Point it at a
+ * bucket or CDN to serve them from there instead.
  */
-const img = (slug) => `/api/art/${slug}`;
+const ART_BASE = (process.env.NEXT_PUBLIC_ART_BASE_URL || "/art").replace(/\/$/, "");
+const img = (slug) => `${ART_BASE}/${slug}.webp`;
 
 /** Alt text without giving away which piece it is. */
 const describe = (t) => ["TERMINL", t.screen && `— ${t.screen} on a ${t.chassis}`]
@@ -430,18 +435,19 @@ function Tape({ data }) {
 }
 
 export async function getStaticProps() {
-  try {
-    // eslint-disable-next-line global-require
-    const { collection } = require("../lib/collection");
-    // eslint-disable-next-line global-require
-    const { STORY_ART, slugFor } = require("../lib/showcase");
-    const data = collection();
-    const bySlug = new Map(data.showcase.map((t) => [t.slug, t]));
-    const storyArt = STORY_ART.map((tokenId) => bySlug.get(slugFor(tokenId))).filter(Boolean);
-    return { props: { data: { ...data, storyArt }, error: null }, revalidate: 60 };
-  } catch (failure) {
-    // The locked collection lives outside the repo, so a build without it must
-    // still succeed rather than break the whole site.
-    return { props: { data: null, error: `Collection not readable: ${failure.message}` }, revalidate: 30 };
-  }
+  /*
+   * Everything the page renders was resolved by `npm run snapshot` and
+   * committed. There is no filesystem access and no collection lookup here —
+   * the build reads a 12 kB JSON file and nothing else.
+   */
+  // eslint-disable-next-line global-require
+  const site = require("../data/site.json");
+  const bySlug = new Map(site.showcase.map((t) => [t.slug, t]));
+
+  return {
+    props: {
+      data: { ...site, storyArt: site.storyArt.map((slug) => bySlug.get(slug)).filter(Boolean) },
+      error: null,
+    },
+  };
 }
