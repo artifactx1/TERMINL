@@ -34,7 +34,7 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL
 const OG_IMAGE = process.env.NEXT_PUBLIC_OG_IMAGE
   || "https://storage.googleapis.com/curent-marketplace/terminl/og.jpg";
 
-const OG_TITLE = "TERMINL — WAGMI. Allegedly.";
+const OG_TITLE = "TERMINL — WAGMI. Or maybe we won't.";
 
 /** Alt text without giving away which piece it is. */
 const describe = (t) => ["TERMINL", t.screen && `— ${t.screen} on a ${t.chassis}`]
@@ -181,11 +181,9 @@ function Site({ data }) {
           </div>
 
           <div className={styles.readout}>
-            <h1 className={styles.headline}>WAGMI.<br />Allegedly.</h1>
+            <h1 className={styles.headline}>WAGMI.<br />Or maybe<br />we won&rsquo;t.</h1>
             <p className={styles.blurb}>
-              {data.supply} pixel machines, the memes on their screens, and the{" "}
-              {data.traitTotals.Companion} regulars who are still holding.{" "}
-              {data.outcomes.rekt} of them are already rekt.
+              {data.supply} pixel machines. Only {shown.length} have ever been shown.
             </p>
 
             <div className={styles.score}>

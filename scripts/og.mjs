@@ -64,15 +64,16 @@ async function card() {
   );
 
   const text = Buffer.from(`<svg width="${W}" height="${H}">
-    <text x="56" y="150" font-family="monospace" font-size="62" font-weight="700"
+    <text x="56" y="124" font-family="monospace" font-size="62" font-weight="700"
           fill="#ffffff" letter-spacing="20">TERMINL</text>
-    <rect x="58" y="186" width="86" height="3" fill="#7dff5c"/>
-    <text x="56" y="268" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">WAGMI.</text>
-    <text x="56" y="330" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">Allegedly.</text>
-    <text x="56" y="392" font-family="monospace" font-size="20" fill="#9aa89f">${esc(
+    <rect x="58" y="152" width="86" height="3" fill="#7dff5c"/>
+    <text x="56" y="232" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">WAGMI.</text>
+    <text x="56" y="286" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">Or maybe</text>
+    <text x="56" y="340" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">we won&#8217;t.</text>
+    <text x="56" y="394" font-family="monospace" font-size="20" fill="#9aa89f">${esc(
       `${site.supply} machines. ${site.outcomes.rekt} already rekt.`,
     )}</text>
-    <text x="56" y="424" font-family="monospace" font-size="20" fill="#7dff5c" letter-spacing="2">${esc(
+    <text x="56" y="426" font-family="monospace" font-size="20" fill="#7dff5c" letter-spacing="2">${esc(
       `ONLY ${site.showcase.length} SHOWN · MINTING ON OPENSEA`,
     )}</text>
   </svg>`);
