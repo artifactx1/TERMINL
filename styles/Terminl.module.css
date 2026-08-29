@@ -255,3 +255,34 @@
   .cast { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .degen img { height: 120px; }
 }
+
+/* ---- mint ---- */
+.mint { display: flex; flex-direction: column; gap: 12px; }
+
+.mintStats { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line); }
+.mintStats > div { background: var(--panel); padding: 11px 10px; }
+.mintStats b { display: block; font-size: 17px; color: #fff; letter-spacing: -.02em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mintStats span { display: block; margin-top: 3px; font-size: 8.5px; letter-spacing: .18em; color: var(--muted); }
+
+/* The closed/holding states reuse the CTA's footprint so the column does not
+   jump when the drop opens. */
+.mintClosed { padding: 16px; text-align: center; border: 1px solid #2e3b33;
+  color: var(--muted); font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; }
+
+.qty { display: grid; grid-template-columns: 46px 1fr 46px; align-items: center;
+  border: 1px solid var(--line); background: var(--panel); }
+.qty button { padding: 12px 0; cursor: pointer; border: 0; background: none;
+  color: var(--ink); font: 700 15px/1 ui-monospace, monospace; transition: color .15s; }
+.qty button:hover:not(:disabled) { color: var(--green); }
+.qty button:disabled { color: #39443d; cursor: default; }
+.qty b { text-align: center; font-size: 14px; color: #fff; }
+
+.mintOk { display: block; padding: 11px; text-align: center; text-decoration: none;
+  border: 1px solid #2f5c28; background: rgba(125,255,92,.07); color: var(--green);
+  font-size: 9.5px; letter-spacing: .16em; }
+.mintOk:hover { border-color: var(--green); }
+
+.mintErr { margin: 0; padding: 9px 11px; border-left: 2px solid var(--red);
+  background: rgba(255,106,94,.06); color: #ffb3ac; font-size: 10px; line-height: 1.6; }

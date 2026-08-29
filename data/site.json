@@ -49,6 +49,17 @@
     "winner": 373,
     "rekt": 756
   },
+  "storyFacts": {
+    "regulars": 150,
+    "mostCommon": {
+      "name": "Margin Call Max",
+      "count": 78,
+      "percent": 3.809
+    },
+    "gasFeeReceipt": 12,
+    "emptyWallet": 4,
+    "bagholderTrophy": 7
+  },
   "traitTotals": {
     "Background": 16,
     "Chassis": 7,
@@ -601,5 +612,5 @@
     "2c4ab743c2315576",
     "5bd1525b1227c04d"
   ],
-  "generatedAt": "2026-08-29T16:23:46.676Z"
+  "generatedAt": "2026-08-29T17:05:00.340Z"
 }

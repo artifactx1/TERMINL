@@ -1,7 +1,8 @@
 # TERMINL
 
-Site for **TERMINL** — 2048 generative CRT terminals. Minting happens on
-OpenSea; this site exists to sell the art without giving it away.
+Site for **TERMINL** — 2048 generative CRT terminals. The mint runs here, on
+Robinhood Chain, against the collection's own drop contract; the site exists to
+sell the art without giving it away.
 
 > A celebration of art, memes and degenerate behavior.
 
@@ -50,7 +51,9 @@ Worth rerunning afterwards — no token ids in the markup, one slug per piece:
 
 ```bash
 npm run build
-grep -cE '#[0-9]{4}|/[0-9]{4}\.png' .next/server/pages/index.html      # expect 0
+# expect 0. The \b matters: without it the theme-color meta (#060907) matches
+# as a false positive, and a check that cries wolf stops being read.
+grep -cE '#[0-9]{4}\b|/[0-9]{4}\.png' .next/server/pages/index.html
 grep -oE '[0-9a-f]{16}\.webp' .next/server/pages/index.html | sort -u | wc -l
 ```
 
@@ -123,8 +126,10 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 
 | variable | effect if unset |
 |---|---|
+| `NEXT_PUBLIC_TERMINL_CONTRACT` | the mint panel reads "MINT OPENS SOON" — **set this after deploying** |
+| `NEXT_PUBLIC_CHAIN_ID` | `4663` (Robinhood mainnet); `46630` is the testnet |
+| `NEXT_PUBLIC_RPC_URL` | the chain's public RPC, which is live |
 | `NEXT_PUBLIC_ART_BASE_URL` | serves the committed images from `/art` |
-| `NEXT_PUBLIC_OPENSEA_URL` | falls back to a guessed `opensea.io` slug — **set this** |
 | `NEXT_PUBLIC_SITE_URL` | `og:url` and `canonical` are omitted; set to the production domain |
 | `NEXT_PUBLIC_OG_IMAGE` | card is served from the bucket, which is correct |
 
@@ -161,7 +166,22 @@ styles/                CRT/terminal treatment
 - **No roadmap section, stated plainly.** No utility, no staking, no token; more
   may follow depending on the mint. Written as an honest position rather than a
   promise, so nothing has to be walked back.
-- **No wallet code.** Minting is on OpenSea; the CTA is a link.
+- **The mint is hand-encoded, not an SDK.** Wallet libraries are what made
+  this a separate repo in the first place — inside ELEMENT the first load was
+  393 kB and the hero stalled behind a Suspense-wrapped wallet provider. So the
+  four reads and one write the drop needs are ABI-encoded by hand in
+  `lib/mint.js`, over `window.ethereum` and plain `eth_call`. The whole mint
+  costs **8.7 kB**; the page is 92.7 kB. That is only defensible because the
+  encoding is *checked* rather than trusted — `scripts/verify-calldata.mjs`
+  diffs it against `cast calldata` across five cases and fails the build if any
+  byte differs. **If an allowlist phase is ever added, stop and pull in viem:**
+  a merkle proof makes the encoding genuinely dynamic and hand-rolling stops
+  being worth it.
+- **Nothing about the drop is hardcoded.** Price, supply, remaining, and the
+  per-wallet cap are read from the contract, so the page cannot advertise terms
+  the chain disagrees with. Before deployment it renders an inert "opens soon"
+  panel — the previous version shipped a MINT button pointing at an OpenSea
+  collection that 404s, and a dead link costs more trust than a closed sign.
 - **Images go through the optimizer.** The snapshot already reduces each piece
   to 1200px, and `next/image` derives the grid and marquee variants. No tile
   passes a `sizes` prop — passing one silently switches `next/image` to the
@@ -183,9 +203,43 @@ styles/                CRT/terminal treatment
 - **Trait counts exclude `None`.** The rarity report has a `None` row per
   optional slot. Counting it published "159 companions" when there are 150.
 
+## The mint
+
+The drop contract is `ArtifactXERC721Drop` in the `nftcontracts` repo — a
+thirdweb `ERC721Drop` with an immutable platform-fee carve-out, a royalty cap
+and a reentrancy-guarded claim. Deploy it with
+`script/DeployTerminl.s.sol`, which does the three steps in the order the
+contract requires (`lazyMint` → `adminMint` reserves → `setDropConditions`):
+
+```bash
+cd ../developement_projects/nftcontracts
+export PRIVATE_KEY=0x...
+export TERMINL_BASE_URI="ar://<metadata-manifest-tx>/"   # trailing slash
+export TERMINL_PRICE_WEI=0            # free mint; 5000000000000000 = 0.005 ETH
+export TERMINL_PER_WALLET=10
+export TERMINL_RESERVE=0              # team allocation, minted before the phase opens
+
+# dry run first
+forge script script/DeployTerminl.s.sol --rpc-url https://rpc.testnet.chain.robinhood.com
+
+# then for real
+forge script script/DeployTerminl.s.sol --broadcast \
+  --rpc-url https://rpc.mainnet.chain.robinhood.com
+```
+
+Put the printed address in `NEXT_PUBLIC_TERMINL_CONTRACT` and the mint is live.
+Nothing else on the site changes.
+
+**`TERMINL_BASE_URI` must be the finished Arweave manifest.** `lazyMint` bakes
+it into the batch; correcting it afterwards is a reveal, not an edit. Upload the
+art and the metadata first, verify a few tokens resolve, then deploy.
+
 ## Still to wire
 
-1. `NEXT_PUBLIC_OPENSEA_URL` — currently defaults to a guessed slug.
+1. **The Arweave upload.** Every metadata file still carries the
+   `ar://__IMAGE_TX__/` placeholder from `LOCK.json`. Until the images and
+   metadata are up and the real tx substituted, there is no `TERMINL_BASE_URI`
+   to deploy against.
 2. `NEXT_PUBLIC_SITE_URL` once the domain is settled, so `og:url` and the
    canonical link are emitted.
 3. Revisit `SHOWCASE` once the mint sells out — no reason to keep the rest

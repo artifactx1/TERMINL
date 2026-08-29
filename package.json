@@ -2,7 +2,7 @@
   "name": "terminl",
   "version": "1.0.0",
   "private": true,
-  "description": "Mint site for TERMINL — 2048 generative CRT terminals, stored permanently on Arweave.",
+  "description": "Mint site for TERMINL \u2014 2048 generative CRT terminals, stored permanently on Arweave.",
   "scripts": {
     "dev": "next dev -p 4000",
     "build": "next build",
@@ -10,7 +10,8 @@
     "lint": "next lint",
     "snapshot": "node scripts/snapshot.mjs",
     "upload-art": "node scripts/upload-art.mjs",
-    "og": "node scripts/og.mjs"
+    "og": "node scripts/og.mjs",
+    "verify-calldata": "node scripts/verify-calldata.mjs"
   },
   "dependencies": {
     "next": "14.2.35",

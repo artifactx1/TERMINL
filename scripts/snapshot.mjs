@@ -76,6 +76,25 @@ async function main() {
     o.count,
   ]));
 
+  /*
+   * The handful of counts the story names out loud.
+   *
+   * They are read from the untrimmed trait tables, not typed into the prose, so
+   * a regenerated collection cannot leave the page asserting a number that is
+   * no longer true. Anything absent resolves to null and the sentence that
+   * would have cited it is dropped rather than printed wrong.
+   */
+  const countOf = (category, name) =>
+    traits[category]?.find((v) => v.name === name)?.count ?? null;
+
+  const storyFacts = {
+    regulars: traits.Companion?.length ?? null,
+    mostCommon: traits.Companion?.[0] ?? null,
+    gasFeeReceipt: countOf("Primary Prop", "Gas Fee Receipt"),
+    emptyWallet: countOf("Primary Prop", "Empty Wallet"),
+    bagholderTrophy: countOf("Primary Prop", "Bagholder Trophy"),
+  };
+
   const showcase = [];
   for (const tokenId of SHOWCASE) {
     const token = tokens[tokenId];
@@ -124,6 +143,7 @@ async function main() {
     counts: { uniqueDna: lock.counts.uniqueDna },
     tiers: rarity.tiers,
     outcomes,
+    storyFacts,
     // Totals are counted before the trim, so the "N variants" labels stay honest
     // while only the rendered rows ship.
     traitTotals: Object.fromEntries(Object.entries(traits).map(([k, v]) => [k, v.length])),

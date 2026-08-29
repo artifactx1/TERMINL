@@ -2,10 +2,10 @@ import Head from "next/head";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
+import Mint from "../components/Mint";
+import { CHAIN, CONTRACT } from "../lib/mint";
 
 const HERO_ROTATE_MS = 5200;
-
-const OPENSEA = process.env.NEXT_PUBLIC_OPENSEA_URL || "https://opensea.io/collection/terminl";
 
 /*
  * Art is addressed by opaque slug, never by token id — the numbers are part of
@@ -152,7 +152,11 @@ function Site({ data }) {
             <a href="#art">ART</a>
             <a href="#degens">DEGENS</a>
             <a href="#tape">TAPE</a>
-            <a className={styles.os} href={OPENSEA} target="_blank" rel="noreferrer">OPENSEA ↗</a>
+            {CONTRACT ? (
+              <a className={styles.os} href={`${CHAIN.explorer}/address/${CONTRACT}`} target="_blank" rel="noreferrer">CONTRACT ↗</a>
+            ) : (
+              <a className={styles.os} href="#top">MINT</a>
+            )}
           </div>
         </nav>
 
@@ -204,8 +208,7 @@ function Site({ data }) {
               <Spec k="STANDING THERE" v={current.companion} />
             </dl>
 
-            <a className={styles.cta} href={OPENSEA} target="_blank" rel="noreferrer">MINT ON OPENSEA ↗</a>
-            <p className={styles.note}>{data.supply} pieces · stored on Arweave, forever</p>
+            <Mint />
           </div>
         </section>
 
@@ -286,7 +289,7 @@ function Site({ data }) {
         )}
 
         <footer className={styles.foot}>
-          <a className={styles.footCta} href={OPENSEA} target="_blank" rel="noreferrer">MINT ON OPENSEA ↗</a>
+          <a className={styles.footCta} href="#top">MINT TERMINL</a>
           <div>{data.name} · {data.symbol} · {data.counts.uniqueDna} unique of {data.supply}</div>
           <div><code>{data.imageTx ? `ar://${data.imageTx}` : "arweave manifest pending upload"}</code></div>
         </footer>
@@ -386,6 +389,11 @@ const Spec = ({ k, v }) => (
 );
 
 function Story({ data }) {
+  /* Every number below is snapshot output, not prose — see storyFacts in
+   * scripts/snapshot.mjs. A count that goes missing drops its clause instead of
+   * printing something the collection no longer supports. */
+  const f = data.storyFacts || {};
+
   return (
     <section className={styles.story} id="story">
       <div className={styles.storyArt}>
@@ -394,25 +402,30 @@ function Story({ data }) {
         ))}
       </div>
       <div className={styles.storyText}>
-        <h2>Where they came from</h2>
-        <p>Nobody knows where the first one came from.</p>
+        <h2>Who&rsquo;s standing there</h2>
         <p>
-          A market never really closes. The exchange dies, the order book keeps matching, it
-          just moves somewhere with worse lighting. A dead mall. An empty office. A motel
-          breezeway at 4am. Wherever it lands, it needs something to run on.
+          Barry bought the top. Not this top — an earlier one, that nobody brings up any
+          more. He is still at the same machine in the same dead mall, holding a trophy he
+          bought for himself.
         </p>
         <p>
-          So it takes whatever&rsquo;s in the room. A boombox. A payphone. A handheld
-          somebody left in a drawer in 1997. By morning it&rsquo;s bolted to the floor, warm
-          to the touch, showing a chart nobody asked for.
+          There are {f.regulars ?? data.traitTotals.Companion} of them and they have all
+          got a version of that. Paper Hands Paul, who sold and now has to watch.{" "}
+          {f.mostCommon ? `${f.mostCommon.name}, who turns up ${f.mostCommon.count} times because he keeps doing it. ` : ""}
+          A pigeon that smokes.{" "}
+          {f.gasFeeReceipt ? `${f.gasFeeReceipt} of them are holding a gas fee receipt. ` : ""}
+          {f.emptyWallet ? `${f.emptyWallet} are holding an empty wallet — not a joke about being broke, an actual trait, and ${f.emptyWallet} people are going to own it.` : ""}
         </p>
         <p>
-          Then the degens turn up. Bought the top and stayed. Sold the bottom and came back
-          to watch anyway. They stand there with a bong, a rolling tray and a gas fee receipt
-          they&rsquo;re never getting back, waiting on a green candle like it&rsquo;s weather.
+          The machines were already in the room. Somebody&rsquo;s boombox, a payphone, a
+          handheld left in a drawer in 1997, bolted down and wired up and still printing.
+          Nobody maintains them. Nobody turns them off either. That is not the interesting
+          part — the interesting part is who keeps showing up to watch.
         </p>
         <p className={styles.storyLast}>
-          Nobody has turned one off. Nobody has really tried.
+          {data.outcomes.winner} of these people made it. {data.outcomes.rekt} got rekt. The
+          other {data.outcomes.open} are still standing there at 4am, waiting to find out
+          which.
         </p>
       </div>
     </section>
