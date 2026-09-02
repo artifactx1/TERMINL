@@ -72,6 +72,16 @@
 .cta:hover { filter: brightness(1.14); transform: translateY(-1px); }
 .note { margin: -8px 0 0; font-size: 9px; color: var(--muted); text-align: center; letter-spacing: .06em; }
 
+/* ---- chain badge ---- */
+/* Sits directly above the mint control in the hero readout. The left rule is
+   green so it reads as a live fact about the drop rather than another spec row. */
+.chainBadge { display: flex; align-items: center; gap: 11px; padding: 11px 14px;
+  border: 1px solid #2e3b33; border-left: 2px solid var(--green); background: var(--panel); }
+.chainLogo { flex: none; width: 26px; height: 26px; border-radius: 50%; display: block; }
+.chainText { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.chainText span { font-size: 8.5px; letter-spacing: .18em; color: var(--muted); }
+.chainText b { font-size: 11.5px; letter-spacing: .1em; color: var(--green); white-space: nowrap; }
+
 /* ---- marquee ---- */
 /* Paused while the lightbox is open — see .frozen. */
 .stripWrap { overflow: hidden; border-bottom: 1px solid var(--line); background: #040605; }
@@ -290,6 +300,13 @@
   border: 1px solid #2f5c28; background: rgba(125,255,92,.07); color: var(--green);
   font-size: 9.5px; letter-spacing: .16em; }
 .mintOk:hover { border-color: var(--green); }
+
+/* Submitted, but not confirmed — and not dressed up as a success. Same
+   footprint as .mintOk so the column does not jump when the receipt lands. */
+.mintPending { display: block; padding: 11px; text-align: center; text-decoration: none;
+  border: 1px solid var(--line); background: rgba(255,255,255,.03); color: var(--muted);
+  font-size: 9.5px; letter-spacing: .16em; }
+.mintPending:hover { border-color: var(--muted); color: var(--ink); }
 
 .mintErr { margin: 0; padding: 9px 11px; border-left: 2px solid var(--red);
   background: rgba(255,106,94,.06); color: #ffb3ac; font-size: 10px; line-height: 1.6; }

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
+import ChainBadge from "../components/ChainBadge";
 import { CHAIN, CONTRACT } from "../lib/mint";
 
 const HERO_ROTATE_MS = 5200;
@@ -208,6 +209,7 @@ function Site({ data }) {
               <Spec k="STANDING THERE" v={current.companion} />
             </dl>
 
+            <ChainBadge />
             <Mint />
           </div>
         </section>
