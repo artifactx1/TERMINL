@@ -77,7 +77,9 @@
    green so it reads as a live fact about the drop rather than another spec row. */
 .chainBadge { display: flex; align-items: center; gap: 11px; padding: 11px 14px;
   border: 1px solid #2e3b33; border-left: 2px solid var(--green); background: var(--panel); }
-.chainLogo { flex: none; width: 26px; height: 26px; border-radius: 50%; display: block; }
+/* Their mark is a square lime tile — shown uncropped, and squared off like
+   everything else on the page rather than punched into a circle. */
+.chainLogo { flex: none; width: 26px; height: 26px; border-radius: 2px; display: block; }
 .chainText { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .chainText span { font-size: 8.5px; letter-spacing: .18em; color: var(--muted); }
 .chainText b { font-size: 11.5px; letter-spacing: .1em; color: var(--green); white-space: nowrap; }

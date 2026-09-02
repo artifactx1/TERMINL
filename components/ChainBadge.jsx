@@ -10,10 +10,10 @@ import { CHAIN } from "../lib/mint";
  * 9px grey, inside a branch that only renders after the contract is deployed.
  *
  * The mark is Robinhood's, used nominatively to identify the network the drop
- * deploys to. Drop the official asset at public/robinhood-chain.svg and it
- * appears. Until it exists the badge degrades to text rather than shipping a
- * broken image or a stand-in mark that is not theirs. */
-const LOGO = "/robinhood-chain.svg";
+ * deploys to. It ships as their square lime tile, uncropped — the onError
+ * fallback below keeps the badge readable as text if the asset ever goes
+ * missing rather than leaving a broken image beside the mint button. */
+const LOGO = "/robinhood-chain.png";
 
 export default function ChainBadge() {
   const [logoOk, setLogoOk] = useState(true);
