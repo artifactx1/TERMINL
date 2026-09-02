@@ -66,14 +66,14 @@ async function card() {
   const text = Buffer.from(`<svg width="${W}" height="${H}">
     <text x="56" y="124" font-family="monospace" font-size="62" font-weight="700"
           fill="#ffffff" letter-spacing="20">TERMINL</text>
-    <rect x="58" y="152" width="86" height="3" fill="#7dff5c"/>
+    <rect x="58" y="152" width="86" height="3" fill="#c8f800"/>
     <text x="56" y="232" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">WAGMI.</text>
     <text x="56" y="286" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">Or maybe</text>
     <text x="56" y="340" font-family="monospace" font-size="52" font-weight="700" fill="#ffffff">we won&#8217;t.</text>
     <text x="56" y="394" font-family="monospace" font-size="20" fill="#9aa89f">${esc(
       `${site.supply} machines. ${site.outcomes.rekt} already rekt.`,
     )}</text>
-    <text x="56" y="426" font-family="monospace" font-size="20" fill="#7dff5c" letter-spacing="2">${esc(
+    <text x="56" y="426" font-family="monospace" font-size="20" fill="#c8f800" letter-spacing="2">${esc(
       `ONLY ${site.showcase.length} SHOWN · MINTING ON OPENSEA`,
     )}</text>
   </svg>`);
@@ -105,9 +105,9 @@ function markSvg(size) {
   return Buffer.from(`<svg width="${size}" height="${size}">
     <rect width="${size}" height="${size}" rx="${r}" fill="#060907"/>
     <rect x="${inset}" y="${inset}" width="${screen}" height="${screen}" rx="${Math.round(r * 0.5)}"
-          fill="none" stroke="#7dff5c" stroke-width="${Math.max(2, Math.round(size * 0.075))}"/>
+          fill="none" stroke="#c8f800" stroke-width="${Math.max(2, Math.round(size * 0.075))}"/>
     <rect x="${Math.round(size * 0.34)}" y="${Math.round(size * 0.4)}"
-          width="${Math.round(size * 0.32)}" height="${Math.round(size * 0.2)}" fill="#7dff5c"/>
+          width="${Math.round(size * 0.32)}" height="${Math.round(size * 0.2)}" fill="#c8f800"/>
   </svg>`);
 }
 

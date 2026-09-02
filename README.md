@@ -127,8 +127,10 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 | variable | effect if unset |
 |---|---|
 | `NEXT_PUBLIC_TERMINL_CONTRACT` | the mint panel reads "MINT OPENS SOON" — **set this after deploying** |
+| `NEXT_PUBLIC_REOWN_PROJECT_ID` | no WalletConnect: CONNECT falls back to the browser's injected wallet only. Use the ArtifactX project id, and add this site's domain to it at cloud.reown.com |
 | `NEXT_PUBLIC_CHAIN_ID` | `4663` (Robinhood mainnet); `46630` is the testnet |
 | `NEXT_PUBLIC_RPC_URL` | the chain's public RPC, which is live |
+| `RPC_URL` | `/api/drop` reads the public RPC too. Set this, server-side only, to a keyed endpoint such as `https://robinhood-mainnet.g.alchemy.com/v2/<key>` — it is not `NEXT_PUBLIC_`, so the key never reaches the browser |
 | `NEXT_PUBLIC_ART_BASE_URL` | serves the committed images from `/art` |
 | `NEXT_PUBLIC_SITE_URL` | `og:url` and `canonical` are omitted; set to the production domain |
 | `NEXT_PUBLIC_OG_IMAGE` | card is served from the bucket, which is correct |
@@ -140,6 +142,8 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 
 ```
 lib/showcase.js        the sixteen published ids and the slug hash
+lib/mint.js            the drop's reads and the claim, ABI-encoded by hand
+lib/wallet/            the connector: Reown AppKit over wagmi, as on ArtifactX
 scripts/snapshot.mjs   the only code that reads the locked collection
 scripts/og.mjs         share card + icons, built from the published art
 scripts/upload-art.mjs pushes the snapshot and the card to the ELEMENT bucket
@@ -147,6 +151,7 @@ data/site.json         every number and string the page renders (12 kB)
 public/art/            the sixteen published images
 public/degens/         portraits of the cast who appear in them
 pages/index.jsx        the site
+pages/api/drop.js      the drop state, read once and CDN-cached for everyone
 styles/                CRT/terminal treatment
 ```
 
@@ -166,17 +171,35 @@ styles/                CRT/terminal treatment
 - **No roadmap section, stated plainly.** No utility, no staking, no token; more
   may follow depending on the mint. Written as an honest position rather than a
   promise, so nothing has to be walked back.
-- **The mint is hand-encoded, not an SDK.** Wallet libraries are what made
-  this a separate repo in the first place — inside ELEMENT the first load was
-  393 kB and the hero stalled behind a Suspense-wrapped wallet provider. So the
-  four reads and one write the drop needs are ABI-encoded by hand in
-  `lib/mint.js`, over `window.ethereum` and plain `eth_call`. The whole mint
-  costs **8.7 kB**; the page is 92.7 kB. That is only defensible because the
-  encoding is *checked* rather than trusted — `scripts/verify-calldata.mjs`
-  diffs it against `cast calldata` across five cases and fails the build if any
-  byte differs. **If an allowlist phase is ever added, stop and pull in viem:**
-  a merkle proof makes the encoding genuinely dynamic and hand-rolling stops
-  being worth it.
+- **The wallet is ArtifactX's; the mint is still hand-encoded.** The
+  connector is the same Reown AppKit + wagmi stack the marketplace uses
+  (`lib/wallet/`), pinned to the same versions, with the same two wallets
+  listed and the WalletConnect QR as the fallback — so a collector who has
+  connected to ArtifactX gets the identical picker here. It is also what made
+  this a separate repo in the first place: inside ELEMENT the first load was
+  393 kB and the hero stalled behind a Suspense-wrapped wallet provider. Two
+  things keep that from repeating. The AppKit chunk is loaded *after*
+  hydration, started at module evaluation the way ArtifactX does it, and
+  aliased out of the server bundle entirely, so the page still renders
+  without it. And wagmi carries only the connection and the send: the four
+  reads and one write stay ABI-encoded by hand in `lib/mint.js`, over plain
+  `eth_call`, and `scripts/verify-calldata.mjs` still diffs every byte
+  against `cast` — so the first load is 144 kB, not 393. **If an allowlist
+  phase is ever added, use viem's encoder for the proof path** — it is in the
+  bundle now, and a `bytes32[]` is where hand-rolling stops being worth it.
+- **The crowd reads the drop through a cache.** The panel polls the drop
+  state every 20 seconds, three RPC calls a time, against a public endpoint
+  with no stated rate limit — two thousand people on the page would be
+  hundreds of calls a second before anyone minted. `pages/api/drop.js` makes
+  those reads once — batched into one round trip, on a keyed endpoint when
+  `RPC_URL` is set, with the public one as fallback — and the CDN answers
+  everyone else for five seconds, or five minutes once the drop is sold out
+  or closed. The route serves facts, not state: the panel decides "started"
+  and "ended" itself against a clock corrected to chain time, with the `Age`
+  header folded in, so a cached copy is never wrong about the phase opening.
+  Per-wallet reads stay direct, and if the route is unreachable the panel
+  reads the chain itself rather than showing a closed mint. The reasoning and
+  the measurements are in `MARKETPLACE_DROP_CACHE.md`.
 - **Nothing about the drop is hardcoded.** Price, supply, remaining, and the
   per-wallet cap are read from the contract, so the page cannot advertise terms
   the chain disagrees with. Before deployment it renders an inert "opens soon"

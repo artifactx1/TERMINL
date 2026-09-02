@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAccount, useSendTransaction, useSwitchChain } from "wagmi";
 import styles from "../styles/Terminl.module.css";
 import {
-  CHAIN, CONTRACT, buildClaimTx, countdown, explorerTx, formatEth, readClaimedBy,
-  readableError, readDrop, revertReason, simulateClaim, waitForReceipt,
+  CHAIN, CONTRACT, buildClaimTx, countdown, describeDrop, explorerTx, fetchDropFacts, formatEth,
+  isTerminal, readClaimedBy, readableError, revertReason, simulateClaim, waitForReceipt,
 } from "../lib/mint";
+import { openWallet } from "../lib/wallet/open";
 
 /*
  * The mint.
@@ -22,9 +24,11 @@ import {
  * simulated before the wallet is ever opened, and is not called a success until
  * a receipt comes back with status 0x1 — a hash only proves the transaction was
  * submitted, and a claim that reverts on-chain returns one just the same.
+ *
+ * The wallet itself comes from wagmi, connected through the same Reown AppKit
+ * picker ArtifactX uses (lib/wallet). The reads stay on plain eth_call and the
+ * claim stays hand-encoded — wagmi only carries the connection and the send.
  */
-
-const hex = (n) => `0x${Number(n).toString(16)}`;
 
 /* How many the picker will offer at once when the phase sets no per-wallet cap.
  * Not a rule — just a sane ceiling for one signature. */
@@ -35,21 +39,16 @@ const BATCH_CAP = 20;
  * more than this far behind the chain. */
 const POLL_MS = 20_000;
 
-/* Wallets do not ship Robinhood Chain, so a plain switch fails with 4902 and we
- * have to offer to add it. Both are attempted in that order. */
-const CHAIN_PARAMS = {
-  chainId: hex(CHAIN.id),
-  chainName: CHAIN.name,
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: [CHAIN.rpc],
-  blockExplorerUrls: [CHAIN.explorer],
-};
-
 export default function Mint() {
-  const [drop, setDrop] = useState(null);
-  const [hasWallet, setHasWallet] = useState(false);
-  const [account, setAccount] = useState(null);
-  const [chainId, setChainId] = useState(null);
+  /* wagmi's `chainId` here is the WALLET's chain, not the app's — that is the
+   * one the wrong-chain check has to compare against. Wallets do not ship
+   * Robinhood Chain, and the connectors handle the add-then-switch dance
+   * (4902) themselves, from the chain definition in lib/wallet/wagmi-config. */
+  const { address: account, chainId, isConnected } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
+  const { sendTransactionAsync } = useSendTransaction();
+
+  const [facts, setFacts] = useState(null);
   const [claimed, setClaimed] = useState(0n);
   const [quantity, setQuantity] = useState(1);
   const [phase, setPhase] = useState("idle");
@@ -58,32 +57,19 @@ export default function Mint() {
   const [mintedAt, setMintedAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
-  const eth = typeof window !== "undefined" ? window.ethereum : undefined;
   const busy = phase === "checking" || phase === "wallet" || phase === "pending";
 
-  /* Live drop state, with or without a wallet — a visitor who has not connected
-   * still gets the real price and the real count. */
+  /* The facts about the drop, with or without a wallet — a visitor who has not
+   * connected still gets the real price and the real count. Read through
+   * /api/drop, which the CDN caches for a few seconds, so a crowd costs the RPC
+   * almost nothing. */
   const refresh = useCallback(() => {
-    readDrop().then((d) => { setDrop(d); setError(null); }).catch((e) => setError(readableError(e)));
+    fetchDropFacts()
+      .then((f) => { setFacts(f); setNow(Date.now()); setError(null); })
+      .catch((e) => setError(readableError(e)));
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
-
-  useEffect(() => {
-    if (!eth) return undefined;
-    setHasWallet(true);
-    eth.request({ method: "eth_accounts" }).then((a) => setAccount(a?.[0] || null)).catch(() => {});
-    eth.request({ method: "eth_chainId" }).then((c) => setChainId(Number(c))).catch(() => {});
-
-    const onAccounts = (a) => setAccount(a?.[0] || null);
-    const onChain = (c) => setChainId(Number(c));
-    eth.on?.("accountsChanged", onAccounts);
-    eth.on?.("chainChanged", onChain);
-    return () => {
-      eth.removeListener?.("accountsChanged", onAccounts);
-      eth.removeListener?.("chainChanged", onChain);
-    };
-  }, [eth]);
 
   /* Per-wallet count, re-read after a mint *confirms* — not when it is sent. */
   useEffect(() => {
@@ -91,14 +77,49 @@ export default function Mint() {
     readClaimedBy(account).then(setClaimed).catch(() => {});
   }, [account, mintedAt]);
 
+  /* Counted against chain time, corrected for however wrong this machine's
+   * clock is — otherwise the countdown and the contract disagree. */
+  const chainNow = now - (facts?.skewMs ?? 0);
+
+  /* The state is decided HERE, on every tick, from cached facts and a corrected
+   * clock — never read from the cache. A cached "not started" would be wrong the
+   * moment the phase opened, and every visitor would then hammer the route
+   * until the copy expired; a cached start timestamp is never wrong. So a
+   * countdown reaching zero becomes a state change locally, and the next poll
+   * merely picks up the counts. */
+  const drop = useMemo(
+    () => (facts ? describeDrop(facts.condition, facts.endsAt, BigInt(Math.floor(chainNow / 1000))) : null),
+    [facts, chainNow],
+  );
+
   /* Poll while there is anything left to change. A sold-out or ended drop is
-   * terminal, so stop bothering the RPC once it gets there. */
-  const shouldPoll = !!drop?.configured && !drop.soldOut && !drop.ended;
+   * terminal, so stop bothering the RPC once it gets there. A drop that opens
+   * in more than ten minutes changes nothing until then, so poll it slowly. A
+   * tab nobody is looking at does not poll at all, and catches up the moment
+   * it is looked at again. */
+  const shouldPoll = !!drop?.configured && !isTerminal(drop);
+  const farOff = !!drop && !drop.started && Number(drop.startsAt) * 1000 - chainNow > 600_000;
+  const pollMs = farOff ? POLL_MS * 3 : POLL_MS;
   useEffect(() => {
     if (!shouldPoll) return undefined;
-    const id = setInterval(refresh, POLL_MS);
-    return () => clearInterval(id);
-  }, [shouldPoll, refresh]);
+    const tick = () => { if (document.visibilityState !== "hidden") refresh(); };
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
+    const id = setInterval(tick, pollMs);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [shouldPoll, pollMs, refresh]);
+
+  /* When the phase opens under a visitor, fetch the counts once, right then —
+   * not on every render while the cache is stale. */
+  const wasStarted = useRef(null);
+  useEffect(() => {
+    const started = drop ? drop.started : null;
+    if (wasStarted.current === false && started === true) refresh();
+    wasStarted.current = started;
+  }, [drop, refresh]);
 
   /* One-second tick, only while something is actually counting down. */
   const ticking = !!drop && drop.configured && (!drop.started || (drop.endsAt !== 0n && !drop.ended));
@@ -108,17 +129,8 @@ export default function Mint() {
     return () => clearInterval(id);
   }, [ticking]);
 
-  /* Counted against chain time, corrected for however wrong this machine's
-   * clock is — otherwise the countdown and the contract disagree. A countdown
-   * that reaches zero has to become a state change, not a "0s". */
-  const chainNow = now - (drop?.skewMs ?? 0);
   const opensIn = drop && drop.configured && !drop.started ? countdown(drop.startsAt, chainNow) : null;
   const endsIn = drop && drop.endsAt !== 0n && !drop.ended ? countdown(drop.endsAt, chainNow) : null;
-  useEffect(() => {
-    if (drop?.configured && ((!drop.started && !opensIn) || (drop.endsAt !== 0n && !drop.ended && !endsIn))) {
-      refresh();
-    }
-  }, [drop, opensIn, endsIn, refresh]);
 
   /* How many this wallet may still take in one go. */
   const max = useMemo(() => {
@@ -135,26 +147,20 @@ export default function Mint() {
     setQuantity((q) => Math.min(Math.max(1, q), max));
   }, [max]);
 
+  /* Opens the AppKit picker. The connected account then arrives through
+   * useAccount — nothing here waits on it. */
   const connect = async () => {
     setError(null);
     try {
-      const accounts = await eth.request({ method: "eth_requestAccounts" });
-      setAccount(accounts?.[0] || null);
+      await openWallet();
     } catch (e) { setError(readableError(e)); }
   };
 
   const switchChain = async () => {
     setError(null);
     try {
-      await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex(CHAIN.id) }] });
-    } catch (e) {
-      // 4902: the wallet has never heard of this chain. Offer to add it.
-      if (e?.code === 4902 || /unrecognized|not been added/i.test(e?.message || "")) {
-        try {
-          await eth.request({ method: "wallet_addEthereumChain", params: [CHAIN_PARAMS] });
-        } catch (addError) { setError(readableError(addError)); }
-      } else setError(readableError(e));
-    }
+      await switchChainAsync({ chainId: CHAIN.id });
+    } catch (e) { setError(readableError(e)); }
   };
 
   const mint = async () => {
@@ -170,7 +176,15 @@ export default function Mint() {
       await simulateClaim(tx);
 
       setPhase("wallet");
-      const hash = await eth.request({ method: "eth_sendTransaction", params: [tx] });
+      /* The same calldata the simulation just ran, handed to the wallet through
+       * wagmi. `value` is hex for eth_call and a bigint here — one source. */
+      const hash = await sendTransactionAsync({
+        account,
+        chainId: CHAIN.id,
+        to: tx.to,
+        data: tx.data,
+        ...(tx.value ? { value: BigInt(tx.value) } : {}),
+      });
       setTxHash(hash);
 
       setPhase("pending");
@@ -221,7 +235,7 @@ export default function Mint() {
     );
   }
 
-  const wrongChain = chainId !== null && chainId !== CHAIN.id;
+  const wrongChain = isConnected && chainId !== CHAIN.id;
   const cap = drop.capPerWallet;
   const total = drop.price * BigInt(quantity);
 
@@ -239,9 +253,7 @@ export default function Mint() {
         <div><b>{formatEth(drop.price)}</b><span>EACH</span></div>
       </div>
 
-      {!hasWallet ? (
-        <div className={styles.mintClosed}>NO WALLET FOUND</div>
-      ) : !account ? (
+      {!account ? (
         <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
       ) : wrongChain ? (
         <button type="button" className={styles.cta} onClick={switchChain}>

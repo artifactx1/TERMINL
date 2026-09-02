@@ -2,7 +2,7 @@
   "name": "terminl",
   "version": "1.0.0",
   "private": true,
-  "description": "Mint site for TERMINL \u2014 2048 generative CRT terminals, stored permanently on Arweave.",
+  "description": "Mint site for TERMINL — 2048 generative CRT terminals, stored permanently on Arweave.",
   "scripts": {
     "dev": "next dev -p 4000",
     "build": "next build",
@@ -14,14 +14,28 @@
     "verify-calldata": "node scripts/verify-calldata.mjs"
   },
   "dependencies": {
+    "@base-org/account": "^2.5.8",
+    "@metamask/connect-evm": "^1.0.0",
+    "@reown/appkit": "^1.8.23",
+    "@reown/appkit-adapter-wagmi": "^1.8.23",
+    "@tanstack/react-query": "^5.101.4",
+    "@walletconnect/ethereum-provider": "^2.23.10",
+    "accounts": "^0.8.10",
     "next": "14.2.35",
+    "porto": "^0.2.37",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "viem": "^2.48.4",
+    "wagmi": "^3.6.8"
   },
   "devDependencies": {
     "@google-cloud/storage": "^7.22.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.35"
+  },
+  "overrides": {
+    "@wagmi/core": "3.4.7",
+    "@wagmi/connectors": "8.0.8"
   }
 }

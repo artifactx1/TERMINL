@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
 import ChainBadge from "../components/ChainBadge";
+import WalletButton from "../components/WalletButton";
 import { CHAIN, CONTRACT } from "../lib/mint";
 
 const HERO_ROTATE_MS = 5200;
@@ -158,6 +159,7 @@ function Site({ data }) {
             ) : (
               <a className={styles.os} href="#top">MINT</a>
             )}
+            <WalletButton />
           </div>
         </nav>
 

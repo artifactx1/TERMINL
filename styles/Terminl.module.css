@@ -1,6 +1,6 @@
 .shell {
   --ink: #edf7ee; --muted: #78857d; --dim: #9aa89f; --line: #1c231e;
-  --green: #7dff5c; --amber: #ffc65c; --red: #ff6a5e;
+  --accent: #c8f800; --amber: #ffc65c; --red: #ff6a5e;
   --panel: #0a0e0c;
   min-height: 100vh; background: #060907; color: var(--ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -16,12 +16,19 @@
   padding: 13px 28px; border-bottom: 1px solid var(--line); background: rgba(6,9,7,.97); }
 .wordmark { display: flex; align-items: baseline; gap: 10px; text-decoration: none; }
 .wordmark b { font-size: 19px; letter-spacing: .36em; color: #fff; }
-.wordmark span { font-size: 9px; letter-spacing: .2em; color: var(--green); }
+.wordmark span { font-size: 9px; letter-spacing: .2em; color: var(--accent); }
 .navRight { display: flex; align-items: center; gap: 22px; font-size: 10px; letter-spacing: .14em; }
 .navRight a { color: var(--muted); text-decoration: none; transition: color .15s; }
-.navRight a:hover { color: var(--green); }
+.navRight a:hover { color: var(--accent); }
 .os { padding: 7px 13px; border: 1px solid #2e3b33; color: var(--ink) !important; }
-.os:hover { border-color: var(--green); background: rgba(125,255,92,.08); }
+.os:hover { border-color: var(--accent); background: rgba(200,248,0,.08); }
+/* The wallet control shares the CONTRACT link's footprint. Connected, it
+   turns green and shows the address — a fact about the visitor, in the same
+   voice as the chain badge. */
+.wallet { padding: 7px 13px; border: 1px solid #2e3b33; background: none; color: var(--ink);
+  font: inherit; letter-spacing: inherit; cursor: pointer; transition: border-color .15s, background .15s; }
+.wallet:hover { border-color: var(--accent); background: rgba(200,248,0,.08); }
+.walletOn { color: var(--accent); border-color: #5a6800; }
 
 /* ---- hero: the art gets the column, the copy gets the gutter ---- */
 .hero { display: grid; grid-template-columns: minmax(0,1fr) 420px; align-items: center;
@@ -29,12 +36,12 @@
 .stageWrap { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 34px 28px; min-width: 0; }
 .stage { position: relative; display: block; padding: 0; width: min(100%, 68vh); aspect-ratio: 1; cursor: pointer;
   border: 1px solid #2c382f; background: #050706; overflow: hidden;
-  box-shadow: 0 0 120px rgba(125,255,92,.09), 0 30px 80px rgba(0,0,0,.7); }
+  box-shadow: 0 0 120px rgba(200,248,0,.09), 0 30px 80px rgba(0,0,0,.7); }
 .stage img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .stageFade { animation: fadein .5s ease both; }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 .sweep { position: absolute; left: 0; right: 0; height: 30%; pointer-events: none;
-  background: linear-gradient(180deg, transparent, rgba(125,255,92,.07), transparent); animation: sweep 5.2s linear infinite; }
+  background: linear-gradient(180deg, transparent, rgba(200,248,0,.07), transparent); animation: sweep 5.2s linear infinite; }
 @keyframes sweep { from { top: -30%; } to { top: 100%; } }
 
 /*
@@ -48,7 +55,7 @@
   padding: 0; overflow: hidden;
   border: 1px solid #1b2420; background: none; cursor: pointer; line-height: 0;
   opacity: .45; transition: opacity .2s, border-color .2s; }
-.upNext button:hover { opacity: 1; border-color: var(--green); }
+.upNext button:hover { opacity: 1; border-color: var(--accent); }
 .upNext img { width: 100%; height: 100%; object-fit: cover; }
 
 .readout { border-left: 1px solid var(--line); padding: 34px 30px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
@@ -67,22 +74,22 @@
 .specRow dd { margin: 0; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .specRow dd em { color: #4d5850; font-style: normal; }
 
-.cta { display: block; padding: 16px; text-align: center; text-decoration: none; background: var(--green); color: #061003;
+.cta { display: block; padding: 16px; text-align: center; text-decoration: none; background: var(--accent); color: #141600;
   font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; transition: filter .15s, transform .15s; }
 .cta:hover { filter: brightness(1.14); transform: translateY(-1px); }
 .note { margin: -8px 0 0; font-size: 9px; color: var(--muted); text-align: center; letter-spacing: .06em; }
 
 /* ---- chain badge ---- */
-/* Sits directly above the mint control in the hero readout. The left rule is
-   green so it reads as a live fact about the drop rather than another spec row. */
+/* Sits directly above the mint control in the hero readout. The left rule takes
+   the accent so it reads as a live fact about the drop rather than another spec row. */
 .chainBadge { display: flex; align-items: center; gap: 11px; padding: 11px 14px;
-  border: 1px solid #2e3b33; border-left: 2px solid var(--green); background: var(--panel); }
+  border: 1px solid #2e3b33; border-left: 2px solid var(--accent); background: var(--panel); }
 /* Their mark is a square lime tile — shown uncropped, and squared off like
    everything else on the page rather than punched into a circle. */
 .chainLogo { flex: none; width: 26px; height: 26px; border-radius: 2px; display: block; }
 .chainText { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .chainText span { font-size: 8.5px; letter-spacing: .18em; color: var(--muted); }
-.chainText b { font-size: 11.5px; letter-spacing: .1em; color: var(--green); white-space: nowrap; }
+.chainText b { font-size: 11.5px; letter-spacing: .1em; color: var(--accent); white-space: nowrap; }
 
 /* ---- marquee ---- */
 /* Paused while the lightbox is open — see .frozen. */
@@ -90,13 +97,13 @@
 .strip { display: flex; gap: 10px; padding: 10px; width: max-content; animation: slide 90s linear infinite; }
 .strip img { width: 210px; height: 210px; object-fit: cover; flex: 0 0 auto;
   border: 1px solid #18211c; opacity: .7; transition: opacity .25s, border-color .25s; }
-.strip img:hover { opacity: 1; border-color: var(--green); }
+.strip img:hover { opacity: 1; border-color: var(--accent); }
 @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* ---- motto ---- */
 .motto { display: grid; place-items: center; padding: 78px 24px; text-align: center;
   border-bottom: 1px solid var(--line);
-  background: radial-gradient(ellipse at 50% 50%, rgba(125,255,92,.05), transparent 70%); }
+  background: radial-gradient(ellipse at 50% 50%, rgba(200,248,0,.05), transparent 70%); }
 .motto p { margin: 0; font-size: clamp(20px, 3.1vw, 40px); line-height: 1.24; letter-spacing: -.03em; color: #fff; }
 
 /* ---- story ---- */
@@ -106,7 +113,7 @@
 .storyArt img { width: 100%; height: auto; border: 1px solid #232d27; }
 .storyText h2 { margin: 0 0 20px; font-size: clamp(26px,3vw,38px); letter-spacing: -.035em; color: #fff; }
 .storyText p { margin: 0 0 16px; color: #b3c0b8; font-size: 14px; line-height: 1.95; max-width: 62ch; }
-.storyLast { color: var(--green) !important; }
+.storyLast { color: var(--accent) !important; }
 
 /* ---- plain prose block ---- */
 .plain { max-width: 1400px; margin: 0 auto; display: grid; gap: 16px;
@@ -126,52 +133,52 @@
 .tile { position: relative; display: block; text-decoration: none; border: 1px solid #1d2721; background: var(--panel); overflow: hidden; }
 .tile img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover;
   transition: transform .5s ease; }
-.tile:hover { border-color: var(--green); }
+.tile:hover { border-color: var(--accent); }
 .tile:hover img { transform: scale(1.04); }
 .tileMeta { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: baseline; gap: 8px;
   padding: 9px 11px; font-size: 9.5px; letter-spacing: .04em;
   background: linear-gradient(180deg, transparent, rgba(4,6,5,.94) 55%);
   opacity: 0; transform: translateY(6px); transition: opacity .22s, transform .22s; }
 .tile:hover .tileMeta { opacity: 1; transform: none; }
-.tileMeta b { color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tileMeta b { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tileMeta span { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tileWith { color: var(--muted) !important; margin-left: auto; flex: 0 1 auto; }
 
 .more { display: block; margin: 26px auto 0; padding: 13px 30px; cursor: pointer;
   border: 1px solid #2e3b33; background: transparent; color: var(--dim);
   font: 600 10px/1 ui-monospace, monospace; letter-spacing: .18em; transition: all .15s; }
-.more:hover { border-color: var(--green); color: var(--green); }
+.more:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ---- the regulars: a roster, read as type ---- */
 .wall { max-width: 1400px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 7px; }
 .name { display: inline-flex; align-items: baseline; gap: 8px; padding: 8px 12px;
   border: 1px solid #1d2721; background: var(--panel); font-size: 11px; color: #b6c2ba; transition: all .15s; }
-.name:hover { border-color: var(--green); color: #fff; }
+.name:hover { border-color: var(--accent); color: #fff; }
 .name i { font-style: normal; font-size: 9px; color: var(--muted); }
 .nameRest { display: inline-flex; align-items: center; padding: 8px 12px;
-  border: 1px dashed #2c3a32; font-size: 11px; color: var(--green); }
+  border: 1px dashed #2c3a32; font-size: 11px; color: var(--accent); }
 
 /* ---- the tape ---- */
 .tierRow { max-width: 1400px; margin: 0 auto 14px; display: grid; grid-template-columns: repeat(6,1fr); gap: 10px; }
 .tier { border: 1px solid #232d27; background: var(--panel); padding: 14px; }
 .tier b { display: block; font-size: 22px; color: #fff; letter-spacing: -.03em; }
 .tier span { display: block; margin-top: 3px; font-size: 9px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
-.tier > i { display: block; margin-top: 10px; height: 2px; background: var(--green); }
+.tier > i { display: block; margin-top: 10px; height: 2px; background: var(--accent); }
 
 .traitWrap { max-width: 1400px; margin: 0 auto; display: grid; gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(250px,1fr)); }
 .traitCard { border: 1px solid #232d27; background: var(--panel); padding: 15px; }
-.traitCard h3 { margin: 0 0 3px; font-size: 10px; letter-spacing: .16em; color: var(--green); text-transform: uppercase; }
+.traitCard h3 { margin: 0 0 3px; font-size: 10px; letter-spacing: .16em; color: var(--accent); text-transform: uppercase; }
 .traitCard small { display: block; margin-bottom: 12px; color: var(--muted); font-size: 9px; }
 .traitRow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 4px 0; font-size: 10px; }
 .traitRow > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #a9b5ad; }
-.traitRow > b { color: var(--green); font-weight: 700; }
+.traitRow > b { color: var(--accent); font-weight: 700; }
 .traitTrack { grid-column: 1 / -1; height: 2px; background: #18211a; }
 .traitTrack i { display: block; height: 100%; background: #3a6031; }
 
 .foot { padding: 60px 28px 70px; text-align: center; color: var(--muted); font-size: 9.5px; letter-spacing: .1em; line-height: 2.2; }
 .footCta { display: inline-block; margin-bottom: 22px; padding: 16px 42px; text-decoration: none;
-  background: var(--green); color: #061003; font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; }
+  background: var(--accent); color: #141600; font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; }
 .footCta:hover { filter: brightness(1.14); }
 .foot code { color: #5f6a63; }
 
@@ -232,7 +239,7 @@
 .lightboxSide { display: flex; flex-direction: column; gap: 14px; padding: 20px;
   border-left: 1px solid var(--line); overflow-y: auto; }
 .lightboxHead { display: flex; align-items: baseline; justify-content: space-between; }
-.lightboxHead b { font-size: 15px; color: var(--green); letter-spacing: .32em; }
+.lightboxHead b { font-size: 15px; color: var(--accent); letter-spacing: .32em; }
 .lightboxHead span { font-size: 10px; color: var(--muted); letter-spacing: .12em; }
 /* The hero rail truncates long trait values to protect its layout; the panel
    here has the room to show them in full. */
@@ -244,7 +251,7 @@
 .lightboxNav button { flex: 0 0 44px; padding: 11px 0; cursor: pointer;
   border: 1px solid #303a33; background: #0d1410; color: var(--ink);
   font: 700 14px/1 ui-monospace, monospace; }
-.lightboxNav button:hover { border-color: var(--green); color: var(--green); }
+.lightboxNav button:hover { border-color: var(--accent); color: var(--accent); }
 .lightboxClose { flex: 1 1 auto !important; letter-spacing: .16em; font-size: 10px !important; }
 
 @media (max-width: 860px) {
@@ -270,7 +277,7 @@
   margin: 0; aspect-ratio: 1;
   padding: 14px 10px 0; border: 1px solid #1d2721; background: linear-gradient(180deg, #0d1310, #070a08);
   overflow: hidden; transition: border-color .18s; }
-.degen:hover { border-color: var(--green); }
+.degen:hover { border-color: var(--accent); }
 /* The portraits are 340x560, so `contain` letterboxes them into the square and
    keeps whatever stupid thing they are holding — `cover` would crop it off. */
 .degen img { display: block; flex: 1; min-height: 0; width: 100%;
@@ -283,7 +290,7 @@
    sign, not one of the cast. */
 .castRest { grid-column: span 3;
   display: flex; align-items: center; justify-content: center; text-align: center;
-  padding: 20px 12px; border: 1px dashed #2c3a32; font-size: 11px; line-height: 1.7; color: var(--green); }
+  padding: 20px 12px; border: 1px dashed #2c3a32; font-size: 11px; line-height: 1.7; color: var(--accent); }
 
 /* Four across still divides 16 evenly, so the closing tile goes back to one
    cell and the last row stays full. */
@@ -317,14 +324,14 @@
   border: 1px solid var(--line); background: var(--panel); }
 .qty button { padding: 12px 0; cursor: pointer; border: 0; background: none;
   color: var(--ink); font: 700 15px/1 ui-monospace, monospace; transition: color .15s; }
-.qty button:hover:not(:disabled) { color: var(--green); }
+.qty button:hover:not(:disabled) { color: var(--accent); }
 .qty button:disabled { color: #39443d; cursor: default; }
 .qty b { text-align: center; font-size: 14px; color: #fff; }
 
 .mintOk { display: block; padding: 11px; text-align: center; text-decoration: none;
-  border: 1px solid #2f5c28; background: rgba(125,255,92,.07); color: var(--green);
+  border: 1px solid #5a6800; background: rgba(200,248,0,.07); color: var(--accent);
   font-size: 9.5px; letter-spacing: .16em; }
-.mintOk:hover { border-color: var(--green); }
+.mintOk:hover { border-color: var(--accent); }
 
 /* Submitted, but not confirmed — and not dressed up as a success. Same
    footprint as .mintOk so the column does not jump when the receipt lands. */
