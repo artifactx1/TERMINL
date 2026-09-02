@@ -259,11 +259,18 @@
 /* ---- the degens ---- */
 .cast { max-width: 1400px; margin: 0 auto; display: grid; gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+/* margin: 0 is load-bearing — <figure> carries a UA default of `1em 40px`, and
+   without it every tile sat 80px narrower than its own grid cell, which is what
+   made a square card render as a tall sliver. */
 .degen { display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  margin: 0; aspect-ratio: 1;
   padding: 14px 10px 0; border: 1px solid #1d2721; background: linear-gradient(180deg, #0d1310, #070a08);
   overflow: hidden; transition: border-color .18s; }
 .degen:hover { border-color: var(--green); }
-.degen img { display: block; width: auto; height: 168px; object-fit: contain; object-position: bottom; }
+/* The portraits are 340x560, so `contain` letterboxes them into the square and
+   keeps whatever stupid thing they are holding — `cover` would crop it off. */
+.degen img { display: block; flex: 1; min-height: 0; width: 100%;
+  object-fit: contain; object-position: bottom; }
 .degen b { display: block; width: 100%; margin-top: 10px; padding: 8px 4px;
   border-top: 1px solid #1c2620; font-size: 10px; font-weight: 500; text-align: center;
   color: #b6c2ba; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -272,7 +279,7 @@
 
 @media (max-width: 620px) {
   .cast { grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .degen img { height: 120px; }
+  .degen { padding: 10px 7px 0; }
 }
 
 /* ---- mint ---- */
