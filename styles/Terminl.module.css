@@ -398,6 +398,13 @@
 .checkStage em { font-style: normal; color: var(--accent); font-size: 9px; letter-spacing: .12em; }
 .checkTerms { color: var(--muted) !important; font-weight: 500 !important; letter-spacing: 0 !important; }
 
+/* The escape from a wallet that never answered. Quiet — it is an admission
+   that something went wrong, not a second call to action. */
+.mintReset { display: block; width: 100%; padding: 10px; border: 1px dashed #2e3b33;
+  background: none; color: var(--muted); font: 700 9px/1 ui-monospace, monospace;
+  letter-spacing: .14em; cursor: pointer; }
+.mintReset:hover { color: var(--ink); border-color: #3d4b42; }
+
 /*
  * The mint, always within reach.
  *

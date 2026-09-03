@@ -334,9 +334,23 @@ export default function Mint() {
 
   /* Everything after the wallet has taken the request. Split out so the tap
    * handler itself can stay synchronous up to the send. */
-  const follow = useCallback(async (sent, tx) => {
+  /*
+   * A mint in flight, as the CHAIN will know it.
+   *
+   * `run` rises on every attempt so a stale continuation cannot overwrite a
+   * newer one, and `before` is the wallet's count for the live phase as it
+   * stood the instant before sending — the number that going up means "this
+   * landed", whatever the transport did or did not tell us.
+   */
+  const pending = useRef(null);
+  const run = useRef(0);
+
+  const follow = useCallback(async (sent, tx, id) => {
     try {
       const hash = await sent;
+      /* The watcher below already saw this land on chain and moved on. The
+       * response arriving afterwards is just late news. */
+      if (run.current !== id) return;
       setTxHash(hash);
 
       setPhase("pending");
@@ -358,12 +372,32 @@ export default function Mint() {
 
       setPhase("done");
       setMintedAt(Date.now());
+      pending.current = null;
       refresh();
     } catch (e) {
+      if (run.current !== id) return;
       setError(readableError(e));
       setPhase("idle");
+      pending.current = null;
     }
   }, [refresh]);
+
+  /* The wallet's on-chain count for the live phase, recorded as the baseline
+   * for this attempt. If the read fails the baseline stays null and the
+   * watcher simply never fires — the ordinary promise path still works, and
+   * nothing is claimed that was not observed. */
+  const readBaseline = useCallback(async (id) => {
+    const p = pending.current;
+    if (!p || p.id !== id || !account) return;
+    try {
+      const v = p.kind === "stage"
+        ? await readStageClaimedBy(p.stageIndex, account)
+        : await readClaimedBy(account);
+      if (pending.current?.id === id) pending.current.before = v;
+    } catch {
+      /* Unknown baseline: the watcher stays out of it. */
+    }
+  }, [account]);
 
   const send = useCallback((tx) => sendTransactionAsync({
     account,
@@ -381,9 +415,20 @@ export default function Mint() {
     setTxHash(null);
     const tx = buildTx();
 
+    /* The count this mint has to beat for the watcher below to call it landed.
+     * Left null until the chain answers, and the watcher waits for it: the
+     * number in React state can lag, and a baseline that is too LOW would
+     * declare a mint that never happened. Missing a success is recoverable —
+     * claiming a false one is not. */
+    const id = (run.current += 1);
+    pending.current = { id, before: null, kind: active?.kind, stageIndex: active?.stageIndex ?? null };
+
     if (preflight.current?.key === preflightKey && preflight.current.ok) {
       setPhase("wallet");
-      follow(send(tx), tx);
+      follow(send(tx), tx, id);
+      /* After the send, never before it — this is a network read, and in front
+       * of the wallet call it would cost the tap's activation on iOS. */
+      readBaseline(id);
       return;
     }
 
@@ -395,12 +440,87 @@ export default function Mint() {
         setPhase("checking");
         await simulateClaim(tx);
         setPhase("wallet");
-        await follow(send(tx), tx);
+        const sent = send(tx);
+        readBaseline(id);
+        await follow(sent, tx, id);
       } catch (e) {
         setError(readableError(e));
         setPhase("idle");
       }
     })();
+  };
+
+  /*
+   * Did it land while we were not looking?
+   *
+   * On a phone the mint is confirmed in another app. Safari suspends this page
+   * while that happens, the WalletConnect relay socket goes with it, and the
+   * response can be lost on the way back — so `await sent` never settles and
+   * the button says CONFIRM IN WALLET for as long as the page is open, for a
+   * mint that already succeeded. Reported from a real phone.
+   *
+   * The wallet's on-chain count for the live phase does not care about any of
+   * that. If it has gone up since the moment before sending, the mint landed.
+   * That is checked the instant the page is looked at again, which is exactly
+   * when someone comes back from their wallet, and on a slow interval so a
+   * desktop wallet that answers into a dropped socket recovers too.
+   *
+   * There is no transaction hash down this path — the response carrying it is
+   * what went missing — so the success reads as MINTED without a receipt link
+   * rather than inventing one.
+   */
+  useEffect(() => {
+    if (phase !== "wallet" || !account) return undefined;
+    let on = true;
+
+    const check = async () => {
+      const p = pending.current;
+      /* before === null means the baseline read has not answered yet. Without
+       * it there is nothing to compare against, so wait rather than guess. */
+      if (!on || !p || p.before === null || run.current !== p.id) return;
+      try {
+        const now = p.kind === "stage"
+          ? await readStageClaimedBy(p.stageIndex, account)
+          : await readClaimedBy(account);
+        if (!on || run.current !== p.id || now <= p.before) return;
+        run.current += 1;          // the pending continuation is now stale
+        pending.current = null;
+        setPhase("done");
+        setMintedAt(Date.now());
+        refresh();
+      } catch {
+        /* A failed read means we still do not know. Say nothing and try again. */
+      }
+    };
+
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+    const id = setInterval(check, 4000);
+    return () => {
+      on = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [phase, account, refresh]);
+
+  /*
+   * The way out. A rejected request whose rejection never arrives leaves the
+   * panel waiting on something that is never coming, and the watcher above
+   * only rescues the case where the mint SUCCEEDED. After a while, offer the
+   * button back rather than leaving someone stuck at a dead end.
+   */
+  const [waitedLong, setWaitedLong] = useState(false);
+  useEffect(() => {
+    if (phase !== "wallet") { setWaitedLong(false); return undefined; }
+    const id = setTimeout(() => setWaitedLong(true), 20_000);
+    return () => clearTimeout(id);
+  }, [phase]);
+
+  const giveUp = () => {
+    run.current += 1;
+    pending.current = null;
+    setPhase("idle");
+    setError(null);
   };
 
   /* While the wallet holds the request, offer a way into it. Resolved when the
@@ -690,10 +810,21 @@ export default function Mint() {
           MINTED ✓ VIEW TRANSACTION ↗
         </a>
       )}
+      {/* Confirmed by reading the chain rather than by the wallet's reply, so
+          there is no hash to link. Still a mint, and said so. */}
+      {phase === "done" && !txHash && <div className={styles.mintOk}>MINTED ✓</div>}
       {txHash && phase === "failed" && (
         <a className={styles.mintPending} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
           TRANSACTION FAILED ↗
         </a>
+      )}
+
+      {/* Waiting on a wallet that may never answer — a rejection that got lost
+          on the way back leaves this pending forever. Hand the button back. */}
+      {phase === "wallet" && waitedLong && (
+        <button type="button" className={styles.mintReset} onClick={giveUp}>
+          NOTHING HAPPENED? TAP TO TRY AGAIN
+        </button>
       )}
 
       {error && <p className={styles.mintErr}>{error}</p>}
