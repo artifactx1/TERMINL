@@ -6,6 +6,8 @@ import {
   isTerminal, readClaimedBy, readableError, revertReason, simulateClaim, waitForReceipt,
 } from "../lib/mint";
 import { openWallet } from "../lib/wallet/open";
+import { fetchPhases } from "../lib/phases";
+import Phases, { Progress } from "./Phases";
 
 /*
  * The mint.
@@ -70,6 +72,19 @@ export default function Mint() {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  /* Allowlist stage definitions, for the schedule. They change when the artist
+   * edits them — rarely, never mid-stage — so once per visit, and again when a
+   * backgrounded tab is looked at. */
+  const [phases, setPhases] = useState(null);
+  useEffect(() => {
+    let on = true;
+    const load = () => fetchPhases().then((p) => { if (on) setPhases(p); });
+    load();
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { on = false; document.removeEventListener("visibilitychange", onVisible); };
+  }, []);
 
   /* Per-wallet count, re-read after a mint *confirms* — not when it is sent. */
   useEffect(() => {
@@ -215,10 +230,15 @@ export default function Mint() {
 
   /* ---- states that are not a mint button ---- */
 
+  /* Every closed/holding state still shows how far the drop got and what the
+   * schedule is — "MINT NOT OPEN YET" beside a list of when it opens is the
+   * answer to the question people actually have. */
   const shell = (headline, note) => (
     <div className={styles.mint}>
       <div className={styles.mintClosed}>{headline}</div>
       {note && <p className={styles.note}>{note}</p>}
+      <Progress drop={drop} />
+      <Phases drop={drop} phases={phases} chainNow={chainNow} />
     </div>
   );
 
@@ -252,6 +272,7 @@ export default function Mint() {
         <div><b>{String(drop.remaining)}</b><span>LEFT</span></div>
         <div><b>{formatEth(drop.price)}</b><span>EACH</span></div>
       </div>
+      <Progress drop={drop} />
 
       {!account ? (
         <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
@@ -300,6 +321,7 @@ export default function Mint() {
         {endsIn ? `ends in ${endsIn} · ` : ""}
         on {CHAIN.name} · art on Arweave, forever
       </p>
+      <Phases drop={drop} phases={phases} chainNow={chainNow} />
     </div>
   );
 }

@@ -4,12 +4,16 @@ Open items from the 2026-09-02 session, in the order they block launch.
 
 ## Vercel environment
 
-- [ ] `NEXT_PUBLIC_TERMINL_CONTRACT` — the mainnet drop, once deployed.
-      Testnet contract for previews: `0x417EeE67E4A9B34D9b310273C82F075492a1F32E`
-      (chain `46630`, set `NEXT_PUBLIC_CHAIN_ID=46630` alongside it). It is an
-      ArtifactXERC721Drop with no phase configured and no allowlist root
-      published yet, so the panel reads "MINT NOT OPEN YET" until
-      `setDropConditions` is called.
+- [x] `NEXT_PUBLIC_TERMINL_CONTRACT` — set on Production and Preview
+      (2026-09-02) to the TESTNET contract
+      `0x417EeE67E4A9B34D9b310273C82F075492a1F32E`, with
+      `NEXT_PUBLIC_CHAIN_ID=46630` on both. It is an ArtifactXERC721Drop with
+      no phase configured and no allowlist root published yet, so the panel
+      reads "MINT NOT OPEN YET" until `setDropConditions` is called.
+- [ ] Swap both to the MAINNET contract and `NEXT_PUBLIC_CHAIN_ID=4663` once
+      it is deployed. Production currently mints testnet.
+- [ ] `ALLOWLIST_API_URL` — the mainnet ArtifactX backend host, server-side
+      only, so the schedule can list allowlist stages. Testnet is built in.
 - [ ] `NEXT_PUBLIC_REOWN_PROJECT_ID` — reuse the ArtifactX project id, then add
       the TERMINL domain (and the Vercel preview domain while testing) to that
       project's allowed domains at cloud.reown.com. Without the domain,
@@ -47,6 +51,10 @@ Open items from the 2026-09-02 session, in the order they block launch.
       confirm, receipt, "MINTED ✓" link resolves on the explorer.
 
 ## Allowlist (parked)
+
+- [ ] While an allowlist stage is live and the public phase is not, the panel
+      still says "MINT NOT OPEN YET" above a LIVE row. Correct once allowlist
+      minting exists here; until then the schedule row is the truth.
 
 - [ ] Eligibility check for the connected wallet, same logic as ArtifactX:
       a narrow Next API route proxies `GET /drop-allowlist/<contract>/claim/<wallet>`

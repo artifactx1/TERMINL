@@ -131,6 +131,7 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 | `NEXT_PUBLIC_CHAIN_ID` | `4663` (Robinhood mainnet); `46630` is the testnet |
 | `NEXT_PUBLIC_RPC_URL` | the chain's public RPC, which is live |
 | `RPC_URL` | `/api/drop` reads the public RPC too. Set this, server-side only, to a keyed endpoint such as `https://robinhood-mainnet.g.alchemy.com/v2/<key>` — it is not `NEXT_PUBLIC_`, so the key never reaches the browser |
+| `ALLOWLIST_API_URL` | server-side only. The ArtifactX backend that holds allowlist stages; the testnet host is built in, mainnet must be set or the schedule shows the public phase alone |
 | `NEXT_PUBLIC_ART_BASE_URL` | serves the committed images from `/art` |
 | `NEXT_PUBLIC_SITE_URL` | `og:url` and `canonical` are omitted; set to the production domain |
 | `NEXT_PUBLIC_OG_IMAGE` | card is served from the bucket, which is correct |
@@ -152,6 +153,9 @@ public/art/            the sixteen published images
 public/degens/         portraits of the cast who appear in them
 pages/index.jsx        the site
 pages/api/drop.js      the drop state, read once and CDN-cached for everyone
+pages/api/phases.js    allowlist stage definitions, proxied from ArtifactX's backend
+lib/phases.js          the schedule: stages + public phase, derived against chain time
+components/Phases.jsx  the schedule and the progress bar under the mint control
 styles/                CRT/terminal treatment
 ```
 
@@ -200,6 +204,15 @@ styles/                CRT/terminal treatment
   Per-wallet reads stay direct, and if the route is unreachable the panel
   reads the chain itself rather than showing a closed mint. The reasoning and
   the measurements are in `MARKETPLACE_DROP_CACHE.md`.
+- **The schedule is shown in every state.** Under the mint control sits a
+  progress bar and every phase — allowlist stages from ArtifactX's backend,
+  the public phase from the contract — soonest first, each with its price,
+  caps, window and a live/upcoming/ended status derived against chain time.
+  It renders beside "MINT NOT OPEN YET" too, because "when?" is the question
+  a closed sign raises. Stage terms live in a merkle leaf, not on chain, so
+  they come through `pages/api/phases.js`: a fixed-contract, GET-only proxy
+  to the backend's public summary route, cached for a minute. Stages that
+  are saved but not yet signed on-chain are marked as such.
 - **Nothing about the drop is hardcoded.** Price, supply, remaining, and the
   per-wallet cap are read from the contract, so the page cannot advertise terms
   the chain disagrees with. Before deployment it renders an inert "opens soon"
