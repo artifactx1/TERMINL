@@ -102,7 +102,19 @@
 .specRow dd { margin: 0; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .specRow dd em { color: #4d5850; font-style: normal; }
 
-.cta { display: block; padding: 16px; text-align: center; text-decoration: none; background: var(--accent); color: #061003;
+/*
+ * `width: 100%` and not just `display: block`.
+ *
+ * A <button> is a form control, so `width: auto` resolves to shrink-to-fit
+ * rather than to fill-available the way an ordinary block does. This looked
+ * full-width for as long as it was a direct child of .mint, whose column flex
+ * stretched it; the moment it was wrapped in a div — for the observer that
+ * drives the sticky bar — the stretch stopped applying and the button
+ * collapsed to the width of its own text, while everything around it stayed
+ * full width. Sizing it explicitly makes it independent of whatever it is
+ * nested in next. box-sizing is border-box globally, so the padding is inside.
+ */
+.cta { display: block; width: 100%; padding: 16px; text-align: center; text-decoration: none; background: var(--accent); color: #061003;
   font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; transition: filter .15s, transform .15s; }
 .cta:hover { filter: brightness(1.14); transform: translateY(-1px); }
 .note { margin: -8px 0 0; font-size: 9px; color: var(--muted); text-align: center; letter-spacing: .06em; }
