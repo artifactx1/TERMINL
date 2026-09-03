@@ -20,13 +20,14 @@
 .navRight { display: flex; align-items: center; gap: 22px; font-size: 10px; letter-spacing: .14em; }
 .navRight a { color: var(--muted); text-decoration: none; transition: color .15s; }
 .navRight a:hover { color: var(--accent); }
-.os { padding: 7px 13px; border: 1px solid #2e3b33; color: var(--ink) !important; }
+.os { padding: 7px 13px; border: 1px solid #2e3b33; color: var(--ink) !important; white-space: nowrap; }
 .os:hover { border-color: var(--accent); background: rgba(125,255,92,.08); }
 /* The wallet control shares the CONTRACT link's footprint. Connected, it
    turns green and shows the address — a fact about the visitor, in the same
    voice as the chain badge. */
 .wallet { padding: 7px 13px; border: 1px solid #2e3b33; background: none; color: var(--ink);
-  font: inherit; letter-spacing: inherit; cursor: pointer; transition: border-color .15s, background .15s; }
+  font: inherit; letter-spacing: inherit; cursor: pointer; white-space: nowrap;
+  transition: border-color .15s, background .15s; }
 .wallet:hover { border-color: var(--accent); background: rgba(125,255,92,.08); }
 .walletOn { color: var(--accent); border-color: #2f5c28; }
 
@@ -237,6 +238,23 @@
   .strip img { width: 150px; height: 150px; }
 }
 @media (max-width: 620px) {
+  /*
+   * The nav on a phone.
+   *
+   * Desktop spacing left the two pills no room: 28px of padding either side
+   * and a 22px gap, against a wordmark tracked out at .36em. CONTRACT broke
+   * its arrow onto a second line, the address broke after the ellipsis, and
+   * the wallet button ran off the right edge of the screen. Both pills say
+   * something short and indivisible, so they get `white-space: nowrap` at
+   * every width and the room to honour it here.
+   */
+  .nav { padding: 11px 14px; }
+  .wordmark { gap: 7px; }
+  .wordmark b { font-size: 15px; letter-spacing: .2em; }
+  .wordmark span { font-size: 8px; }
+  .navRight { gap: 8px; font-size: 9px; }
+  .os, .wallet { padding: 7px 9px; }
+
   .section { padding: 56px 16px; }
   .stageWrap { padding: 20px 16px; }
   .stage, .upNext { width: 100%; }
