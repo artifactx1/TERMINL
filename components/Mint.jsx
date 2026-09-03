@@ -413,6 +413,41 @@ export default function Mint() {
     return () => { on = false; };
   }, [phase]);
 
+  /*
+   * Is the real mint control on screen?
+   *
+   * The sticky bar exists to carry the button down the page, so it must appear
+   * only once the button it duplicates has gone. Watching the control itself
+   * means that is exact at any viewport, with no scroll maths and no guess at
+   * where the fold is.
+   */
+  /* A callback ref, not useRef: a ref object does not tell a hook when it gets
+   * filled, so the effect would have to run after EVERY render to notice — and
+   * this component re-renders once a second for the countdown, which would mean
+   * building and tearing down an observer every second for the life of the
+   * page. This way it runs when the node actually changes, and no more. */
+  const [ctaNode, setCtaNode] = useState(null);
+  const [ctaSeen, setCtaSeen] = useState(true);
+  useEffect(() => {
+    if (!ctaNode || typeof IntersectionObserver === "undefined") {
+      setCtaSeen(true);
+      return undefined;
+    }
+    const io = new IntersectionObserver(([e]) => setCtaSeen(e.isIntersecting), { threshold: 0 });
+    io.observe(ctaNode);
+    return () => io.disconnect();
+  }, [ctaNode]);
+
+  /* The bar is fixed, so it sits ON the page rather than in it. Without room
+   * reserved underneath it covers the last line of the footer. */
+  const barShown = !!active && !ctaSeen;
+  useEffect(() => {
+    if (!barShown) return undefined;
+    const previous = document.body.style.paddingBottom;
+    document.body.style.paddingBottom = "62px";
+    return () => { document.body.style.paddingBottom = previous; };
+  }, [barShown]);
+
   /* ---- states that are not a mint button ---- */
 
   /* Progress is the DROP's progress, not one phase's. While a public condition
@@ -568,14 +603,14 @@ export default function Mint() {
       ) : cap && active.claimed >= cap ? (
         <div className={styles.mintClosed}>YOU&rsquo;VE MINTED YOUR {String(cap)}</div>
       ) : (
-        <>
+        <div ref={setCtaNode}>
           <div className={styles.qty}>
             <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
             <b>{quantity}</b>
             <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
           </div>
           <button type="button" className={styles.cta} onClick={mint} disabled={busy}>{cta}</button>
-        </>
+        </div>
       )}
 
       {/* The request is with the wallet, which on a phone is another app that
@@ -624,6 +659,30 @@ export default function Mint() {
         on {CHAIN.name} · art on Arweave, forever
       </p>
       <Phases drop={drop} phases={phases} chainNow={chainNow} />
+
+      {/* The same handlers as the control above — not a second implementation
+          of the mint, just a second place to reach it. In particular it calls
+          the same `mint`, so the tap still lands on the wallet with nothing
+          awaited in front of it. */}
+      {barShown && (
+        <div className={styles.bar}>
+          <div className={styles.barFacts}>
+            <b>{onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}</b>
+            {active.remaining === null ? "allowlist mint" : `${String(active.remaining)} left`}
+            {onStage && stageEndsIn ? ` · ends in ${stageEndsIn}` : ""}
+            {!onStage && endsIn ? ` · ends in ${endsIn}` : ""}
+          </div>
+          {!account ? (
+            <button type="button" className={styles.barCta} onClick={connect}>CONNECT</button>
+          ) : wrongChain ? (
+            <button type="button" className={styles.barCta} onClick={switchChain}>SWITCH CHAIN</button>
+          ) : cap && active.claimed >= cap ? (
+            <button type="button" className={styles.barCta} disabled>MINTED ✓</button>
+          ) : (
+            <button type="button" className={styles.barCta} onClick={mint} disabled={busy}>{cta}</button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

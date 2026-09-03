@@ -31,9 +31,22 @@
 .walletOn { color: var(--accent); border-color: #2f5c28; }
 
 /* ---- hero: the art gets the column, the copy gets the gutter ---- */
-.hero { display: grid; grid-template-columns: minmax(0,1fr) 420px; align-items: center;
+/*
+ * `align-items: start`, not center. The readout column holds the mint control,
+ * the schedule and the allowlist checker, and once a drop has stages that is
+ * taller than the viewport. Centering made the ROW the reference: a column
+ * twice the screen's height centred the art halfway down it, which put the
+ * art below the fold on the one screen it is the whole point of.
+ *
+ * So the art keeps its own viewport-tall box and stays put in it while the
+ * readout scrolls past. Nothing is capped and nothing scrolls inside itself —
+ * the column can be as long as it needs to be.
+ */
+.hero { display: grid; grid-template-columns: minmax(0,1fr) 420px; align-items: start;
   min-height: calc(100vh - 51px); border-bottom: 1px solid var(--line); }
-.stageWrap { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 34px 28px; min-width: 0; }
+.stageWrap { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 34px 28px; min-width: 0;
+  position: sticky; top: 51px; min-height: calc(100vh - 51px); }
 .stage { position: relative; display: block; padding: 0; width: min(100%, 68vh); aspect-ratio: 1; cursor: pointer;
   border: 1px solid #2c382f; background: #050706; overflow: hidden;
   box-shadow: 0 0 120px rgba(125,255,92,.09), 0 30px 80px rgba(0,0,0,.7); }
@@ -188,6 +201,9 @@
 }
 @media (max-width: 1180px) {
   .hero { grid-template-columns: 1fr; }
+  /* One column: the readout sits UNDER the art, so pinning the art would push
+     every word of it a full screen down. */
+  .stageWrap { position: static; min-height: 0; }
   .readout { border-left: 0; border-top: 1px solid var(--line); }
   .stage, .upNext { width: min(100%, 60vh); }
   .tierRow { grid-template-columns: repeat(3,1fr); }
@@ -336,6 +352,33 @@
 .checkStage span { color: #fff; font-weight: 700; letter-spacing: .1em; font-size: 9.5px; }
 .checkStage em { font-style: normal; color: var(--accent); font-size: 9px; letter-spacing: .12em; }
 .checkTerms { color: var(--muted) !important; font-weight: 500 !important; letter-spacing: 0 !important; }
+
+/*
+ * The mint, always within reach.
+ *
+ * The control lives beside the art at the top; everything below it — the
+ * schedule, the checker, the story, the gallery — is a long way from the
+ * button. This is that button, following the reader down, and it appears only
+ * once the real one has scrolled out of sight, so the two are never on screen
+ * arguing about the same thing.
+ */
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+  padding: 9px 14px; border-top: 1px solid #2f5c28;
+  background: rgba(6,9,7,.94); backdrop-filter: blur(6px);
+  animation: barUp .18s ease both; }
+@keyframes barUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.barFacts { min-width: 0; font: 500 10px/1.4 ui-monospace, monospace; color: var(--muted); }
+.barFacts b { display: block; color: #fff; font-size: 11px; letter-spacing: .04em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barCta { padding: 12px 20px; border: 0; background: var(--accent); color: #061003;
+  font: 800 11px/1 ui-monospace, monospace; letter-spacing: .14em; cursor: pointer; white-space: nowrap; }
+.barCta:disabled { opacity: .6; cursor: default; }
+@media (max-width: 620px) {
+  .bar { padding: 8px 12px; gap: 8px; }
+  .barCta { padding: 12px 14px; font-size: 10px; letter-spacing: .1em; }
+}
+@media (prefers-reduced-motion: reduce) { .bar { animation: none; } }
 
 /* An allowlist stage is a different offer from the public phase — a different
    price, a different cap, and one this wallet specifically has. Said once,
