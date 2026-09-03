@@ -1,6 +1,6 @@
 .shell {
   --ink: #edf7ee; --muted: #78857d; --dim: #9aa89f; --line: #1c231e;
-  --accent: #c8f800; --amber: #ffc65c; --red: #ff6a5e;
+  --accent: #7dff5c; --amber: #ffc65c; --red: #ff6a5e;
   --panel: #0a0e0c;
   min-height: 100vh; background: #060907; color: var(--ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -21,14 +21,14 @@
 .navRight a { color: var(--muted); text-decoration: none; transition: color .15s; }
 .navRight a:hover { color: var(--accent); }
 .os { padding: 7px 13px; border: 1px solid #2e3b33; color: var(--ink) !important; }
-.os:hover { border-color: var(--accent); background: rgba(200,248,0,.08); }
+.os:hover { border-color: var(--accent); background: rgba(125,255,92,.08); }
 /* The wallet control shares the CONTRACT link's footprint. Connected, it
    turns green and shows the address — a fact about the visitor, in the same
    voice as the chain badge. */
 .wallet { padding: 7px 13px; border: 1px solid #2e3b33; background: none; color: var(--ink);
   font: inherit; letter-spacing: inherit; cursor: pointer; transition: border-color .15s, background .15s; }
-.wallet:hover { border-color: var(--accent); background: rgba(200,248,0,.08); }
-.walletOn { color: var(--accent); border-color: #5a6800; }
+.wallet:hover { border-color: var(--accent); background: rgba(125,255,92,.08); }
+.walletOn { color: var(--accent); border-color: #2f5c28; }
 
 /* ---- hero: the art gets the column, the copy gets the gutter ---- */
 .hero { display: grid; grid-template-columns: minmax(0,1fr) 420px; align-items: center;
@@ -36,12 +36,12 @@
 .stageWrap { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 34px 28px; min-width: 0; }
 .stage { position: relative; display: block; padding: 0; width: min(100%, 68vh); aspect-ratio: 1; cursor: pointer;
   border: 1px solid #2c382f; background: #050706; overflow: hidden;
-  box-shadow: 0 0 120px rgba(200,248,0,.09), 0 30px 80px rgba(0,0,0,.7); }
+  box-shadow: 0 0 120px rgba(125,255,92,.09), 0 30px 80px rgba(0,0,0,.7); }
 .stage img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .stageFade { animation: fadein .5s ease both; }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 .sweep { position: absolute; left: 0; right: 0; height: 30%; pointer-events: none;
-  background: linear-gradient(180deg, transparent, rgba(200,248,0,.07), transparent); animation: sweep 5.2s linear infinite; }
+  background: linear-gradient(180deg, transparent, rgba(125,255,92,.07), transparent); animation: sweep 5.2s linear infinite; }
 @keyframes sweep { from { top: -30%; } to { top: 100%; } }
 
 /*
@@ -74,14 +74,14 @@
 .specRow dd { margin: 0; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .specRow dd em { color: #4d5850; font-style: normal; }
 
-.cta { display: block; padding: 16px; text-align: center; text-decoration: none; background: var(--accent); color: #141600;
+.cta { display: block; padding: 16px; text-align: center; text-decoration: none; background: var(--accent); color: #061003;
   font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; transition: filter .15s, transform .15s; }
 .cta:hover { filter: brightness(1.14); transform: translateY(-1px); }
 .note { margin: -8px 0 0; font-size: 9px; color: var(--muted); text-align: center; letter-spacing: .06em; }
 
 /* ---- chain badge ---- */
-/* Sits directly above the mint control in the hero readout. The left rule takes
-   the accent so it reads as a live fact about the drop rather than another spec row. */
+/* Sits directly above the mint control in the hero readout. The left rule is
+   green so it reads as a live fact about the drop rather than another spec row. */
 .chainBadge { display: flex; align-items: center; gap: 11px; padding: 11px 14px;
   border: 1px solid #2e3b33; border-left: 2px solid var(--accent); background: var(--panel); }
 /* Their mark is a square lime tile — shown uncropped, and squared off like
@@ -103,7 +103,7 @@
 /* ---- motto ---- */
 .motto { display: grid; place-items: center; padding: 78px 24px; text-align: center;
   border-bottom: 1px solid var(--line);
-  background: radial-gradient(ellipse at 50% 50%, rgba(200,248,0,.05), transparent 70%); }
+  background: radial-gradient(ellipse at 50% 50%, rgba(125,255,92,.05), transparent 70%); }
 .motto p { margin: 0; font-size: clamp(20px, 3.1vw, 40px); line-height: 1.24; letter-spacing: -.03em; color: #fff; }
 
 /* ---- story ---- */
@@ -178,7 +178,7 @@
 
 .foot { padding: 60px 28px 70px; text-align: center; color: var(--muted); font-size: 9.5px; letter-spacing: .1em; line-height: 2.2; }
 .footCta { display: inline-block; margin-bottom: 22px; padding: 16px 42px; text-decoration: none;
-  background: var(--accent); color: #141600; font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; }
+  background: var(--accent); color: #061003; font: 800 12px/1 ui-monospace, monospace; letter-spacing: .18em; }
 .footCta:hover { filter: brightness(1.14); }
 .foot code { color: #5f6a63; }
 
@@ -329,7 +329,7 @@
 .qty b { text-align: center; font-size: 14px; color: #fff; }
 
 .mintOk { display: block; padding: 11px; text-align: center; text-decoration: none;
-  border: 1px solid #5a6800; background: rgba(200,248,0,.07); color: var(--accent);
+  border: 1px solid #2f5c28; background: rgba(125,255,92,.07); color: var(--accent);
   font-size: 9.5px; letter-spacing: .16em; }
 .mintOk:hover { border-color: var(--accent); }
 
