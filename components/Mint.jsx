@@ -131,7 +131,9 @@ export default function Mint() {
    * countdown reaching zero becomes a state change locally, and the next poll
    * merely picks up the counts. */
   const drop = useMemo(
-    () => (facts ? describeDrop(facts.condition, facts.endsAt, BigInt(Math.floor(chainNow / 1000))) : null),
+    () => (facts
+      ? describeDrop(facts.condition, facts.endsAt, BigInt(Math.floor(chainNow / 1000)), facts)
+      : null),
     [facts, chainNow],
   );
 
@@ -613,9 +615,11 @@ export default function Mint() {
    * is configured its own counters are the familiar figures and stay; a
    * stages-only drop has an all-zero condition, so the contract-wide totals are
    * the only honest source. */
-  const progress = drop?.configured
-    ? drop
-    : (facts && facts.lazySupply > 0n ? { minted: facts.minted, supply: facts.lazySupply } : null);
+  /* The bar is the DROP's progress, never one phase's slice of it — the
+   * question it answers is "how much of the collection is gone". */
+  const progress = facts && facts.lazySupply > 0n
+    ? { minted: facts.minted, supply: facts.lazySupply }
+    : (drop?.configured ? drop : null);
 
   /* Why this wallet is being shown a closed door rather than a stage. Only ever
    * about the allowlist — the public phase explains itself below. */
