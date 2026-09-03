@@ -1,6 +1,8 @@
+import { useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import { formatEth } from "../lib/mint";
-import { buildSchedule, whenLabel } from "../lib/phases";
+import { buildSchedule, whenLabel, windowStatus } from "../lib/phases";
+import { fetchAllowlist } from "../lib/allowlist";
 
 const STATUS = {
   upcoming: "UPCOMING",
@@ -50,7 +52,104 @@ export default function Phases({ drop, phases, chainNow }) {
           </div>
         );
       })}
+      {(phases?.stages?.length ?? 0) > 0 && <Eligibility chainNow={chainNow} />}
     </div>
+  );
+}
+
+const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
+const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
+
+/**
+ * Check any address against the allowlist, without connecting anything.
+ *
+ * Eligibility is per wallet and lives in the backend, so before this the only
+ * way to learn you were on the list was to connect — which is a lot to ask of
+ * someone who just wants to know whether it is worth setting an alarm. Nothing
+ * here needs a wallet: the proof route is public and a proof is useless to
+ * anyone but the address it was cut for, because the contract hashes the
+ * caller into the leaf it verifies.
+ *
+ * It answers about ONE address at a time, typed deliberately. That is a
+ * question someone asks about their own wallet, not a way to enumerate a list —
+ * and the stage summary already publishes the wallet COUNTS without the
+ * wallets, which is the part that is nobody else's business.
+ */
+function Eligibility({ chainNow }) {
+  const [value, setValue] = useState("");
+  const [state, setState] = useState(null); // { checking } | { address, stages, reason, failed }
+
+  const check = async (e) => {
+    e.preventDefault();
+    const address = value.trim();
+    if (!ADDRESS.test(address)) {
+      setState({ invalid: true });
+      return;
+    }
+    setState({ checking: true });
+    const result = await fetchAllowlist(address);
+    setState({ address, ...result });
+  };
+
+  const nowSec = Math.floor(chainNow / 1000);
+
+  return (
+    <form className={styles.check} onSubmit={check}>
+      <div className={styles.checkHead}>AM I ON THE LIST?</div>
+      <div className={styles.checkRow}>
+        <input
+          className={styles.checkInput}
+          value={value}
+          onChange={(e) => { setValue(e.target.value); setState(null); }}
+          placeholder="0x…"
+          aria-label="Wallet address"
+          spellCheck={false}
+          autoComplete="off"
+        />
+        <button type="submit" className={styles.checkBtn} disabled={state?.checking}>
+          {state?.checking ? "…" : "CHECK"}
+        </button>
+      </div>
+
+      {state?.invalid && (
+        <p className={styles.checkNote}>that is not a wallet address — paste the 0x… one</p>
+      )}
+
+      {/* A failed lookup is not a "no". Say which it is. */}
+      {state?.failed && (
+        <p className={styles.checkNote}>could not reach the allowlist — try again in a moment</p>
+      )}
+
+      {state?.address && !state.failed && (
+        state.stages.length ? (
+          <div className={styles.checkOk}>
+            <b>{short(state.address)} is on the list</b>
+            {state.stages.map((s) => {
+              const start = Number(s.params.startTime || 0);
+              const end = Number(s.params.endTime || 0);
+              const status = windowStatus(start, end, nowSec);
+              return (
+                <div key={s.stageIndex} className={styles.checkStage}>
+                  <span>{(s.name || `STAGE ${s.stageIndex}`).toUpperCase()}</span>
+                  <em>{status === "live" ? "LIVE NOW" : status === "upcoming" ? `opens ${whenLabel(start)}` : "ended"}</em>
+                  <span className={styles.checkTerms}>
+                    {formatEth(BigInt(s.params.pricePerToken || 0))} · max {String(s.params.maxMintableByWallet)} per wallet
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className={styles.checkNote}>
+            {state.reason === "root_not_published"
+              ? "the allowlist is saved but not published on-chain yet — check back shortly"
+              : state.reason === "no_allowlist"
+                ? "this drop has no allowlist"
+                : `${short(state.address)} is not on the list for this drop`}
+          </p>
+        )
+      )}
+    </form>
   );
 }
 

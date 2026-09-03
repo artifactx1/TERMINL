@@ -315,6 +315,28 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mintStats span { display: block; margin-top: 3px; font-size: 8.5px; letter-spacing: .18em; color: var(--muted); }
 
+/* "Am I on the list?" — the schedule can say when a stage runs but not whether
+   it is yours, so this asks for one address and answers that. */
+.check { margin-top: 10px; padding: 10px; border: 1px solid var(--line); background: var(--panel); }
+.checkHead { font: 800 8.5px/1 ui-monospace, monospace; letter-spacing: .2em; color: var(--muted); }
+.checkRow { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 8px; }
+.checkInput { min-width: 0; padding: 9px 8px; border: 1px solid var(--line); background: #060907;
+  color: var(--ink); font: 500 11px/1 ui-monospace, monospace; }
+.checkInput:focus { outline: none; border-color: #2f5c28; }
+.checkInput::placeholder { color: #4a544d; }
+.checkBtn { padding: 9px 12px; border: 1px solid #2f5c28; background: none; color: var(--accent);
+  font: 800 9px/1 ui-monospace, monospace; letter-spacing: .16em; cursor: pointer; }
+.checkBtn:hover:not(:disabled) { background: rgba(125,255,92,.08); }
+.checkBtn:disabled { opacity: .5; cursor: default; }
+.checkNote { margin: 8px 0 0; font: 500 10px/1.5 ui-monospace, monospace; color: var(--muted); }
+.checkOk { margin-top: 8px; font: 500 10px/1.5 ui-monospace, monospace; color: var(--dim); }
+.checkOk b { display: block; color: var(--accent); font-size: 10.5px; letter-spacing: .04em; }
+.checkStage { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin-top: 6px;
+  padding-top: 6px; border-top: 1px solid var(--line); }
+.checkStage span { color: #fff; font-weight: 700; letter-spacing: .1em; font-size: 9.5px; }
+.checkStage em { font-style: normal; color: var(--accent); font-size: 9px; letter-spacing: .12em; }
+.checkTerms { color: var(--muted) !important; font-weight: 500 !important; letter-spacing: 0 !important; }
+
 /* An allowlist stage is a different offer from the public phase — a different
    price, a different cap, and one this wallet specifically has. Said once,
    above the numbers it changes, so nobody has to work out why the price on

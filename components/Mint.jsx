@@ -7,7 +7,7 @@ import {
   revertReason, simulateClaim, waitForReceipt,
 } from "../lib/mint";
 import { openWallet, walletDeepLink } from "../lib/wallet/open";
-import { fetchPhases } from "../lib/phases";
+import { fetchPhases, windowStatus } from "../lib/phases";
 import {
   describeStage, fetchAllowlist, ineligibleNote, liveStage, maxForStage, nextStage,
 } from "../lib/allowlist";
@@ -142,6 +142,17 @@ export default function Mint() {
    * Derived every tick, like everything else here: a stage opening under a
    * visitor is a state change on this page, not a reason to re-fetch. */
   const openStage = useMemo(() => liveStage(allow.stages, nowSec), [allow.stages, nowSec]);
+
+  /* A stage that is live according to the PUBLIC schedule — no wallet needed.
+   * `openStage` above is this wallet's; this one is the drop's, and it is what
+   * lets the panel tell a visitor who has not connected that there is an
+   * allowlist mint happening at all. */
+  const liveOnSchedule = useMemo(
+    () => (phases?.stages || []).find(
+      (s) => windowStatus(Number(s.startTime || 0), Number(s.endTime || 0), nowSec) === "live",
+    ) || null,
+    [phases, nowSec],
+  );
   const soonStage = useMemo(() => nextStage(allow.stages, nowSec), [allow.stages, nowSec]);
 
   /* Units taken in THIS stage. Counted per stage on chain, so it must be read
@@ -432,6 +443,19 @@ export default function Mint() {
     </div>
   );
 
+  /* The same shell, but with the wallet button — for the states whose whole
+   * point is that connecting is what resolves them. A closed sign whose fix is
+   * one tap away should carry the tap. */
+  const connectShell = (headline, note) => (
+    <div className={styles.mint}>
+      <div className={styles.stageBanner}>{headline}</div>
+      {note && <p className={styles.note}>{note}</p>}
+      <Progress drop={progress} />
+      <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
+      <Phases drop={drop} phases={phases} chainNow={chainNow} />
+    </div>
+  );
+
   if (!CONTRACT) return shell("MINT OPENS SOON", "2048 pieces · stored on Arweave, forever");
   if (!drop) return shell(error || "READING THE CHAIN…");
 
@@ -459,6 +483,36 @@ export default function Mint() {
        * condition is all zeros, and "0 of 0 minted" is worse than saying
        * nothing. */
       return shell("MINT CLOSED", progress ? `${String(progress.minted)} of ${String(progress.supply)} minted` : null);
+    }
+
+    /* An allowlist stage is running. Eligibility is per wallet and cannot be
+     * known before one is connected, so say what IS true — the mint is open,
+     * to a list — and offer the tap that answers it. Anything else reads as a
+     * closed door directly above a row marked LIVE, which is the state that
+     * confused people. */
+    if (liveOnSchedule && !account) {
+      return connectShell(
+        `${(liveOnSchedule.name || `STAGE ${liveOnSchedule.stageIndex}`).toUpperCase()} IS LIVE — ALLOWLIST ONLY`,
+        `${formatEth(BigInt(liveOnSchedule.pricePerToken || 0))} · connect to check if you're on the list`,
+      );
+    }
+
+    /* Connected, and the answer is no. Worth stating plainly rather than as
+     * "MINT NOT OPEN YET", which reads as a clock problem the visitor should
+     * wait out. */
+    if (liveOnSchedule && allow.reason === "not_allowlisted") {
+      return shell(
+        "ALLOWLIST ONLY RIGHT NOW",
+        `this wallet is not on the list for ${stageName(liveOnSchedule)}${
+          drop.configured && !drop.started && opensIn ? ` · public mint opens in ${opensIn}` : ""
+        }`,
+      );
+    }
+
+    /* The allowlist could not be reached. Never let that read as "not on the
+     * list" — it is a question we failed to ask, not an answer. */
+    if (liveOnSchedule && allow.failed) {
+      return shell("COULD NOT CHECK THE ALLOWLIST", "reload to try again");
     }
     if (!drop.configured) return shell("MINT NOT OPEN YET", listNote || "the drop is deployed, the phase is not live");
     if (drop.soldOut) return shell("SOLD OUT", `all ${String(drop.supply)} gone`);
