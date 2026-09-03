@@ -315,6 +315,14 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mintStats span { display: block; margin-top: 3px; font-size: 8.5px; letter-spacing: .18em; color: var(--muted); }
 
+/* An allowlist stage is a different offer from the public phase — a different
+   price, a different cap, and one this wallet specifically has. Said once,
+   above the numbers it changes, so nobody has to work out why the price on
+   screen is not the price in the schedule. */
+.stageBanner { padding: 9px 10px; text-align: center; border: 1px solid #2f5c28;
+  background: rgba(125,255,92,.08); color: var(--accent);
+  font: 800 9.5px/1.35 ui-monospace, monospace; letter-spacing: .18em; }
+
 /* The closed/holding states reuse the CTA's footprint so the column does not
    jump when the drop opens. */
 .mintClosed { padding: 16px; text-align: center; border: 1px solid #2e3b33;

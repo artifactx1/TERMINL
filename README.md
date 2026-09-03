@@ -154,7 +154,9 @@ public/degens/         portraits of the cast who appear in them
 pages/index.jsx        the site
 pages/api/drop.js      the drop state, read once and CDN-cached for everyone
 pages/api/phases.js    allowlist stage definitions, proxied from ArtifactX's backend
+pages/api/allowlist/   one wallet's stage terms and merkle proofs, same proxy
 lib/phases.js          the schedule: stages + public phase, derived against chain time
+lib/allowlist.js       which stage a wallet may mint from, and on what terms
 components/Phases.jsx  the schedule and the progress bar under the mint control
 styles/                CRT/terminal treatment
 ```
@@ -265,6 +267,42 @@ forge script script/DeployTerminl.s.sol --broadcast \
 
 Put the printed address in `NEXT_PUBLIC_TERMINL_CONTRACT` and the mint is live.
 Nothing else on the site changes.
+
+### Allowlist stages
+
+A stage — GTD or FCFS — is not a claim condition. Its price, window, per-wallet
+cap and supply bound live inside a merkle leaf; the contract stores one root for
+the whole drop and nothing else. So the terms cannot be read from the chain: the
+wallet asks the backend, gets its terms and a proof, and hands both back to
+`claimAllowlist`, which re-derives the leaf and checks it against the root.
+
+Stages are authored in the ArtifactX studio (Manage → Mint Phases), which builds
+the tree, has the artist sign `setAllowlistRoot`, and publishes. **Proofs are
+served only after the root is signed** — until then this site says so rather
+than offering a mint that would revert.
+
+What that means here:
+
+- `/api/phases` is the public schedule — every stage, no wallet lists. It is
+  what the SCHEDULE panel shows, with or without a wallet connected.
+- `/api/allowlist/<wallet>` is that wallet's terms and proofs. Both go
+  server-to-server: the backend's CORS admits browsers from artifactx.app only,
+  and a request from a Next API route carries no `Origin` header and passes.
+- A live stage **takes precedence** over the public phase. `claimAllowlist`
+  never reads the public condition, so while a stage is open its price and its
+  cap are the ones that apply — counted by a per-stage on-chain counter
+  (`stageMintedByWallet`) that has nothing to do with the public tally.
+- Two adjacent fields where zero means opposite things: `maxSupplyForStage: 0`
+  is *uncapped*, `maxMintableByWallet: 0` is *nobody may mint*. The studio
+  writes an unlimited per-wallet cap as `MAX_SAFE_INTEGER`, not 0.
+- Stage windows are start-inclusive, end-**exclusive** — the contract reverts
+  `StageEnded` at the end second itself. Keep GTD and FCFS windows sequential:
+  if two overlap and a wallet holds both, the lower stage index is the one the
+  button spends.
+
+`claimAllowlist` is hand-encoded like the rest of `lib/mint.js`, and every case
+is diffed against `cast calldata` — including proof depths 0 to 12 — by
+`node scripts/verify-calldata.mjs`. Run it if you touch the encoder.
 
 **`TERMINL_BASE_URI` must be the finished Arweave manifest.** `lazyMint` bakes
 it into the batch; correcting it afterwards is a reveal, not an edit. Upload the

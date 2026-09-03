@@ -2,11 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useSendTransaction, useSwitchChain } from "wagmi";
 import styles from "../styles/Terminl.module.css";
 import {
-  CHAIN, CONTRACT, buildClaimTx, countdown, describeDrop, explorerTx, fetchDropFacts, formatEth,
-  isTerminal, readClaimedBy, readableError, revertReason, simulateClaim, waitForReceipt,
+  CHAIN, CONTRACT, buildAllowlistClaimTx, buildClaimTx, countdown, describeDrop, explorerTx,
+  fetchDropFacts, formatEth, isTerminal, readClaimedBy, readStageClaimedBy, readableError,
+  revertReason, simulateClaim, waitForReceipt,
 } from "../lib/mint";
-import { openWallet } from "../lib/wallet/open";
+import { openWallet, walletDeepLink } from "../lib/wallet/open";
 import { fetchPhases } from "../lib/phases";
+import {
+  describeStage, fetchAllowlist, ineligibleNote, liveStage, maxForStage, nextStage,
+} from "../lib/allowlist";
 import Phases, { Progress } from "./Phases";
 
 /*
@@ -27,6 +31,14 @@ import Phases, { Progress } from "./Phases";
  * a receipt comes back with status 0x1 — a hash only proves the transaction was
  * submitted, and a claim that reverts on-chain returns one just the same.
  *
+ * Two ways to mint, and the panel renders both through one control. The PUBLIC
+ * phase is a claim condition on the contract, so anyone may take it on the
+ * terms the chain states. An ALLOWLIST STAGE is not on chain at all: its terms
+ * are sealed in a merkle leaf, so they and the proof come from the backend for
+ * one wallet at a time (lib/allowlist). A live stage takes precedence — its
+ * price and its per-wallet cap are the ones that apply, counted by a per-stage
+ * counter that has nothing to do with the public phase's tally.
+ *
  * The wallet itself comes from wagmi, connected through the same Reown AppKit
  * picker ArtifactX uses (lib/wallet). The reads stay on plain eth_call and the
  * claim stays hand-encoded — wagmi only carries the connection and the send.
@@ -40,6 +52,10 @@ const BATCH_CAP = 20;
  * phase opens, the clock runs out. Re-read on a slow loop so the panel is never
  * more than this far behind the chain. */
 const POLL_MS = 20_000;
+
+/* Not on any list, and nothing tried yet — the state a visitor without a wallet
+ * is in, and the one a public-only drop stays in forever. */
+const EMPTY_ALLOWLIST = { eligible: false, reason: null, stages: [], failed: false };
 
 export default function Mint() {
   /* wagmi's `chainId` here is the WALLET's chain, not the app's — that is the
@@ -92,6 +108,17 @@ export default function Mint() {
     readClaimedBy(account).then(setClaimed).catch(() => {});
   }, [account, mintedAt]);
 
+  /* What THIS wallet may claim from the allowlist, with the proofs. Fetched
+   * once per connected wallet: stage terms are fixed by the published root, so
+   * the only thing that moves is the clock, and that is derived locally. */
+  const [allow, setAllow] = useState(EMPTY_ALLOWLIST);
+  useEffect(() => {
+    if (!account) { setAllow(EMPTY_ALLOWLIST); return undefined; }
+    let on = true;
+    fetchAllowlist(account).then((a) => { if (on) setAllow(a); });
+    return () => { on = false; };
+  }, [account]);
+
   /* Counted against chain time, corrected for however wrong this machine's
    * clock is — otherwise the countdown and the contract disagree. */
   const chainNow = now - (facts?.skewMs ?? 0);
@@ -107,12 +134,63 @@ export default function Mint() {
     [facts, chainNow],
   );
 
+  /* Chain time in seconds — the same value the contract compares against, and
+   * the only clock a stage window may be judged by. */
+  const nowSec = Math.floor(chainNow / 1000);
+
+  /* The stage this wallet can mint from right now, and the next one it holds.
+   * Derived every tick, like everything else here: a stage opening under a
+   * visitor is a state change on this page, not a reason to re-fetch. */
+  const openStage = useMemo(() => liveStage(allow.stages, nowSec), [allow.stages, nowSec]);
+  const soonStage = useMemo(() => nextStage(allow.stages, nowSec), [allow.stages, nowSec]);
+
+  /* Units taken in THIS stage. Counted per stage on chain, so it must be read
+   * per stage — a wallet holding both a GTD and an FCFS allocation spends them
+   * independently, and neither shows up in the public phase's tally. */
+  const [stageClaimed, setStageClaimed] = useState(0n);
+  const openStageIndex = openStage?.stageIndex ?? null;
+  useEffect(() => {
+    if (!account || !openStageIndex) { setStageClaimed(0n); return undefined; }
+    let on = true;
+    readStageClaimedBy(openStageIndex, account)
+      .then((v) => { if (on) setStageClaimed(v); })
+      .catch(() => {});
+    return () => { on = false; };
+  }, [account, openStageIndex, mintedAt]);
+
+  const stage = useMemo(
+    () => (openStage && facts
+      ? describeStage({
+          stage: openStage,
+          stageClaimed,
+          minted: facts.minted,
+          lazySupply: facts.lazySupply,
+          dropEndsAt: facts.endsAt,
+          now: nowSec,
+        })
+      : null),
+    [openStage, stageClaimed, facts, nowSec],
+  );
+
+  /* Which set of terms the button spends. A live stage wins: claimAllowlist
+   * never consults the public condition, so while a stage is open its price and
+   * its cap are simply the ones that apply. */
+  const active = useMemo(
+    () => (stage?.open ? stage : (drop?.open ? { kind: "public", ...drop, claimed } : null)),
+    [stage, drop, claimed],
+  );
+
   /* Poll while there is anything left to change. A sold-out or ended drop is
    * terminal, so stop bothering the RPC once it gets there. A drop that opens
    * in more than ten minutes changes nothing until then, so poll it slowly. A
    * tab nobody is looking at does not poll at all, and catches up the moment
    * it is looked at again. */
-  const shouldPoll = !!drop?.configured && !isTerminal(drop);
+  /* Something can still change if a public phase is configured, if this wallet
+   * holds a stage, or if the schedule shows stages at all — that last one
+   * matters for a stages-only drop seen by a visitor who has not connected,
+   * where the condition is all zeros and would otherwise read as inert. */
+  const shouldPoll = (!!drop?.configured || allow.stages.length > 0 || (phases?.stages?.length ?? 0) > 0)
+    && !(drop && isTerminal(drop));
   const farOff = !!drop && !drop.started && Number(drop.startsAt) * 1000 - chainNow > 600_000;
   const pollMs = farOff ? POLL_MS * 3 : POLL_MS;
   useEffect(() => {
@@ -137,7 +215,9 @@ export default function Mint() {
   }, [drop, refresh]);
 
   /* One-second tick, only while something is actually counting down. */
-  const ticking = !!drop && drop.configured && (!drop.started || (drop.endsAt !== 0n && !drop.ended));
+  const ticking = (!!drop && drop.configured && (!drop.started || (drop.endsAt !== 0n && !drop.ended)))
+    || !!soonStage
+    || (!!stage && (!stage.started || (stage.endsAt !== 0n && !stage.ended)));
   useEffect(() => {
     if (!ticking) return undefined;
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -147,14 +227,23 @@ export default function Mint() {
   const opensIn = drop && drop.configured && !drop.started ? countdown(drop.startsAt, chainNow) : null;
   const endsIn = drop && drop.endsAt !== 0n && !drop.ended ? countdown(drop.endsAt, chainNow) : null;
 
-  /* How many this wallet may still take in one go. */
+  /* A stage's own clock, which is not the drop's: a stage can close hours
+   * before the drop does, and the number beside the button has to be the one
+   * that will actually stop this wallet minting. */
+  const stageOpensIn = soonStage ? countdown(Number(soonStage.params.startTime), chainNow) : null;
+  const stageEndsIn = stage?.open && stage.endsAt !== 0n ? countdown(stage.endsAt, chainNow) : null;
+
+  /* How many this wallet may still take in one go — against whichever terms
+   * are live, since a stage's cap and the public phase's are separate counters
+   * and only one of them is being spent. */
   const max = useMemo(() => {
+    if (stage?.open) return maxForStage(stage, BATCH_CAP);
     if (!drop) return 1;
     const left = drop.capPerWallet === null
       ? BATCH_CAP
       : Number(drop.capPerWallet > claimed ? drop.capPerWallet - claimed : 0n);
     return Math.max(1, Math.min(left, Number(drop.remaining), BATCH_CAP));
-  }, [drop, claimed]);
+  }, [stage, drop, claimed]);
 
   /* Supply drains and caps fill while the page is open. Without this the picker
    * keeps a number the contract will now reject. */
@@ -178,28 +267,64 @@ export default function Mint() {
     } catch (e) { setError(readableError(e)); }
   };
 
-  const mint = async () => {
-    setError(null);
-    setTxHash(null);
-    const tx = buildClaimTx({ account, drop, quantity });
+  /* The calldata for whatever is live, built without touching the network so
+   * it can be produced inside a tap handler.
+   *
+   * One or the other, never a blend: a stage claim carries its own proven price
+   * and pays it from the leaf, while the public claim reads the price off the
+   * chain. Building the wrong one for the live phase reverts. */
+  const buildTx = useCallback(() => (
+    active?.kind === "stage"
+      ? buildAllowlistClaimTx({ account, stage: active.stage, quantity })
+      : buildClaimTx({ account, drop, quantity })
+  ), [active, account, drop, quantity]);
 
+  /*
+   * The pre-flight, run AHEAD of the tap rather than inside it.
+   *
+   * Simulating a claim before opening the wallet is what stops a doomed mint
+   * costing gas, and it stays. What moved is when: on a phone, an `await`
+   * between the tap and the wallet request is fatal. Waking a wallet app means
+   * leaving the browser, and iOS only permits that while the user's tap is
+   * still "active" — a few hundred milliseconds. An eth_call over cellular
+   * spends that budget, the hand-off is silently refused, and the page sits on
+   * "CONFIRM IN WALLET…" while nothing opens. The user is left tapping a
+   * button that already worked.
+   *
+   * So the verdict is computed whenever the inputs change and kept in a ref.
+   * A tap with a fresh verdict calls the wallet with nothing awaited in front
+   * of it. Anything else — no verdict yet, or one that failed — falls back to
+   * the old path, which is correct precisely because it does NOT need to reach
+   * the wallet.
+   */
+  const canPreflight = !!(active && account && !(isConnected && chainId !== CHAIN.id));
+  const preflightKey = canPreflight
+    ? `${active.kind}:${active.stageIndex ?? "public"}:${account}:${quantity}:${String(active.price)}`
+    : null;
+
+  const preflight = useRef(null);
+  useEffect(() => {
+    preflight.current = null;
+    if (!preflightKey) return undefined;
+    let on = true;
+    /* Debounced: the stepper fires this on every press, and only the number
+     * they settle on is worth a call. */
+    const id = setTimeout(() => {
+      simulateClaim(buildTx()).then(
+        () => { if (on) preflight.current = { key: preflightKey, ok: true }; },
+        () => { if (on) preflight.current = { key: preflightKey, ok: false }; },
+      );
+    }, 400);
+    return () => { on = false; clearTimeout(id); };
+    // buildTx is derived from exactly the values preflightKey is built from.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preflightKey]);
+
+  /* Everything after the wallet has taken the request. Split out so the tap
+   * handler itself can stay synchronous up to the send. */
+  const follow = useCallback(async (sent, tx) => {
     try {
-      /* Never open the wallet for a transaction that cannot succeed. The
-       * contract mirrors its end-time check into verifyClaim precisely so this
-       * simulation matches what the claim will do. */
-      setPhase("checking");
-      await simulateClaim(tx);
-
-      setPhase("wallet");
-      /* The same calldata the simulation just ran, handed to the wallet through
-       * wagmi. `value` is hex for eth_call and a bigint here — one source. */
-      const hash = await sendTransactionAsync({
-        account,
-        chainId: CHAIN.id,
-        to: tx.to,
-        data: tx.data,
-        ...(tx.value ? { value: BigInt(tx.value) } : {}),
-      });
+      const hash = await sent;
       setTxHash(hash);
 
       setPhase("pending");
@@ -226,9 +351,74 @@ export default function Mint() {
       setError(readableError(e));
       setPhase("idle");
     }
+  }, [refresh]);
+
+  const send = useCallback((tx) => sendTransactionAsync({
+    account,
+    chainId: CHAIN.id,
+    to: tx.to,
+    data: tx.data,
+    ...(tx.value ? { value: BigInt(tx.value) } : {}),
+  }), [account, sendTransactionAsync]);
+
+  /* Deliberately NOT async. The fast path below must reach the wallet in the
+   * same turn as the tap, and an async function that awaits first would give
+   * that up even if nothing before the await did any work. */
+  const mint = () => {
+    setError(null);
+    setTxHash(null);
+    const tx = buildTx();
+
+    if (preflight.current?.key === preflightKey && preflight.current.ok) {
+      setPhase("wallet");
+      follow(send(tx), tx);
+      return;
+    }
+
+    /* No usable verdict. Simulate now — slower, and it will likely cost the
+     * app-switch on a phone, but it is the branch where the answer is usually
+     * "this would have reverted" and the wallet is never needed. */
+    (async () => {
+      try {
+        setPhase("checking");
+        await simulateClaim(tx);
+        setPhase("wallet");
+        await follow(send(tx), tx);
+      } catch (e) {
+        setError(readableError(e));
+        setPhase("idle");
+      }
+    })();
   };
 
+  /* While the wallet holds the request, offer a way into it. Resolved when the
+   * request goes out rather than on demand, so the button itself is a plain
+   * link the tap can follow immediately. */
+  const [walletLink, setWalletLink] = useState(null);
+  useEffect(() => {
+    if (phase !== "wallet") { setWalletLink(null); return undefined; }
+    let on = true;
+    walletDeepLink().then((link) => { if (on) setWalletLink(link); });
+    return () => { on = false; };
+  }, [phase]);
+
   /* ---- states that are not a mint button ---- */
+
+  /* Progress is the DROP's progress, not one phase's. While a public condition
+   * is configured its own counters are the familiar figures and stay; a
+   * stages-only drop has an all-zero condition, so the contract-wide totals are
+   * the only honest source. */
+  const progress = drop?.configured
+    ? drop
+    : (facts && facts.lazySupply > 0n ? { minted: facts.minted, supply: facts.lazySupply } : null);
+
+  /* Why this wallet is being shown a closed door rather than a stage. Only ever
+   * about the allowlist — the public phase explains itself below. */
+  const listNote = allow.failed
+    ? "the allowlist could not be checked — reload to try again"
+    : account
+      ? ineligibleNote(allow.reason)
+      : (phases?.stages?.length ? "connect your wallet to check the allowlist" : null);
 
   /* Every closed/holding state still shows how far the drop got and what the
    * schedule is — "MINT NOT OPEN YET" beside a list of when it opens is the
@@ -237,27 +427,61 @@ export default function Mint() {
     <div className={styles.mint}>
       <div className={styles.mintClosed}>{headline}</div>
       {note && <p className={styles.note}>{note}</p>}
-      <Progress drop={drop} />
+      <Progress drop={progress} />
       <Phases drop={drop} phases={phases} chainNow={chainNow} />
     </div>
   );
 
   if (!CONTRACT) return shell("MINT OPENS SOON", "2048 pieces · stored on Arweave, forever");
   if (!drop) return shell(error || "READING THE CHAIN…");
-  if (!drop.configured) return shell("MINT NOT OPEN YET", "the drop is deployed, the phase is not live");
-  if (drop.ended) return shell("MINT CLOSED", `${String(drop.minted)} of ${String(drop.supply)} minted`);
-  if (drop.soldOut) return shell("SOLD OUT", `all ${String(drop.supply)} gone`);
-  if (drop.nobodyMayMint) return shell("MINT NOT OPEN YET", "the phase is live but claiming is closed");
-  if (!drop.started) {
-    return shell(
-      opensIn ? `OPENS IN ${opensIn}` : "OPENING…",
-      `${String(drop.supply)} pieces · ${formatEth(drop.price)} each`,
-    );
+
+  /* Nothing is mintable by this wallet right now. A stage it holds is the most
+   * useful thing to say — it outranks anything about the public phase, because
+   * claimAllowlist never consults the public condition and a wallet on the list
+   * does not care that the open phase has not started. */
+  if (!active) {
+    const stageName = (s) => (s?.name || `stage ${s?.stageIndex}`).toLowerCase();
+
+    if (stage?.spent) {
+      return shell(`YOU'VE MINTED YOUR ${String(stage.capPerWallet)}`, `${stageName(stage)} · your allocation is spent`);
+    }
+    if (stage?.soldOut) return shell("STAGE SOLD OUT", `${stageName(stage)} has nothing left`);
+    if (stage?.nobodyMayMint) return shell("STAGE CLOSED", `${stageName(stage)} is live but claiming is closed`);
+    if (soonStage) {
+      return shell(
+        stageOpensIn ? `YOUR STAGE OPENS IN ${stageOpensIn}` : "YOUR STAGE OPENS…",
+        `${stageName(soonStage)} · you are on the list`,
+      );
+    }
+
+    if (drop.ended) {
+      /* Counters from whichever record actually has them: a stages-only drop's
+       * condition is all zeros, and "0 of 0 minted" is worse than saying
+       * nothing. */
+      return shell("MINT CLOSED", progress ? `${String(progress.minted)} of ${String(progress.supply)} minted` : null);
+    }
+    if (!drop.configured) return shell("MINT NOT OPEN YET", listNote || "the drop is deployed, the phase is not live");
+    if (drop.soldOut) return shell("SOLD OUT", `all ${String(drop.supply)} gone`);
+    if (drop.nobodyMayMint) return shell("MINT NOT OPEN YET", "the phase is live but claiming is closed");
+    if (!drop.started) {
+      return shell(
+        opensIn ? `OPENS IN ${opensIn}` : "OPENING…",
+        listNote || `${String(drop.supply)} pieces · ${formatEth(drop.price)} each`,
+      );
+    }
+    /* Open on chain, closed to this wallet: it has taken its per-wallet cap. */
+    return shell(`YOU'VE MINTED YOUR ${String(drop.capPerWallet)}`, listNote);
   }
 
   const wrongChain = isConnected && chainId !== CHAIN.id;
-  const cap = drop.capPerWallet;
-  const total = drop.price * BigInt(quantity);
+  const onStage = active.kind === "stage";
+  const cap = active.capPerWallet;
+  const total = active.price * BigInt(quantity);
+
+  /* A stage's counters are the stage's. Its "minted" is the drop's, though —
+   * the watermark it is bounded by is measured over everything ever minted, so
+   * the public phase's tally would understate what is gone. */
+  const shownMinted = onStage ? (facts?.minted ?? 0n) : drop.minted;
 
   const cta = {
     checking: "CHECKING…",
@@ -267,12 +491,19 @@ export default function Mint() {
 
   return (
     <div className={styles.mint}>
+      {onStage && (
+        <div className={styles.stageBanner}>
+          {active.name}{active.label !== active.name ? ` · ${active.label}` : ""} — YOU&rsquo;RE IN
+        </div>
+      )}
       <div className={styles.mintStats}>
-        <div><b>{String(drop.minted)}</b><span>MINTED</span></div>
-        <div><b>{String(drop.remaining)}</b><span>LEFT</span></div>
-        <div><b>{formatEth(drop.price)}</b><span>EACH</span></div>
+        <div><b>{String(shownMinted)}</b><span>MINTED</span></div>
+        {/* null = the drop's total could not be read, which is not the same as
+            nothing left. Say nothing rather than a number that is wrong. */}
+        <div><b>{active.remaining === null ? "—" : String(active.remaining)}</b><span>LEFT</span></div>
+        <div><b>{formatEth(active.price)}</b><span>EACH</span></div>
       </div>
-      <Progress drop={drop} />
+      <Progress drop={progress} />
 
       {!account ? (
         <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
@@ -280,7 +511,7 @@ export default function Mint() {
         <button type="button" className={styles.cta} onClick={switchChain}>
           SWITCH TO {CHAIN.name.toUpperCase()}
         </button>
-      ) : cap && claimed >= cap ? (
+      ) : cap && active.claimed >= cap ? (
         <div className={styles.mintClosed}>YOU&rsquo;VE MINTED YOUR {String(cap)}</div>
       ) : (
         <>
@@ -291,6 +522,21 @@ export default function Mint() {
           </div>
           <button type="button" className={styles.cta} onClick={mint} disabled={busy}>{cta}</button>
         </>
+      )}
+
+      {/* The request is with the wallet, which on a phone is another app that
+          may not have come forward on its own. A link the user presses is the
+          one hand-off the OS always honours, since the press is a gesture.
+
+          Same tab, no target: a wallet's own scheme (metamask://) is
+          intercepted by the OS before any navigation happens, and the page is
+          still here underneath when they come back, whereas opening a tab
+          first adds a step iOS sometimes refuses outright. The link comes from
+          the connected session, so that wallet is definitely installed. */}
+      {phase === "wallet" && walletLink && (
+        <a className={styles.mintPending} href={walletLink}>
+          OPEN WALLET TO CONFIRM ↗
+        </a>
       )}
 
       {/* A hash means "submitted", and says so, until a receipt says otherwise. */}
@@ -318,7 +564,9 @@ export default function Mint() {
       {error && <p className={styles.mintErr}>{error}</p>}
       <p className={styles.note}>
         {cap ? `max ${String(cap)} per wallet · ` : ""}
-        {endsIn ? `ends in ${endsIn} · ` : ""}
+        {onStage
+          ? (stageEndsIn ? `stage ends in ${stageEndsIn} · ` : "")
+          : (endsIn ? `ends in ${endsIn} · ` : "")}
         on {CHAIN.name} · art on Arweave, forever
       </p>
       <Phases drop={drop} phases={phases} chainNow={chainNow} />

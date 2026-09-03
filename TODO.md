@@ -12,8 +12,13 @@ Open items from the 2026-09-02 session, in the order they block launch.
       reads "MINT NOT OPEN YET" until `setDropConditions` is called.
 - [ ] Swap both to the MAINNET contract and `NEXT_PUBLIC_CHAIN_ID=4663` once
       it is deployed. Production currently mints testnet.
-- [ ] `ALLOWLIST_API_URL` — the mainnet ArtifactX backend host, server-side
-      only, so the schedule can list allowlist stages. Testnet is built in.
+- [ ] `ALLOWLIST_API_URL` — `https://artifactxserver-production.up.railway.app`,
+      the MAINNET ArtifactX backend, server-side only, so the schedule can list
+      allowlist stages. Set it in the same change as the mainnet contract, not
+      before: the testnet host is built into `lib/phases.js` under chain 46630,
+      and this one holds a different database, so pointing at it while the
+      testnet contract is live returns an empty schedule. Confirmed serving
+      2026-09-03 (it 502s while the mainnet server is mid-migration).
 - [x] `NEXT_PUBLIC_REOWN_PROJECT_ID` — set on Production and Preview
       (2026-09-03) to the ArtifactX project id from ELEMENT/.env.testnet.
 - [ ] Add `https://terminl.net` (and the Vercel preview domain while testing)
@@ -52,25 +57,56 @@ Open items from the 2026-09-02 session, in the order they block launch.
 - [ ] Connect flow on a phone: WalletConnect QR from desktop, and the in-wallet
       browser on mobile. Confirm the wallet is offered the PUBLIC Robinhood
       RPC when it adds the chain, not the keyed one.
+- [ ] **Mint on a phone over WalletConnect**, which is the case the 2026-09-03
+      fixes were for: the wallet app should come forward on its own when MINT
+      is pressed. The claim is now simulated ahead of the tap and cached, so
+      nothing is awaited between the press and the wallet request — an
+      `await` there spends iOS's user-activation budget and the app switch is
+      refused silently. If it still does not surface, the panel shows an
+      "OPEN WALLET TO CONFIRM" link (built from the connected session's own
+      redirect metadata); confirm that appears and works. Also confirm the
+      wallet returns to the site after signing, which is what
+      `metadata.redirect.universal` is for — it needs `NEXT_PUBLIC_SITE_URL`
+      set, so it only works on Production and Preview, not on localhost.
 - [ ] One real testnet mint end to end once a phase is configured: simulate,
       confirm, receipt, "MINTED ✓" link resolves on the explorer.
 
-## Allowlist (parked)
+## Allowlist
 
-- [ ] While an allowlist stage is live and the public phase is not, the panel
-      still says "MINT NOT OPEN YET" above a LIVE row. Correct once allowlist
-      minting exists here; until then the schedule row is the truth.
+Built 2026-09-03. GTD and FCFS stages mint on this site through
+`claimAllowlist`; see README → The mint → Allowlist stages.
 
-- [ ] Eligibility check for the connected wallet, same logic as ArtifactX:
-      a narrow Next API route proxies `GET /drop-allowlist/<contract>/claim/<wallet>`
-      on ElementServer (server-to-server, which passes its CORS) and the panel
-      shows eligible / not on the list / no allowlist. Prefetch at connect,
-      cache 30 s per wallet, no polling.
-- [ ] If an allowlist phase mints here: `claimAllowlist` via viem's encoder
-      (the proof is a `bytes32[]`), the stage's price and cap take precedence
-      over the public phase, and the `Stage*` error selectors go into
-      `lib/mint.js`. Testnet API host for previews:
-      `https://precious-blessing-production-fc0b.up.railway.app`.
+- [x] Eligibility for the connected wallet: `/api/allowlist/<wallet>` proxies
+      `GET /drop-allowlist/<contract>/claim/<wallet>` server-to-server (which
+      passes the backend's CORS), cached 30 s per wallet, fetched once per
+      connection, no polling. Failure reads as "could not check", never as
+      "not on the list".
+- [x] `claimAllowlist` hand-encoded in `lib/mint.js` rather than pulling in
+      viem — `MintParams` is seven static words and the proof is a `bytes32[]`,
+      so it encodes with fewer moving parts than the public `claim`. Verified
+      against `cast calldata` at proof depths 0-12, and simulated against the
+      deployed testnet contract (reaches `verifyAllowlistClaim`, reverts
+      `AllowlistNotConfigured` as expected with no root published). Cost: 1.4 kB
+      on the page, 2 kB first-load.
+- [x] Stage price and cap take precedence over the public phase while a stage
+      is live, counted per stage via `stageMintedByWallet(uint32,address)`.
+      The panel no longer says "MINT NOT OPEN YET" above a LIVE row.
+- [x] All ten `Stage*` / allowlist error selectors in `lib/mint.js` ERRORS.
+
+- [ ] **End-to-end test on a real stage.** Everything above is verified against
+      `cast`, the live contract and a stub backend, but no stage has ever been
+      published for this drop — so no proof has been through the real path.
+      Before launch: publish a one-wallet GTD stage on the TESTNET drop from the
+      studio, sign the root, and mint it here.
+- [ ] The drop must exist as a `collections` row on the backend for the studio
+      to accept stages (`saveAllowlistStages` 404s otherwise, 403 if the signer
+      is not the collection owner). Import it if it was deployed outside
+      ArtifactX.
+- [ ] Publishing stages through the studio also lists the drop on artifactx.app
+      (Explore → Drops, the homepage rail, the cards). Decide whether TERMINL
+      should appear there or stay standalone.
+- [ ] Keep GTD and FCFS windows sequential. If two overlap and a wallet holds
+      both, only the lower stage index is reachable from this panel.
 
 ## Marketplace
 

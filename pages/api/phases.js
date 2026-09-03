@@ -1,5 +1,5 @@
-import { CHAIN, CONTRACT } from "../../lib/mint";
-import { ALLOWLIST_HOSTS } from "../../lib/phases";
+import { CONTRACT } from "../../lib/mint";
+import { allowlistBase } from "../../lib/phases";
 
 /*
  * Allowlist stage definitions, from ArtifactX's backend, for the schedule.
@@ -17,8 +17,6 @@ import { ALLOWLIST_HOSTS } from "../../lib/phases";
 const CACHE = "public, s-maxage=60, stale-while-revalidate=300";
 const EMPTY = { published: false, stages: [] };
 
-const host = () =>
-  (process.env.ALLOWLIST_API_URL || ALLOWLIST_HOSTS[CHAIN.id] || "").trim().replace(/\/+$/, "");
 
 export default async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "HEAD") {
@@ -30,7 +28,7 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: "no contract configured" });
   }
 
-  const base = host();
+  const base = allowlistBase();
   if (!base) {
     // No backend known for this chain: a public-only drop, as far as the
     // schedule is concerned. Cache it — nothing will change until a deploy.
