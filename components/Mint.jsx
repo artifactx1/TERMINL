@@ -442,6 +442,44 @@ export default function Mint() {
   /* The bar is fixed, so it sits ON the page rather than in it. Without room
    * reserved underneath it covers the last line of the footer. */
   const barShown = !!active && !ctaSeen;
+
+  /*
+   * Hold the bar against the bottom of what the visitor can actually SEE.
+   *
+   * `position: fixed` resolves against the LAYOUT viewport, but what is on
+   * screen is the VISUAL viewport, and on iOS Safari those come apart
+   * constantly — a slight pinch-zoom, the toolbars expanding or collapsing, a
+   * momentum scroll still settling. While they differ, `bottom: 0` paints
+   * where the layout viewport ends, which is above the visible bottom: the bar
+   * appears stranded in the middle of the screen, over the page, with the real
+   * control still visible below it.
+   *
+   * Safari publishes the discrepancy, so it can simply be subtracted. On every
+   * other browser visualViewport either matches the layout viewport or does
+   * not exist, the offset is 0, and this does nothing.
+   */
+  const [barNode, setBarNode] = useState(null);
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!barNode || !vv) return undefined;
+    let frame = 0;
+    const apply = () => {
+      frame = 0;
+      const gap = document.documentElement.clientHeight - (vv.height + vv.offsetTop);
+      barNode.style.transform = gap > 1 ? `translateY(${-gap}px)` : "";
+    };
+    /* These fire through a pinch and through every scroll frame, so the write
+     * is coalesced to one per frame. */
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(apply); };
+    apply();
+    vv.addEventListener("resize", schedule);
+    vv.addEventListener("scroll", schedule);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      vv.removeEventListener("resize", schedule);
+      vv.removeEventListener("scroll", schedule);
+    };
+  }, [barNode]);
   useEffect(() => {
     if (!barShown) return undefined;
     const previous = document.body.style.paddingBottom;
@@ -689,7 +727,7 @@ export default function Mint() {
         * chase.
         */}
       {barShown && typeof document !== "undefined" && createPortal(
-        <div className={styles.bar}>
+        <div className={styles.bar} ref={setBarNode}>
           <div className={styles.barFacts}>
             <b>{onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}</b>
             {active.remaining === null ? "allowlist mint" : `${String(active.remaining)} left`}

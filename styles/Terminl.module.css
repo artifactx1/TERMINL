@@ -395,8 +395,16 @@
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
   padding: 9px 14px calc(9px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid #2f5c28; background: rgba(6,9,7,.96);
-  animation: barUp .18s ease both; }
-@keyframes barUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  animation: barIn .18s ease; }
+/*
+ * Fades rather than slides. The slide animated `transform`, and transform on
+ * this element is spoken for: it carries the visual-viewport correction that
+ * keeps the bar against the visible bottom on iOS. A finished transform
+ * animation with a forwards fill outranks an inline style, so the slide would
+ * have quietly pinned the bar back to the wrong place a fifth of a second
+ * after every appearance.
+ */
+@keyframes barIn { from { opacity: 0; } to { opacity: 1; } }
 .barFacts { min-width: 0; font: 500 10px/1.4 ui-monospace, monospace; color: var(--muted); }
 .barFacts b { display: block; color: #fff; font-size: 11px; letter-spacing: .04em;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
