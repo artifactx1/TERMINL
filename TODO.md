@@ -14,16 +14,21 @@ Open items from the 2026-09-02 session, in the order they block launch.
       it is deployed. Production currently mints testnet.
 - [ ] `ALLOWLIST_API_URL` — the mainnet ArtifactX backend host, server-side
       only, so the schedule can list allowlist stages. Testnet is built in.
-- [ ] `NEXT_PUBLIC_REOWN_PROJECT_ID` — reuse the ArtifactX project id, then add
-      the TERMINL domain (and the Vercel preview domain while testing) to that
-      project's allowed domains at cloud.reown.com. Without the domain,
-      WalletConnect shows a verification warning in the wallet.
-- [ ] `RPC_URL` — server-side only, never `NEXT_PUBLIC_`:
-      `https://robinhood-mainnet.g.alchemy.com/v2/<key>` on production,
-      `https://robinhood-testnet.g.alchemy.com/v2/<key>` on previews. The
-      key is the one ElementServer already uses on Railway (`ALCHEMY_API_KEY`).
-- [ ] `NEXT_PUBLIC_SITE_URL` — the production domain, for `og:url` and the
-      WalletConnect metadata.
+- [x] `NEXT_PUBLIC_REOWN_PROJECT_ID` — set on Production and Preview
+      (2026-09-03) to the ArtifactX project id from ELEMENT/.env.testnet.
+- [ ] Add `https://terminl.net` (and the Vercel preview domain while testing)
+      to that Reown project's allowed domains at cloud.reown.com — a dashboard
+      step, no CLI. Without it WalletConnect shows a verification warning in
+      the wallet; connections still work.
+- [x] `RPC_URL` — set on Production and Preview (2026-09-03) to the Alchemy
+      **testnet** host with the key from artifactx-testnet-railway.env (the
+      one in ElementServer/.env does not answer on Alchemy). Server-side only.
+- [ ] At the mainnet swap, change Production's `RPC_URL` to
+      `https://robinhood-mainnet.g.alchemy.com/v2/<key>` in the same step as
+      the contract and chain id — a testnet RPC with a mainnet chain id reads
+      as "READING THE CHAIN…" forever.
+- [x] `NEXT_PUBLIC_SITE_URL` — `https://terminl.net` on Production
+      (2026-09-03), for `og:url`, `canonical` and the WalletConnect metadata.
 
 ## Assets
 
