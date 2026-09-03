@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAccount, useSendTransaction, useSwitchChain } from "wagmi";
 import styles from "../styles/Terminl.module.css";
 import {
@@ -671,7 +672,23 @@ export default function Mint() {
           of the mint, just a second place to reach it. In particular it calls
           the same `mint`, so the tap still lands on the wallet with nothing
           awaited in front of it. */}
-      {barShown && (
+      {/*
+        * Rendered into <body>, not here.
+        *
+        * `position: fixed` is only viewport-relative while NOTHING in the
+        * ancestor chain is a containing block for it, and a great many
+        * ordinary properties are — transform, filter, backdrop-filter,
+        * perspective, contain, will-change — as is `overflow` on iOS Safari in
+        * its own way. The panel sits several wrappers deep inside a hero that
+        * has a sticky column and a shell that hides overflow-x, and on iOS the
+        * bar came out pinned to the middle of the screen, on top of the mint
+        * stats, with the real button visible below it.
+        *
+        * Chasing which ancestor did it would fix today's chain and break on
+        * the next wrapper anyone adds. A portal has no ancestor chain to
+        * chase.
+        */}
+      {barShown && typeof document !== "undefined" && createPortal(
         <div className={styles.bar}>
           <div className={styles.barFacts}>
             <b>{onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}</b>
@@ -688,7 +705,8 @@ export default function Mint() {
           ) : (
             <button type="button" className={styles.barCta} onClick={mint} disabled={busy}>{cta}</button>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

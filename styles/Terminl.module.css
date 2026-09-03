@@ -377,10 +377,24 @@
  * once the real one has scrolled out of sight, so the two are never on screen
  * arguing about the same thing.
  */
-.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
+/*
+ * The palette is declared on .shell, and this is portaled to <body> — outside
+ * it — so the two variables it needs are restated here. Without them the CTA
+ * loses its green and renders as an unstyled block.
+ *
+ * No backdrop-filter, for the reason already written down at the lightbox: what
+ * sits behind this is a ~7000px marquee on an infinite transform, and blurring
+ * it forces a full recomposite every frame. The background is 96% opaque, so
+ * the blur bought nothing but jank.
+ *
+ * The bottom padding clears the iOS home indicator; on everything else
+ * safe-area-inset-bottom is 0 and it collapses to the base padding.
+ */
+.bar { --accent: #7dff5c; --muted: #78857d;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
-  padding: 9px 14px; border-top: 1px solid #2f5c28;
-  background: rgba(6,9,7,.94); backdrop-filter: blur(6px);
+  padding: 9px 14px calc(9px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid #2f5c28; background: rgba(6,9,7,.96);
   animation: barUp .18s ease both; }
 @keyframes barUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .barFacts { min-width: 0; font: 500 10px/1.4 ui-monospace, monospace; color: var(--muted); }
