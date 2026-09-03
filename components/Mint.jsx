@@ -594,24 +594,31 @@ export default function Mint() {
       </div>
       <Progress drop={progress} />
 
-      {!account ? (
-        <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
-      ) : wrongChain ? (
-        <button type="button" className={styles.cta} onClick={switchChain}>
-          SWITCH TO {CHAIN.name.toUpperCase()}
-        </button>
-      ) : cap && active.claimed >= cap ? (
-        <div className={styles.mintClosed}>YOU&rsquo;VE MINTED YOUR {String(cap)}</div>
-      ) : (
-        <div ref={setCtaNode}>
-          <div className={styles.qty}>
-            <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
-            <b>{quantity}</b>
-            <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
-          </div>
-          <button type="button" className={styles.cta} onClick={mint} disabled={busy}>{cta}</button>
-        </div>
-      )}
+      {/* The observer watches this WHOLE block, not just the mint branch. What
+          it is really asking is "can the visitor act from here?", and for
+          someone who has not connected the answer is the CONNECT button —
+          which is exactly the person the bar is for. Watching only the mint
+          branch left them with no bar at all. */}
+      <div ref={setCtaNode}>
+        {!account ? (
+          <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
+        ) : wrongChain ? (
+          <button type="button" className={styles.cta} onClick={switchChain}>
+            SWITCH TO {CHAIN.name.toUpperCase()}
+          </button>
+        ) : cap && active.claimed >= cap ? (
+          <div className={styles.mintClosed}>YOU&rsquo;VE MINTED YOUR {String(cap)}</div>
+        ) : (
+          <>
+            <div className={styles.qty}>
+              <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
+              <b>{quantity}</b>
+              <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
+            </div>
+            <button type="button" className={styles.cta} onClick={mint} disabled={busy}>{cta}</button>
+          </>
+        )}
+      </div>
 
       {/* The request is with the wallet, which on a phone is another app that
           may not have come forward on its own. A link the user presses is the

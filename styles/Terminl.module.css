@@ -51,7 +51,22 @@
   border: 1px solid #2c382f; background: #050706; overflow: hidden;
   box-shadow: 0 0 120px rgba(125,255,92,.09), 0 30px 80px rgba(0,0,0,.7); }
 .stage img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.stageFade { animation: fadein .5s ease both; }
+/*
+ * No `both`. A backwards fill holds the FROM state — opacity 0 — for as long as
+ * the animation has not started, so the art is invisible until a decoration
+ * decides otherwise. With no fill the element keeps its own opacity until the
+ * animation actually runs, which is the failure direction to prefer: the art
+ * appears without a fade rather than not appearing.
+ *
+ * It does NOT fix the hidden-tab case, which is worth writing down because it
+ * looks like a bug and is not. Chrome starts the animation but does not advance
+ * its timeline while a tab is hidden, so the image sits at keyframe 0 — opacity
+ * 0 — with `playState: running` and `currentTime: 0`, whatever the fill mode
+ * is. The image is loaded and 600x600 the whole time. It fades in when the tab
+ * is looked at. A screenshot of a hidden tab therefore shows a black rectangle
+ * and means nothing.
+ */
+.stageFade { animation: fadein .5s ease; }
 @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 .sweep { position: absolute; left: 0; right: 0; height: 30%; pointer-events: none;
   background: linear-gradient(180deg, transparent, rgba(125,255,92,.07), transparent); animation: sweep 5.2s linear infinite; }
