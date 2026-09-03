@@ -10,10 +10,13 @@ import { CHAIN } from "../lib/mint";
  * 9px grey, inside a branch that only renders after the contract is deployed.
  *
  * The mark is Robinhood's, used nominatively to identify the network the drop
- * deploys to. It ships as their square lime tile, uncropped — the onError
- * fallback below keeps the badge readable as text if the asset ever goes
- * missing rather than leaving a broken image beside the mint button. */
-const LOGO = "/robinhood-chain.png";
+ * deploys to. Their tile is lime; here it is murdered out — a near-black tile
+ * a shade above the panel so the square still reads, with the feather in a
+ * muted grey so it stays visible. `robinhood-chain.png` is the original, kept
+ * beside the dark cut. The onError fallback below keeps the badge readable as
+ * text if the asset ever goes missing rather than leaving a broken image
+ * beside the mint button. */
+const LOGO = "/robinhood-chain-dark.png";
 
 export default function ChainBadge() {
   const [logoOk, setLogoOk] = useState(true);
