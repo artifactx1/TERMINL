@@ -73,15 +73,15 @@ export const LORE = {
   },
 
   "short-squeeze-simone": {
-    epithet: "was right, briefly, and then extremely not",
+    epithet: "does not predict the squeeze. arranges it.",
     spec: {
-      ENTRY: "short, with a thesis, a good one",
-      EXIT: "involuntarily, at 3:40am",
-      DAMAGE: "the account and the thesis",
-      COPE: "“the market stayed irrational longer, etc”",
+      ENTRY: "long, where everyone else was short",
+      EXIT: "into their forced buying",
+      DAMAGE: "theirs, and it was substantial",
+      COPE: "“I didn't liquidate anyone, the exchange did”",
     },
     story:
-      "Simone wrote nine pages on why it was going to zero and every page was correct. It went up 340% in four hours instead, because being correct and being early are the same thing with different funerals. Got liquidated at the exact high. It went to zero eleven weeks later, precisely as documented. She has the nine pages framed. She does not have the money.",
+      "Simone doesn't have opinions about the asset. She has the funding rate and the open interest, and when funding goes deeply negative she knows exactly how many people are short and roughly where each of them stops being short. Then she buys. Not cleverly — just steadily, and past the point where it stops being comfortable, until the first liquidation fires and the engine starts doing her buying for her. Sold the entire position into the cascade while the group chat was still posting about a “breakout.” Has never once been asked what she thinks the fair value is, which is fortunate, because she has no idea.",
   },
 
   "bridge-burn-bernie": {
