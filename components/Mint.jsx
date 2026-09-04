@@ -312,27 +312,59 @@ export default function Mint() {
    * the wallet.
    */
   const canPreflight = !!(active && account && !(isConnected && chainId !== CHAIN.id));
-  const preflightKey = canPreflight
-    ? `${active.kind}:${active.stageIndex ?? "public"}:${account}:${quantity}:${String(active.price)}`
+
+  /* Everything the verdict depends on EXCEPT the quantity — the wallet, the
+   * live phase and its price. Quantity is handled separately below, because a
+   * verdict at one quantity says something about the others. */
+  const shapeKey = canPreflight
+    ? `${active.kind}:${active.stageIndex ?? "public"}:${account}:${String(active.price)}`
     : null;
 
+  /* { shape, okUpTo } — the largest quantity known to pass for this shape.
+   *
+   * Every quantity-dependent check the contract makes is monotonic: the
+   * per-wallet cap, the stage watermark, the lazy-minted ceiling, and the exact
+   * msg.value all move one way with quantity. So a pass at 3 is a pass at 1,
+   * and stepping DOWN never needs another call. Only stepping up does. */
   const preflight = useRef(null);
+  const verdictCovers = (q) =>
+    preflight.current?.shape === shapeKey && preflight.current.okUpTo >= q;
+
   useEffect(() => {
-    preflight.current = null;
-    if (!preflightKey) return undefined;
+    if (!shapeKey) { preflight.current = null; return undefined; }
+
+    const held = preflight.current;
+    /* Already answered for this quantity — no call, no wait, no flicker. */
+    if (held?.shape === shapeKey && held.okUpTo >= quantity) return undefined;
+
+    /* A new shape has no verdict at all, and the commonest flow of the whole
+     * page is: arrive, tap MINT. Debouncing THAT guarantees the first tap is
+     * the slow one, so it runs immediately; only the stepper is debounced,
+     * and briefly, since it is the only thing that fires in a burst. */
+    const fresh = !held || held.shape !== shapeKey;
+    if (fresh) preflight.current = { shape: shapeKey, okUpTo: 0 };
+
     let on = true;
-    /* Debounced: the stepper fires this on every press, and only the number
-     * they settle on is worth a call. */
+    const q = quantity;
     const id = setTimeout(() => {
       simulateClaim(buildTx()).then(
-        () => { if (on) preflight.current = { key: preflightKey, ok: true }; },
-        () => { if (on) preflight.current = { key: preflightKey, ok: false }; },
+        () => {
+          if (!on || preflight.current?.shape !== shapeKey) return;
+          preflight.current.okUpTo = Math.max(preflight.current.okUpTo, q);
+        },
+        () => {
+          /* Deliberately not recorded as a failure. A revert at q says nothing
+           * about q-1, and the tap's own simulation reports the reason
+           * accurately — better to take the slow path than to cache a "no"
+           * that might be wrong for the number they settle on. */
+        },
       );
-    }, 400);
+    }, fresh ? 0 : 200);
+
     return () => { on = false; clearTimeout(id); };
-    // buildTx is derived from exactly the values preflightKey is built from.
+    // buildTx is derived from exactly the values these two are built from.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preflightKey]);
+  }, [shapeKey, quantity]);
 
   /* Everything after the wallet has taken the request. Split out so the tap
    * handler itself can stay synchronous up to the send. */
@@ -425,7 +457,7 @@ export default function Mint() {
     const id = (run.current += 1);
     pending.current = { id, before: null, kind: active?.kind, stageIndex: active?.stageIndex ?? null };
 
-    if (preflight.current?.key === preflightKey && preflight.current.ok) {
+    if (verdictCovers(quantity)) {
       setPhase("wallet");
       follow(send(tx), tx, id);
       /* After the send, never before it — this is a network read, and in front

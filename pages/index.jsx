@@ -115,6 +115,24 @@ function Site({ data }) {
         <meta name="theme-color" content="#060907" />
         {SITE_URL && <link rel="canonical" href={SITE_URL} />}
 
+        {/*
+          * Warm the hosts the wallet picker will need, before anyone taps it.
+          *
+          * Opening the picker is the first time the page talks to Reown at
+          * all, so that tap pays for DNS, TLS and the wallet list on a
+          * connection it has never used — a few hundred milliseconds on
+          * cellular, and the reason CONNECT feels quick on one visit and
+          * sluggish on the next. preconnect gets the handshakes out of the way
+          * during the page load, where nobody is waiting on them.
+          *
+          * The art bucket is here for the same reason: the hero is the first
+          * paint that matters and it is on another origin.
+          */}
+        <link rel="preconnect" href="https://api.web3modal.org" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://pulse.walletconnect.org" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://storage.googleapis.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://relay.walletconnect.org" />
+
         {/* Open Graph — Discord, Telegram, Slack, iMessage, LinkedIn, Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="TERMINL" />
