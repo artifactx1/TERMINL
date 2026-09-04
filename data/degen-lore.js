@@ -13,31 +13,31 @@
  */
 export const LORE = {
   "liquidation-vulture": {
-    epithet: "does not trade. waits.",
+    epithet: "perched on the thing that killed you",
     spec: {
-      ENTRY: "wherever your stop was",
-      EXIT: "wherever your stop was, plus 4%",
-      DAMAGE: "none, to him",
-      COPE: "not needed",
+      ENTRY: "the wick, always the wick",
+      EXIT: "twenty minutes later",
+      DAMAGE: "none, structurally",
+      COPE: "does not require one",
     },
     story:
-      "Doesn't have a thesis. Has a heatmap. Sits on the liquidation clusters like they're carrion and buys the exact wick that takes out four hundred 50x longs, then closes twenty minutes later and goes to bed. Has never posted a chart. Has never said gm. Someone asked him what he thought about the fundamentals and he said “leverage is the fundamental” and left the call.",
+      "Not a person. Half bird, half hardware, entirely patient. Stands on a cracked terminal that is still displaying the red candle that emptied four hundred accounts, and has stood there for some time, because the screen is warm and the position was profitable. Does not trade so much as wait for other people to stop being able to. Has never posted a chart. Has never said gm. Cannot, as far as anyone knows, say anything.",
   },
 
   "margin-call-max": {
-    epithet: "125x or nothing, and it is usually nothing",
+    epithet: "125x or nothing, and it keeps being nothing",
     spec: {
-      ENTRY: "125x long, no stop",
+      ENTRY: "125x, no stop",
       EXIT: "0.4% later",
       DAMAGE: "the whole account, eleven times",
       COPE: "“size was the problem, not direction”",
     },
     story:
-      "Max is right about the trade roughly half the time, which he will tell you, at length, because being right and being solvent turn out to be unrelated. Blew the account on a move so small it doesn't render on the daily. Refunded, doubled the leverage, explained that the mistake last time was being underexposed. Has a spreadsheet. The spreadsheet has one column and it says NO STOPS in row one.",
+      "The shirt says REKT and the shorts say -99% and both were purchased after the fact, which tells you where his priorities landed. Max is right about direction maybe half the time — he will tell you this, at length — and it has never once mattered, because being right and being solvent turn out to be unrelated disciplines. Blew the account on a move so small it does not render on the daily. The phone has been cracked since March. He has not fixed it. He is not sure the phone is the problem.",
   },
 
   "buy-high-brian": {
-    epithet: "the top has a face and it is this one",
+    epithet: "the top has a face and this is it",
     spec: {
       ENTRY: "the exact top",
       EXIT: "“I'm long-term”",
@@ -45,35 +45,35 @@ export const LORE = {
       COPE: "averaging down, which is working",
     },
     story:
-      "Brian is a genuinely useful market indicator and everyone in the group chat knows it except Brian. When he asks how to bridge, that's the top. When he asks which wallet, that's the top. He bought his first bag twenty minutes before an eleven-month drawdown, called it a dip, bought more, called that a dip too. Four separate funds now watch him. He thinks they're friends.",
+      "Wearing the words BUY HIGH across his chest with no detectable irony, drinking something called REKT, sunglasses on indoors. Brian is a genuinely reliable market signal and everyone in the group chat knows it except Brian. When he asks how to bridge, that is the top. When he asks which wallet, that is the top. He has both WAGMI and NGMI stitched to the same jacket, which is either profound or an accident. Two funds now watch his wallet. He thinks they are friends.",
   },
 
   "mev-mia": {
-    epithet: "was in your transaction before you were",
+    epithet: "stood between the two bots. was lunch.",
     spec: {
-      ENTRY: "one block ahead",
-      EXIT: "one block behind",
-      DAMAGE: "yours",
-      COPE: "“that's just latency, anon”",
+      ENTRY: "12% slippage, in a hurry",
+      EXIT: "whatever was left",
+      DAMAGE: "every trade, a little",
+      COPE: "“the receipt is nine feet long”",
     },
     story:
-      "Set your slippage to 12% because you were in a rush, and Mia noticed, and now the difference lives in a wallet you'll never identify. Runs three boxes in a datacentre closer to the sequencer than you will ever be. Calls it “providing execution.” Genuinely does not understand why people are upset — the slippage tolerance is a number YOU typed, ser. She's not wrong, which is the annoying part.",
+      "The shirt says MEV'D and the receipt in her hand goes to the floor, and every line on it is a transaction that failed, reverted, or filled somewhere she did not agree to. She is standing between a board that says MEV BOT and a board that says SANDWICH BOT and has not yet worked out that this is not a coincidence, it is a description. Set the slippage high because the mint was moving fast. It was moving fast because of the bots. The bots were fast because of the slippage.",
   },
 
   "early-mint-maya": {
-    epithet: "minted it at block zero and every block since",
+    epithet: "in at block zero, out before you found the link",
     spec: {
-      ENTRY: "block 0",
-      EXIT: "never, structurally",
-      DAMAGE: "unclear, wallet has 1,900 NFTs",
-      COPE: "“one of them hits”",
+      ENTRY: "block 0, every time",
+      EXIT: "day two, into your bid",
+      DAMAGE: "yours",
+      COPE: "“I just like the art”",
     },
     story:
-      "Maya has minted every free mint since the concept existed. Not selectively. Every one. Her wallet takes eleven seconds to load and looks like a landfill with a floor price. Somewhere in there is a piece worth more than her car, and she cannot find it, and she has stopped looking because the search itself costs gas. Mints in her sleep via a script. The script is better at this than she is.",
+      "The pass in her hand is still glowing, which means it has not been claimed yet, which means she has one and you do not. OG on the shirt, and unlike most people wearing that word she has the wallet history to support it. Mints at block zero, holds through exactly one leg of the pump, and is gone by the time the floor sweeps start — the bag is full of coins from projects whose Discords she left months ago. Says she is in it for the art. Owns the art for around thirty hours at a time.",
   },
 
   "short-squeeze-simone": {
-    epithet: "does not predict the squeeze. arranges it.",
+    epithet: "does not predict the squeeze. sets it.",
     spec: {
       ENTRY: "long, where everyone else was short",
       EXIT: "into their forced buying",
@@ -81,11 +81,11 @@ export const LORE = {
       COPE: "“I didn't liquidate anyone, the exchange did”",
     },
     story:
-      "Simone doesn't have opinions about the asset. She has the funding rate and the open interest, and when funding goes deeply negative she knows exactly how many people are short and roughly where each of them stops being short. Then she buys. Not cleverly — just steadily, and past the point where it stops being comfortable, until the first liquidation fires and the engine starts doing her buying for her. Sold the entire position into the cascade while the group chat was still posting about a “breakout.” Has never once been asked what she thinks the fair value is, which is fortunate, because she has no idea.",
+      "Carries an actual bear trap, which is not subtle, and has never needed to be. Simone has no opinion about the asset. She has the funding rate and the open interest, so she knows how many people are short and roughly where each of them stops being short, and then she simply buys — not cleverly, just steadily and past the comfortable point, until the first liquidation fires and the engine starts doing her buying for her. That green candle on her phone is not a prediction. It is a receipt.",
   },
 
   "bridge-burn-bernie": {
-    epithet: "chose the bridge with the best APY",
+    epithet: "fixin this bridge",
     spec: {
       ENTRY: "a bridge, 4:15pm",
       EXIT: "the bridge, 4:20pm, without him",
@@ -93,7 +93,7 @@ export const LORE = {
       COPE: "“they said a snapshot is coming”",
     },
     story:
-      "Bernie moved size across a bridge he'd heard of that day because the yield on the other side was, and this is a direct quote, “stupid.” It was stupid. The bridge was drained during his transaction — not after, during — so he has the rare distinction of watching the TVL go to zero with his own funds in the numerator. Is in the Discord. Has been in the Discord for a while now. There's a form.",
+      "Bernie is standing in the middle of five burning bridges holding a wrench, and the shirt says FIXIN THIS BRIDGE, and you have to admire a man who brought the wrong tool but brought it with conviction. Moved size across a chain he had heard of that morning because the yield on the other side was, and this is a direct quote, “stupid.” It was stupid. He now has funds on Ethereum, Polygon, Arbitrum, Avalanche and Solana, and access to a bucket. He is in the Discord. There is a form.",
   },
 
   "stablecoin-stella": {
@@ -105,19 +105,19 @@ export const LORE = {
       COPE: "checks the peg 40x a day now",
     },
     story:
-      "Stella did everything right. She de-risked. She got out of the volatile stuff and into the sensible stuff and slept properly for the first time in a year. Then the sensible stuff went to eleven cents over a weekend while she was at a wedding. Now she keeps a chart of a dollar open on a second monitor. It says one dollar. It has said one dollar for months. She does not trust it and she is arguably correct not to.",
+      "The coin in her hand is melting and the phone says zero and she is dressed for weather, which is the most sensible thing in this entire collection. Stella did everything right. She de-risked. She got out of the volatile stuff and into the sensible stuff and slept properly for the first time in a year, and then the sensible stuff went to eleven cents over a weekend while she was at a wedding. She keeps a chart of a dollar open on a second monitor. It says one dollar. She does not believe it and she is arguably correct not to.",
   },
 
   "presale-victor": {
-    epithet: "got the allocation. that was the problem.",
+    epithet: "got the allocation. used it immediately.",
     spec: {
       ENTRY: "seed round, 92% discount",
-      EXIT: "cliff, then twenty-four months",
-      DAMAGE: "-70% before he can touch it",
-      COPE: "“we're building through the bear”",
+      EXIT: "the first four minutes of trading",
+      DAMAGE: "the chart, permanently",
+      COPE: "“we're still building”",
     },
     story:
-      "Victor got in at a valuation you would not believe and he mentions it the way other people mention their children. Then TGE came, and the price found its level, and the level was below his entry despite the 92% discount, which he did not know was mathematically available. He is now vesting into a falling market for two years. He still says he's early. He is technically correct and completely trapped.",
+      "Cream suit, cigar, briefcase, and the phone in his hand shows the launch candle and then what he did to it. Victor is not in the trenches with you, Victor is the reason the trenches exist. Got in at a valuation he mentions the way other men mention their children, waved at the community, tweeted “LFG,” and had the entire allocation on the market before the first liquidity chart had finished rendering. Still in the group chat. Still calls everyone anon. Nobody has the heart, or the wallet clustering, to bring it up.",
   },
 
   "rug-baron-rex": {
@@ -125,71 +125,71 @@ export const LORE = {
     spec: {
       ENTRY: "the deployer wallet",
       EXIT: "the liquidity",
-      DAMAGE: "yours, several times",
+      DAMAGE: "yours, eleven times over",
       COPE: "“the team stepped back to reassess”",
     },
     story:
-      "Rex has launched eleven projects and every single one had a roadmap with four quarters on it and none of them reached Q2. Different name each time, same Discord layout, same anime PFP with a slightly different hat. He isn't hiding especially hard — the wallets are one hop apart and anyone could check — but nobody checks, and that is the entire business model. Deeply insulted by the word rug. Prefers “wound down.”",
+      "Wearing a shirt that says DEV while physically dragging a rug out from under a pile of coins, with a phone in the other hand showing LP: 0 and -100%, and somehow this is still less obvious than the actual on-chain trail. Eleven projects, eleven roadmaps with four quarters on them, none of which reached Q2. Same Discord layout each time, same anime PFP with a slightly different hat. The wallets are one hop apart and anyone could check. Nobody checks. That is the whole business model. Deeply insulted by the word rug — prefers “wound down.”",
   },
 
   "cold-storage-chloe": {
-    epithet: "secured it perfectly. from herself.",
+    epithet: "unbothered. seed phrase memorised. moisturised.",
     spec: {
       ENTRY: "2017",
-      EXIT: "pending, indefinitely",
-      DAMAGE: "unknown, and that's the issue",
-      COPE: "“it's safe, that's the point”",
+      EXIT: "has not, and will not",
+      DAMAGE: "zero, across three cycles",
+      COPE: "does not need one, which is worse",
     },
     story:
-      "Chloe did the responsible thing and put the seed phrase somewhere nobody would ever find it, and she was completely successful. Two of the twelve words are correct and confidently placed and the rest is vibes. Has dug up a garden. Has bought the same model of drive on eBay twice. Refuses to say the number out loud. When people talk about self-custody she nods slowly, like a man who has seen combat.",
+      "Everyone else in this collection is holding a broken phone and Chloe is holding a safe. Bought early, moved it all off the exchange the same week, and then simply went outside for six years while three exchanges she had never used collapsed on people she knew. Was not on the bridge. Was not in the presale. Was not in the Discord at 4am. When the group chat is on fire she posts a single thumbs up and says nothing else, and it is genuinely the most devastating thing anyone does in there.",
   },
 
   "diamond-hands-pepe": {
-    epithet: "has not sold. cannot sell. same thing now.",
+    epithet: "held. through all of it. was right.",
     spec: {
       ENTRY: "the top, with conviction",
       EXIT: "—",
-      DAMAGE: "-99.4%",
-      COPE: "“this is just how the cycle works”",
+      DAMAGE: "-94%, temporarily",
+      COPE: "never needed one, as it turns out",
     },
     story:
-      "Held through -40%, which was brave. Held through -80%, which was stubborn. Held through -99%, which is now a personality. The remaining position is worth less than the gas required to close it, so his diamond hands are load-bearing in a way he prefers not to examine. Posts the same laser-eye meme every anniversary. Everyone likes it. Nobody replies.",
+      "Held through -40%, which was brave. Held through -80%, which was stubborn. Held through -94%, which by then was less a strategy than a medical condition — and then the thing came back, and the fist is still diamond, and the candle on the phone is green. Has not sold any of it and shows no sign of starting. Posts the same laser-eye meme every anniversary. Everyone used to laugh at it. Nobody has laughed at it for about a year.",
   },
 
   "mev-marlon": {
-    epithet: "wanted to be the sandwich. is the filling.",
+    epithet: "caught your transaction with a net",
     spec: {
-      ENTRY: "a searcher bot, self-written",
-      EXIT: "backrun by a better one",
-      DAMAGE: "gas, mostly, but relentlessly",
-      COPE: "“v2 is nearly ready”",
+      ENTRY: "one block ahead of you",
+      EXIT: "one block behind you",
+      DAMAGE: "yours, invisibly",
+      COPE: "“that's just latency, anon”",
     },
     story:
-      "Marlon read the same papers Mia did and built the same bot with none of the infrastructure, so his transactions arrive exactly late enough to lose the auction and pay for the privilege. Has been extracted from by three different bots in a single block, which he screenshotted, because on some level he respects it. Refers to himself as a searcher. Has found, to date, nothing.",
+      "Running down the mempool with a butterfly net, taking transactions out of the bus before they reach the block, and pleased about it in a way that is difficult to be around. Calls himself a searcher. Calls the whole thing “providing execution.” Genuinely does not understand why anyone is upset — the slippage tolerance is a number YOU typed, ser — and the maddening part is that he is not exactly wrong. Has a box in a datacentre closer to the sequencer than you will ever be. Has never met any of the people he does this to, which he considers a courtesy.",
   },
 
   "airdrop-ava": {
-    epithet: "144 wallets. one very tired person.",
+    epithet: "farmed it for eight months. it landed.",
     spec: {
       ENTRY: "every testnet, twice",
-      EXIT: "sybil filter",
+      EXIT: "TGE, +1 parachute",
       DAMAGE: "eight months and the gas",
-      COPE: "“the appeal form is open”",
+      COPE: "“I earned this, actually”",
     },
     story:
-      "Ava farmed a protocol for eight months across 144 wallets with a spreadsheet that had conditional formatting and genuine beauty to it. Bridged in patterns. Varied the timing. Did everything the guides said. Then the snapshot came and every single wallet got flagged for behaving identically, because 144 wallets doing carefully varied things at 2am on the same laptop is itself a pattern. Received nothing. Is currently farming a different protocol.",
+      "Descending under a WAGMI canopy in a storm of coins and receipts, which is roughly what eight months of unpaid QA looks like when it finally pays. Ava bridged in patterns. She varied the timing. She used the protocol like a person who genuinely needed it, for the better part of a year, across a number of wallets she will not discuss. The sybil filter went through everyone she knew and somehow did not catch her, and she has never once explained why. Is already farming the next one. Was farming it before this one landed.",
   },
 
   "oracle-olivia": {
-    epithet: "the price was whatever she needed it to be",
+    epithet: "sees everything. gets it wrong.",
     spec: {
-      ENTRY: "a thin pool, a flash loan",
-      EXIT: "same block",
-      DAMAGE: "the protocol's, entirely",
-      COPE: "“the code permitted it”",
+      ENTRY: "whenever the cards said",
+      EXIT: "whenever the cards said",
+      DAMAGE: "followers, mostly",
+      COPE: "“the timeline shifted”",
     },
     story:
-      "Olivia noticed a lending market pricing its collateral off a pool with about forty thousand dollars in it, borrowed nine figures for eight seconds, moved the price, borrowed against the price, and gave the nine figures back — all inside one block, before anybody's alert had fired. Insists it was not a hack because nothing was broken and every function did exactly what it said. Several lawyers are still arguing. She has not spent it.",
+      "Crystal ball, robes, and a spread of cards including THE MOON, THE DIP and THE RUG, which between them do cover most outcomes. Olivia calls the market with total confidence and a hit rate indistinguishable from a coin, and her patches read BUY HIGH and SELL LOW, which she wears with no visible discomfort at all. Eleven thousand people follow her. They have all done extremely badly. When a call lands it is destiny, and when it does not the timeline shifted, and either way there is another one at nine tomorrow.",
   },
 };
 
