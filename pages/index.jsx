@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
+import { loreFor } from "../data/degen-lore";
 import ChainBadge from "../components/ChainBadge";
 import WalletButton from "../components/WalletButton";
 import { CHAIN, CONTRACT } from "../lib/mint";
@@ -23,6 +24,9 @@ const img = (slug) => `${ART_BASE}/${slug}.webp`;
 
 /* Portraits sit beside the art, wherever that is. */
 const DEGEN_BASE = ART_BASE.replace(/\/art$/, "/degens");
+
+/* Authored, not generated — see data/degen-lore.js. */
+const degenPortrait = (slug) => `${DEGEN_BASE}/${slug}.webp`;
 
 /*
  * Sharing metadata.
@@ -325,9 +329,13 @@ function Site({ data }) {
  * PNG and losing the page. This keeps them here, and keeps the piece next to
  * the traits that describe it.
  */
-function Lightbox({ item, at, total, onClose, onStep, neighbours }) {
-  const closeButton = useRef(null);
-
+/**
+ * Escape closes, arrows step, the page behind stops scrolling, and focus lands
+ * somewhere useful. Shared by both overlays so they cannot drift apart — a
+ * modal that traps the scroll and one that does not is a bug waiting for
+ * whichever one gets edited second.
+ */
+function useOverlay({ onClose, onStep, focusRef }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") onClose();
@@ -335,15 +343,19 @@ function Lightbox({ item, at, total, onClose, onStep, neighbours }) {
       else if (e.key === "ArrowLeft") onStep(-1);
     };
     document.addEventListener("keydown", onKey);
-    // The page behind a full-screen overlay must not scroll with it.
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    closeButton.current?.focus();
+    focusRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previous;
     };
-  }, [onClose, onStep]);
+  }, [onClose, onStep, focusRef]);
+}
+
+function Lightbox({ item, at, total, onClose, onStep, neighbours }) {
+  const closeButton = useRef(null);
+  useOverlay({ onClose, onStep, focusRef: closeButton });
 
   return (
     <div
@@ -464,6 +476,14 @@ function Story({ data }) {
 function Degens({ data }) {
   const rest = data.traitTotals.Companion - data.degens.length;
 
+  /* Which degen is open, by index, so the arrows can walk the cast. */
+  const [meeting, setMeeting] = useState(null);
+  const close = useCallback(() => setMeeting(null), []);
+  const step = useCallback(
+    (by) => setMeeting((i) => (i === null ? i : (i + by + data.degens.length) % data.degens.length)),
+    [data.degens.length],
+  );
+
   return (
     <section className={styles.section} id="degens">
       <div className={styles.sectionHead}>
@@ -475,15 +495,92 @@ function Degens({ data }) {
         </p>
       </div>
       <div className={styles.cast}>
-        {data.degens.map((d) => (
-          <figure key={d.slug} className={styles.degen}>
-            <Image src={`${DEGEN_BASE}/${d.slug}.webp`} alt={d.name} width={340} height={560} quality={80} />
+        {data.degens.map((d, i) => (
+          <button key={d.slug} type="button" className={styles.degen} onClick={() => setMeeting(i)}>
+            <Image src={degenPortrait(d.slug)} alt={d.name} width={340} height={560} quality={80} />
             <b>{d.name}</b>
-          </figure>
+          </button>
         ))}
         <div className={styles.castRest}>+ {rest} more<br />you meet by minting</div>
       </div>
+
+      {meeting !== null && (
+        <DegenCard
+          degen={data.degens[meeting]}
+          at={meeting}
+          total={data.degens.length}
+          onClose={close}
+          onStep={step}
+        />
+      )}
     </section>
+  );
+}
+
+/**
+ * A degen, at length.
+ *
+ * The same modal a piece opens in, because they are the same kind of thing to
+ * look at: a portrait, some rows, and the story underneath. The rows are ENTRY
+ * / EXIT / DAMAGE / COPE rather than the machine's traits, which is the only
+ * real difference — a machine has specifications, a degen has a history.
+ */
+function DegenCard({ degen, at, total, onClose, onStep }) {
+  const closeButton = useRef(null);
+  useOverlay({ onClose, onStep, focusRef: closeButton });
+  const lore = loreFor(degen.slug);
+
+  return (
+    <div
+      className={styles.lightbox}
+      role="dialog"
+      aria-modal="true"
+      aria-label={degen.name}
+      onClick={onClose}
+    >
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events --
+        * Same as the piece lightbox: stops an inside click reaching the
+        * backdrop. Keyboard users get Escape, handled on the document. */}
+      <div className={`${styles.lightboxPanel} ${styles.degenPanel}`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.degenArt}>
+          <Image
+            key={degen.slug}
+            src={degenPortrait(degen.slug)}
+            alt={degen.name}
+            width={340}
+            height={560}
+            quality={85}
+            priority
+          />
+        </div>
+
+        <div className={styles.lightboxSide}>
+          <div className={styles.lightboxHead}>
+            <b>{degen.name.toUpperCase()}</b>
+            <span>{at + 1} / {total}</span>
+          </div>
+
+          {lore?.epithet && <p className={styles.degenEpithet}>{lore.epithet}</p>}
+
+          {lore?.spec && (
+            <dl className={styles.specs}>
+              {Object.entries(lore.spec).map(([k, v]) => <Spec key={k} k={k} v={v} />)}
+            </dl>
+          )}
+
+          {lore?.story && <p className={styles.degenStory}>{lore.story}</p>}
+
+          <p className={styles.lightboxHint}>← → TO BROWSE · ESC TO CLOSE</p>
+          <div className={styles.lightboxNav}>
+            <button type="button" onClick={() => onStep(-1)} aria-label="Previous degen">←</button>
+            <button type="button" onClick={() => onStep(1)} aria-label="Next degen">→</button>
+            <button type="button" ref={closeButton} className={styles.lightboxClose} onClick={onClose}>
+              CLOSE ✕
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
