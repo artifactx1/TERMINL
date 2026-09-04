@@ -637,7 +637,8 @@ export default function Mint() {
   useEffect(() => {
     if (!barShown) return undefined;
     const previous = document.body.style.paddingBottom;
-    document.body.style.paddingBottom = "62px";
+    /* Two rows now — facts, then the quantity and the button. */
+    document.body.style.paddingBottom = "88px";
     return () => { document.body.style.paddingBottom = previous; };
   }, [barShown]);
 
@@ -809,6 +810,20 @@ export default function Mint() {
               <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
               <b>{quantity}</b>
               <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
+              {/* Stepping to a per-wallet cap of fifty one press at a time is
+                  not a thing anyone should be asked to do. Hidden when the cap
+                  is one, where it would be a button that does nothing. */}
+              {max > 1 && (
+                <button
+                  type="button"
+                  className={styles.qtyMax}
+                  onClick={() => setQuantity(max)}
+                  disabled={busy || quantity >= max}
+                  aria-label={`Mint the maximum, ${max}`}
+                >
+                  MAX {max}
+                </button>
+              )}
             </div>
             <button type="button" className={styles.cta} onClick={mint} disabled={busy}>{cta}</button>
           </>
@@ -896,20 +911,38 @@ export default function Mint() {
       {barShown && typeof document !== "undefined" && createPortal(
         <div className={styles.bar} ref={setBarNode}>
           <div className={styles.barFacts}>
-            <b>{onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}</b>
-            {active.remaining === null ? "allowlist mint" : `${String(active.remaining)} left`}
+            {onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}
+            {active.remaining === null ? " · allowlist mint" : ` · ${String(active.remaining)} left`}
             {onStage && stageEndsIn ? ` · ends in ${stageEndsIn}` : ""}
             {!onStage && endsIn ? ` · ends in ${endsIn}` : ""}
           </div>
-          {!account ? (
-            <button type="button" className={styles.barCta} onClick={connect}>CONNECT</button>
-          ) : wrongChain ? (
-            <button type="button" className={styles.barCta} onClick={switchChain}>SWITCH CHAIN</button>
-          ) : cap && active.claimed >= cap ? (
-            <button type="button" className={styles.barCta} disabled>MINTED ✓</button>
-          ) : (
-            <button type="button" className={styles.barCta} onClick={mint} disabled={busy}>{cta}</button>
-          )}
+
+          <div className={styles.barRow}>
+            {/* The bar carried a button that always minted one. Someone who
+                scrolled past the panel had to scroll back to buy two, which is
+                the opposite of what a bar following them down the page is for.
+                Only shown when there is a choice to make. */}
+            {account && !wrongChain && !(cap && active.claimed >= cap) && max > 1 && (
+              <div className={styles.barQty}>
+                <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
+                <b>{quantity}</b>
+                <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
+                <button type="button" className={styles.barMax} onClick={() => setQuantity(max)} disabled={busy || quantity >= max} aria-label={`Mint the maximum, ${max}`}>
+                  MAX
+                </button>
+              </div>
+            )}
+
+            {!account ? (
+              <button type="button" className={styles.barCta} onClick={connect}>CONNECT</button>
+            ) : wrongChain ? (
+              <button type="button" className={styles.barCta} onClick={switchChain}>SWITCH CHAIN</button>
+            ) : cap && active.claimed >= cap ? (
+              <button type="button" className={styles.barCta} disabled>MINTED ✓</button>
+            ) : (
+              <button type="button" className={styles.barCta} onClick={mint} disabled={busy}>{cta}</button>
+            )}
+          </div>
         </div>,
         document.body,
       )}
