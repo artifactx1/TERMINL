@@ -3,3 +3,24 @@ html, body { margin: 0; padding: 0; background: #070a08; }
 body { -webkit-font-smoothing: antialiased; }
 a { color: inherit; }
 ::selection { background: #8dff67; color: #061003; }
+
+/*
+ * The wallet modal's font.
+ *
+ * AppKit is told the stack through `--apkt-font-family`, but it only applies
+ * that to its REGULAR token: generateW3MOverrides sets
+ * `--apkt-fontFamily-regular` and leaves `--apkt-fontFamily-mono` as
+ * 'KHTekaMono'. Setting any custom font also stops it emitting its own
+ * @font-face rules, so KHTekaMono is never loaded and everything it styles as
+ * mono — addresses, balances — falls back to the browser's default monospace.
+ * On iOS that is Courier, beside a page that is monospace everywhere.
+ *
+ * So the mono token is set here, which AppKit never does. `!important`
+ * because AppKit appends its own `:root` block to <head> at runtime, after
+ * this stylesheet, and would otherwise win the cascade on equal specificity.
+ * Custom properties honour it.
+ */
+:root {
+  --apkt-fontFamily-regular: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  --apkt-fontFamily-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
