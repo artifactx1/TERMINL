@@ -635,12 +635,13 @@ export default function Mint() {
     };
   }, [barNode]);
   useEffect(() => {
-    if (!barShown) return undefined;
+    if (!barShown || !barNode) return undefined;
     const previous = document.body.style.paddingBottom;
-    /* Two rows now — facts, then the quantity and the button. */
-    document.body.style.paddingBottom = "88px";
+    /* Measured, not guessed: the bar is one row on a desktop and two on a
+     * phone, and a fixed number is wrong on one of them. */
+    document.body.style.paddingBottom = `${barNode.offsetHeight}px`;
     return () => { document.body.style.paddingBottom = previous; };
-  }, [barShown]);
+  }, [barShown, barNode]);
 
   /* ---- states that are not a mint button ---- */
 
@@ -910,6 +911,9 @@ export default function Mint() {
         */}
       {barShown && typeof document !== "undefined" && createPortal(
         <div className={styles.bar} ref={setBarNode}>
+          {/* An inner track so the bar's CONTENT stops at the page's width on
+              a wide monitor, while its background still runs edge to edge. */}
+          <div className={styles.barInner}>
           <div className={styles.barFacts}>
             {onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}
             {active.remaining === null ? " · allowlist mint" : ` · ${String(active.remaining)} left`}
@@ -942,6 +946,7 @@ export default function Mint() {
             ) : (
               <button type="button" className={styles.barCta} onClick={mint} disabled={busy}>{cta}</button>
             )}
+          </div>
           </div>
         </div>,
         document.body,
