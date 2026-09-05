@@ -354,22 +354,31 @@
 .degen { border: 1px solid var(--line); background: var(--panel); padding: 0;
   font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
 
-/* A degen is a portrait, not a square, so the panel gives the art a narrower
-   column than a piece gets and lets the story have the rest. */
+/*
+ * A degen is a portrait, not a square, so the panel gives the art a narrower
+ * column than a piece gets and lets the story have the rest.
+ *
+ * The art box has a FIXED height, which is the whole point. Left to itself the
+ * grid row is sized by the taller column — the text — so a degen with a long
+ * story got a larger portrait than one with a short story, and the cast came
+ * out at fifteen different sizes. Every source image is 340x560; they should
+ * all land identically, and the writing must not be able to move them.
+ */
 .degenPanel { grid-template-columns: minmax(0, 0.8fr) 380px; }
-.degenArt { display: flex; align-items: center; justify-content: center;
-  padding: 20px; background: #050706; min-width: 0; }
-.degenArt img { display: block; width: auto; height: 100%; max-height: calc(100vh - 88px);
-  max-width: 100%; object-fit: contain; }
+.degenArt { display: grid; place-items: center; padding: 20px; background: #050706;
+  min-width: 0; height: min(74vh, 620px); }
+.degenArt img { display: block; width: auto; height: 100%; max-width: 100%;
+  object-fit: contain; }
 .degenEpithet { margin: 0; padding: 0 2px; color: var(--accent);
   font-size: 10.5px; letter-spacing: .04em; line-height: 1.5; }
 .degenStory { margin: 0; padding: 0 2px; color: var(--dim);
   font-size: 11.5px; line-height: 1.85; overflow-y: auto; min-height: 0; }
 
 @media (max-width: 860px) {
-  .degenPanel { grid-template-columns: 1fr; }
-  .degenArt { max-height: 38vh; padding: 14px; }
-  .degenArt img { max-height: 34vh; }
+  /* Stacked: a fixed slice off the top for the portrait, the rest for the
+     story, and the same slice for every degen. */
+  .degenPanel { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .degenArt { height: 34vh; padding: 12px; }
 }
 
 .castRest { grid-column: span 3;
@@ -390,22 +399,31 @@
 .degen { border: 1px solid var(--line); background: var(--panel); padding: 0;
   font: inherit; color: inherit; text-align: inherit; cursor: pointer; }
 
-/* A degen is a portrait, not a square, so the panel gives the art a narrower
-   column than a piece gets and lets the story have the rest. */
+/*
+ * A degen is a portrait, not a square, so the panel gives the art a narrower
+ * column than a piece gets and lets the story have the rest.
+ *
+ * The art box has a FIXED height, which is the whole point. Left to itself the
+ * grid row is sized by the taller column — the text — so a degen with a long
+ * story got a larger portrait than one with a short story, and the cast came
+ * out at fifteen different sizes. Every source image is 340x560; they should
+ * all land identically, and the writing must not be able to move them.
+ */
 .degenPanel { grid-template-columns: minmax(0, 0.8fr) 380px; }
-.degenArt { display: flex; align-items: center; justify-content: center;
-  padding: 20px; background: #050706; min-width: 0; }
-.degenArt img { display: block; width: auto; height: 100%; max-height: calc(100vh - 88px);
-  max-width: 100%; object-fit: contain; }
+.degenArt { display: grid; place-items: center; padding: 20px; background: #050706;
+  min-width: 0; height: min(74vh, 620px); }
+.degenArt img { display: block; width: auto; height: 100%; max-width: 100%;
+  object-fit: contain; }
 .degenEpithet { margin: 0; padding: 0 2px; color: var(--accent);
   font-size: 10.5px; letter-spacing: .04em; line-height: 1.5; }
 .degenStory { margin: 0; padding: 0 2px; color: var(--dim);
   font-size: 11.5px; line-height: 1.85; overflow-y: auto; min-height: 0; }
 
 @media (max-width: 860px) {
-  .degenPanel { grid-template-columns: 1fr; }
-  .degenArt { max-height: 38vh; padding: 14px; }
-  .degenArt img { max-height: 34vh; }
+  /* Stacked: a fixed slice off the top for the portrait, the rest for the
+     story, and the same slice for every degen. */
+  .degenPanel { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .degenArt { height: 34vh; padding: 12px; }
 }
 
 .castRest { grid-column: span 3; }
