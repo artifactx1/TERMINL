@@ -15,73 +15,73 @@ export const LORE = {
   "liquidation-vulture": {
     epithet: "perched on the thing that killed you",
     spec: {
-      ENTRY: "the wick, always the wick",
+      ENTRY: "the wick",
       EXIT: "twenty minutes later",
-      DAMAGE: "none, structurally",
-      COPE: "does not require one",
+      DAMAGE: "none, ever",
+      COPE: "n/a",
     },
     story:
-      "Not a person. Half bird, half hardware, entirely patient. Stands on a cracked terminal that is still displaying the red candle that emptied four hundred accounts, and has stood there for some time, because the screen is warm and the position was profitable. Does not trade so much as wait for other people to stop being able to. Has never posted a chart. Has never said gm. Cannot, as far as anyone knows, say anything.",
+      "Nobody brought it. It was already here when the exchange launched. It stands on the terminal still showing the candle that closed four hundred accounts, because the screen is warm. Does not trade. Waits for other people to stop being able to. It has outperformed everyone else in this collection and it cannot operate a keyboard.",
   },
 
   "margin-call-max": {
-    epithet: "125x or nothing, and it keeps being nothing",
+    epithet: "125x. every time. it keeps not working.",
     spec: {
       ENTRY: "125x, no stop",
       EXIT: "0.4% later",
-      DAMAGE: "the whole account, eleven times",
+      DAMAGE: "the account, eleven times",
       COPE: "“size was the problem, not direction”",
     },
     story:
-      "The shirt says REKT and the shorts say -99% and both were purchased after the fact, which tells you where his priorities landed. Max is right about direction maybe half the time — he will tell you this, at length — and it has never once mattered, because being right and being solvent turn out to be unrelated disciplines. Blew the account on a move so small it does not render on the daily. The phone has been cracked since March. He has not fixed it. He is not sure the phone is the problem.",
+      "Bought the REKT shirt after. Bought the -99% shorts after. Has never bought a stop loss. Max calls direction correctly about half the time and has never once been solvent to find out. Liquidated on a move that does not appear on the daily. Eleven accounts, same trade. He calls this conviction.",
   },
 
   "buy-high-brian": {
-    epithet: "the top has a face and this is it",
+    epithet: "the top has a face",
     spec: {
       ENTRY: "the exact top",
       EXIT: "“I'm long-term”",
       DAMAGE: "-91%",
-      COPE: "averaging down, which is working",
+      COPE: "averaging down, going great",
     },
     story:
-      "Wearing the words BUY HIGH across his chest with no detectable irony, drinking something called REKT, sunglasses on indoors. Brian is a genuinely reliable market signal and everyone in the group chat knows it except Brian. When he asks how to bridge, that is the top. When he asks which wallet, that is the top. He has both WAGMI and NGMI stitched to the same jacket, which is either profound or an accident. Two funds now watch his wallet. He thinks they are friends.",
+      "Wears BUY HIGH across his chest. Not a joke he is in on. When Brian asks how to bridge, that is the top. When he asks which wallet, that is the top. When he says he has finally learned his lesson, that is a generational top. Two funds have alerts on his wallet. He thinks they are fans.",
   },
 
   "mev-mia": {
-    epithet: "stood between the two bots. was lunch.",
+    epithet: "stood between the two signs. did not read them.",
     spec: {
       ENTRY: "12% slippage, in a hurry",
-      EXIT: "whatever was left",
-      DAMAGE: "every trade, a little",
+      EXIT: "whatever came back",
+      DAMAGE: "every trade, quietly",
       COPE: "“the receipt is nine feet long”",
     },
     story:
-      "The shirt says MEV'D and the receipt in her hand goes to the floor, and every line on it is a transaction that failed, reverted, or filled somewhere she did not agree to. She is standing between a board that says MEV BOT and a board that says SANDWICH BOT and has not yet worked out that this is not a coincidence, it is a description. Set the slippage high because the mint was moving fast. It was moving fast because of the bots. The bots were fast because of the slippage.",
+      "Set slippage to 12% because the mint was moving fast. It was moving fast because of the bots. The bots were fast because of the 12%. The receipt reaches the floor and not one line on it did what she asked. She is standing between a sign that says MEV BOT and a sign that says SANDWICH BOT and has not put it together.",
   },
 
   "early-mint-maya": {
     epithet: "in at block zero, out before you found the link",
     spec: {
-      ENTRY: "block 0, every time",
+      ENTRY: "block 0",
       EXIT: "day two, into your bid",
       DAMAGE: "yours",
       COPE: "“I just like the art”",
     },
     story:
-      "The pass in her hand is still glowing, which means it has not been claimed yet, which means she has one and you do not. OG on the shirt, and unlike most people wearing that word she has the wallet history to support it. Mints at block zero, holds through exactly one leg of the pump, and is gone by the time the floor sweeps start — the bag is full of coins from projects whose Discords she left months ago. Says she is in it for the art. Owns the art for around thirty hours at a time.",
+      "The pass is still glowing. That means it is unclaimed. That means she has one and you do not. In at block zero, out before the floor sweeps start, gone from the Discord before the roadmap drops. Says she is in it for the art. Her record for owning art is thirty-one hours.",
   },
 
   "short-squeeze-simone": {
     epithet: "does not predict the squeeze. sets it.",
     spec: {
-      ENTRY: "long, where everyone else was short",
-      EXIT: "into their forced buying",
-      DAMAGE: "theirs, and it was substantial",
-      COPE: "“I didn't liquidate anyone, the exchange did”",
+      ENTRY: "long, where you were short",
+      EXIT: "into your forced buying",
+      DAMAGE: "yours, substantial",
+      COPE: "“I didn't liquidate you, the exchange did”",
     },
     story:
-      "Carries an actual bear trap, which is not subtle, and has never needed to be. Simone has no opinion about the asset. She has the funding rate and the open interest, so she knows how many people are short and roughly where each of them stops being short, and then she simply buys — not cleverly, just steadily and past the comfortable point, until the first liquidation fires and the engine starts doing her buying for her. That green candle on her phone is not a prediction. It is a receipt.",
+      "Carries a bear trap. Not a metaphor, she brought it with her. Has no view on the asset and does not want one. She has the funding rate, which tells her how many of you are short, and the open interest, which tells her where each of you stops being short. Then she just buys until the engine starts buying for her. The green candle on her phone is not a forecast. It is a receipt.",
   },
 
   "bridge-burn-bernie": {
@@ -93,31 +93,31 @@ export const LORE = {
       COPE: "“they said a snapshot is coming”",
     },
     story:
-      "Bernie is standing in the middle of five burning bridges holding a wrench, and the shirt says FIXIN THIS BRIDGE, and you have to admire a man who brought the wrong tool but brought it with conviction. Moved size across a chain he had heard of that morning because the yield on the other side was, and this is a direct quote, “stupid.” It was stupid. He now has funds on Ethereum, Polygon, Arbitrum, Avalanche and Solana, and access to a bucket. He is in the Discord. There is a form.",
+      "Brought a wrench to a bridge exploit. Went across because the yield on the other side was, and this is a quote, “stupid.” It was. Bernie now holds funds on Ethereum, Polygon, Arbitrum, Avalanche and Solana, and access to none of them. There is a form. He has filled it in four times. It is the same form.",
   },
 
   "stablecoin-stella": {
-    epithet: "learned what the second word was doing there",
+    epithet: "found out what the second word was doing there",
     spec: {
-      ENTRY: "$1.00, obviously",
+      ENTRY: "$1.00",
       EXIT: "$0.11",
-      DAMAGE: "the concept of a safe harbour",
-      COPE: "checks the peg 40x a day now",
+      DAMAGE: "the idea of somewhere safe",
+      COPE: "checks the peg forty times a day",
     },
     story:
-      "The coin in her hand is melting and the phone says zero and she is dressed for weather, which is the most sensible thing in this entire collection. Stella did everything right. She de-risked. She got out of the volatile stuff and into the sensible stuff and slept properly for the first time in a year, and then the sensible stuff went to eleven cents over a weekend while she was at a wedding. She keeps a chart of a dollar open on a second monitor. It says one dollar. She does not believe it and she is arguably correct not to.",
+      "De-risked. Got out of the volatile stuff, into the sensible stuff, slept properly for the first time in a year. The sensible stuff did eleven cents on a Saturday while she was at a wedding. She now keeps a chart of one dollar open on a second monitor. It says one dollar. She does not believe it.",
   },
 
   "presale-victor": {
-    epithet: "got the allocation. used it immediately.",
+    epithet: "got the allocation. used it that afternoon.",
     spec: {
-      ENTRY: "seed round, 92% discount",
-      EXIT: "the first four minutes of trading",
+      ENTRY: "seed, 92% off",
+      EXIT: "minute four",
       DAMAGE: "the chart, permanently",
       COPE: "“we're still building”",
     },
     story:
-      "Cream suit, cigar, briefcase, and the phone in his hand shows the launch candle and then what he did to it. Victor is not in the trenches with you, Victor is the reason the trenches exist. Got in at a valuation he mentions the way other men mention their children, waved at the community, tweeted “LFG,” and had the entire allocation on the market before the first liquidity chart had finished rendering. Still in the group chat. Still calls everyone anon. Nobody has the heart, or the wallet clustering, to bring it up.",
+      "You are not early. Victor was early. He waved at the community, tweeted LFG, and had the entire allocation on the market before the chart finished loading. Mentions the valuation he got in at the way other men mention their children. Still in the group chat. Still calls everyone anon.",
   },
 
   "rug-baron-rex": {
@@ -125,71 +125,71 @@ export const LORE = {
     spec: {
       ENTRY: "the deployer wallet",
       EXIT: "the liquidity",
-      DAMAGE: "yours, eleven times over",
+      DAMAGE: "yours, eleven times",
       COPE: "“the team stepped back to reassess”",
     },
     story:
-      "Wearing a shirt that says DEV while physically dragging a rug out from under a pile of coins, with a phone in the other hand showing LP: 0 and -100%, and somehow this is still less obvious than the actual on-chain trail. Eleven projects, eleven roadmaps with four quarters on them, none of which reached Q2. Same Discord layout each time, same anime PFP with a slightly different hat. The wallets are one hop apart and anyone could check. Nobody checks. That is the whole business model. Deeply insulted by the word rug — prefers “wound down.”",
+      "The shirt says DEV. He is physically dragging a rug out from under a pile of coins while it says DEV. Eleven projects, eleven roadmaps with four quarters on them, none of which reached Q2. The wallets are one hop apart. Anyone could check. Nobody checks — that is the entire product. Hates the word rug. Prefers “wound down.”",
   },
 
   "cold-storage-chloe": {
-    epithet: "unbothered. seed phrase memorised. moisturised.",
+    epithet: "did nothing. correctly. for six years.",
     spec: {
       ENTRY: "2017",
-      EXIT: "has not, and will not",
-      DAMAGE: "zero, across three cycles",
-      COPE: "does not need one, which is worse",
+      EXIT: "has not",
+      DAMAGE: "zero, three cycles running",
+      COPE: "doesn't need one, which is worse",
     },
     story:
-      "Everyone else in this collection is holding a broken phone and Chloe is holding a safe. Bought early, moved it all off the exchange the same week, and then simply went outside for six years while three exchanges she had never used collapsed on people she knew. Was not on the bridge. Was not in the presale. Was not in the Discord at 4am. When the group chat is on fire she posts a single thumbs up and says nothing else, and it is genuinely the most devastating thing anyone does in there.",
+      "Everyone else here is holding a cracked phone. Chloe is holding a safe. Bought early, took it off the exchange the same week, and then went outside for six years while three platforms she had never used collapsed on people she knew. Was not on the bridge. Was not in the presale. Was not awake at 4am. When the group chat is on fire she posts one thumbs up, and it is the most violent thing that happens in there.",
   },
 
   "diamond-hands-pepe": {
-    epithet: "held. through all of it. was right.",
+    epithet: "held. all of it. every time.",
     spec: {
-      ENTRY: "the top, with conviction",
+      ENTRY: "the top",
       EXIT: "—",
       DAMAGE: "-94%, temporarily",
-      COPE: "never needed one, as it turns out",
+      COPE: "turned out not to need one",
     },
     story:
-      "Held through -40%, which was brave. Held through -80%, which was stubborn. Held through -94%, which by then was less a strategy than a medical condition — and then the thing came back, and the fist is still diamond, and the candle on the phone is green. Has not sold any of it and shows no sign of starting. Posts the same laser-eye meme every anniversary. Everyone used to laugh at it. Nobody has laughed at it for about a year.",
+      "Minus forty was brave. Minus eighty was stubborn. Minus ninety-four stopped being a strategy and became a medical condition. Then it came back. The fist is still diamond, the candle is green, and he has sold precisely none of it. Posts the same laser-eyes meme every anniversary. Nobody has laughed at it since March.",
   },
 
   "mev-marlon": {
-    epithet: "caught your transaction with a net",
+    epithet: "caught your transaction in a net",
     spec: {
-      ENTRY: "one block ahead of you",
-      EXIT: "one block behind you",
+      ENTRY: "one block ahead",
+      EXIT: "one block behind",
       DAMAGE: "yours, invisibly",
       COPE: "“that's just latency, anon”",
     },
     story:
-      "Running down the mempool with a butterfly net, taking transactions out of the bus before they reach the block, and pleased about it in a way that is difficult to be around. Calls himself a searcher. Calls the whole thing “providing execution.” Genuinely does not understand why anyone is upset — the slippage tolerance is a number YOU typed, ser — and the maddening part is that he is not exactly wrong. Has a box in a datacentre closer to the sequencer than you will ever be. Has never met any of the people he does this to, which he considers a courtesy.",
+      "Runs down the mempool with a butterfly net and enjoys it more than is appropriate. Calls himself a searcher. Calls this providing execution. Will explain, unprompted, that the slippage tolerance is a number YOU typed, ser — and the unbearable part is that he is correct. Has never met anyone he does this to. Considers that a kindness.",
   },
 
   "airdrop-ava": {
-    epithet: "farmed it for eight months. it landed.",
+    epithet: "eight months of unpaid QA. it landed.",
     spec: {
       ENTRY: "every testnet, twice",
-      EXIT: "TGE, +1 parachute",
+      EXIT: "TGE",
       DAMAGE: "eight months and the gas",
       COPE: "“I earned this, actually”",
     },
     story:
-      "Descending under a WAGMI canopy in a storm of coins and receipts, which is roughly what eight months of unpaid QA looks like when it finally pays. Ava bridged in patterns. She varied the timing. She used the protocol like a person who genuinely needed it, for the better part of a year, across a number of wallets she will not discuss. The sybil filter went through everyone she knew and somehow did not catch her, and she has never once explained why. Is already farming the next one. Was farming it before this one landed.",
+      "Came down under a WAGMI canopy in a rain of coins, which is what a year of using a protocol nobody else could tolerate finally looks like. Bridged in patterns. Varied the timing. Used it like someone who genuinely needed it, across a number of wallets she will not discuss. The sybil filter caught everyone she knows and did not catch her. She has never explained this. She is already farming the next one.",
   },
 
   "oracle-olivia": {
-    epithet: "sees everything. gets it wrong.",
+    epithet: "sees everything. calls it wrong.",
     spec: {
       ENTRY: "whenever the cards said",
       EXIT: "whenever the cards said",
-      DAMAGE: "followers, mostly",
+      DAMAGE: "her followers'",
       COPE: "“the timeline shifted”",
     },
     story:
-      "Crystal ball, robes, and a spread of cards including THE MOON, THE DIP and THE RUG, which between them do cover most outcomes. Olivia calls the market with total confidence and a hit rate indistinguishable from a coin, and her patches read BUY HIGH and SELL LOW, which she wears with no visible discomfort at all. Eleven thousand people follow her. They have all done extremely badly. When a call lands it is destiny, and when it does not the timeline shifted, and either way there is another one at nine tomorrow.",
+      "Crystal ball, robes, and a spread that includes a card reading THE RUG. Her patches say BUY HIGH and SELL LOW and she wears them with no discomfort whatsoever. Eleven thousand people follow her calls and eleven thousand people are down bad. When she is right it was destiny. When she is wrong the timeline shifted. Either way there is another one at nine tomorrow.",
   },
 };
 
