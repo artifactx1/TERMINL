@@ -840,10 +840,17 @@ export default function Mint() {
           still here underneath when they come back, whereas opening a tab
           first adds a step iOS sometimes refuses outright. The link comes from
           the connected session, so that wallet is definitely installed. */}
-      {phase === "wallet" && walletLink && (
-        <a className={styles.mintPending} href={walletLink}>
-          OPEN WALLET TO CONFIRM ↗
-        </a>
+      {phase === "wallet" && (
+        walletLink ? (
+          <a className={styles.mintPending} href={walletLink}>
+            OPEN WALLET TO SIGN ↗
+          </a>
+        ) : (
+          /* No deep link — an injected wallet, an in-wallet browser, or a
+             session that carries no redirect. Still say what is being waited
+             on, because the CTA going quiet is not an instruction. */
+          <p className={styles.mintPending}>WAITING FOR YOU TO SIGN IN YOUR WALLET…</p>
+        )
       )}
 
       {/* A hash means "submitted", and says so, until a receipt says otherwise. */}
@@ -943,6 +950,16 @@ export default function Mint() {
               <button type="button" className={styles.barCta} onClick={switchChain}>SWITCH CHAIN</button>
             ) : cap && active.claimed >= cap ? (
               <button type="button" className={styles.barCta} disabled>MINTED ✓</button>
+            ) : phase === "wallet" ? (
+              /* The request is with the wallet. The bar used to show a greyed
+                 out button reading CONFIRM IN WALLET and nothing else, which on
+                 a phone is a dead end: the wallet is a different app, it may
+                 not have come forward, and this is where the tap came from. */
+              walletLink ? (
+                <a className={styles.barCta} href={walletLink}>OPEN WALLET TO SIGN ↗</a>
+              ) : (
+                <button type="button" className={styles.barCta} disabled>SIGN IN YOUR WALLET…</button>
+              )
             ) : (
               <button type="button" className={styles.barCta} onClick={mint} disabled={busy}>{cta}</button>
             )}
