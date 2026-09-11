@@ -12,6 +12,26 @@ platform adventure. Both have ghost duels, asynchronous friend challenges,
 shared credits, trophies, and unlockable phosphor colors. See
 [TERMINL_OS.md](TERMINL_OS.md) for rules, rewards, and verification.
 
+**New development slice: REKT RUMBLE** — two pixelated fighters, two stages,
+practice/training, and authoritative private online rooms. Existing games stay
+available. This is not the completed five-game release from the master brief.
+
+```bash
+npm run dev:arcade       # terminal 1: http://localhost:4000/os/rumble
+npm run arcade:server    # terminal 2: local multiplayer authority, port 4010
+```
+
+Choose Learn by Fighting, or create a room and send its full invitation to a
+second local browser. Two players select Ready; a third can spectate. Arrows move,
+J/K/L attack, Shift guards, E throws, R uses a full-meter super. Touch controls and
+remapping are included. Remote friends need a shared hosted authority; localhost
+links alone do not make your computer accessible over the internet.
+
+`ARCADE_LABS=1` enables the new routes. Normal builds keep the lab hidden; no
+multiplayer infrastructure is provisioned by pushing this repository. See
+[implementation status](docs/arcade/STATUS.md), [network setup](docs/arcade/MULTIPLAYER.md),
+and [art provenance](docs/arcade/ASSET-PROMPTS.md). No cash/NFT prizes or paid advantages.
+
 ## Run it
 
 ```bash

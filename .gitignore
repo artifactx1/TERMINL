@@ -27,3 +27,5 @@ yarn-error.log*
 .idea
 .vscode
 /.sheet.js
+/.arcade-data/
+/artifacts/arcade/

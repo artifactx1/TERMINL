@@ -9,6 +9,12 @@
     "start": "next start -p 4000",
     "lint": "next lint",
     "test:os": "node --test scripts/terminl-game.test.mjs scripts/moon-mission.test.mjs",
+    "dev:arcade": "ARCADE_LABS=1 next dev -p 4000",
+    "arcade:server": "node server/arcade/index.mjs",
+    "test:arcade": "node --test scripts/rumble-sim.test.mjs scripts/arcade-server.test.mjs",
+    "test:arcade:browser": "node scripts/arcade-browser.mjs",
+    "validate:arcade-assets": "node scripts/validate-arcade-assets.mjs",
+    "validate:arcade-catalog": "node scripts/validate-arcade-catalog.mjs",
     "snapshot": "node scripts/snapshot.mjs",
     "upload-art": "node scripts/upload-art.mjs",
     "og": "node scripts/og.mjs",
@@ -28,12 +34,14 @@
     "react-dom": "18.3.1",
     "sharp": "^0.35.4",
     "viem": "^2.48.4",
-    "wagmi": "^3.6.8"
+    "wagmi": "^3.6.8",
+    "ws": "8.21.3"
   },
   "devDependencies": {
     "@google-cloud/storage": "^7.22.0",
     "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.35"
+    "eslint-config-next": "14.2.35",
+    "playwright": "1.63.0"
   },
   "overrides": {
     "@wagmi/core": "3.4.7",

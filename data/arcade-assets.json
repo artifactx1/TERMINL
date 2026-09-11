@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "releaseApproved": false,
+  "decodedMemoryBudgetBytes": 33554432,
+  "runtimePolicy": "The development slice preloads both stage plates. Aggregate decoded assets and one reusable 200x180 RGBA fighter pixel surface total 13.42 MB. Each active canvas owns one 144 KB scratch surface, reused between both fighters; no per-frame canvas allocation. Display canvas backing buffers are additional viewport-dependent memory. Dispose image references and audio when leaving the game; per-match-only loading is a future optimization.",
+  "assets": [
+    {
+      "id": "max-reference-v1", "role": "character-reference-portrait", "source": "public/degens/margin-call-max.webp",
+      "provenance": "Existing project-supplied TERMINL public character portrait; visually inspected against current public lore.",
+      "rights": "Project-supplied reference. No new third-party license or ownership claim is asserted.",
+      "review": "development-only", "humanApproved": false,
+      "dimensions": { "width": 340, "height": 560 }, "decodedBudgetBytes": 761600,
+      "variants": ["canonical"], "games": ["rekt-rumble"]
+    },
+    {
+      "id": "diamond-reference-v1", "role": "character-reference-portrait", "source": "public/degens/diamond-hands-pepe.webp",
+      "provenance": "Existing project-supplied TERMINL public character portrait; visually inspected against current public lore.",
+      "rights": "Project-supplied reference. Pepe character rights require owner confirmation for commercial game release; no independent license is claimed.",
+      "review": "development-only", "humanApproved": false,
+      "dimensions": { "width": 340, "height": 560 }, "decodedBudgetBytes": 761600,
+      "variants": ["canonical"], "games": ["rekt-rumble"]
+    },
+    {
+      "id": "max-rig-v1", "role": "articulated-character-rig", "source": "lib/arcade/rumble-render.js",
+      "reference": "max-reference-v1", "character": "max",
+      "provenance": "Original code-native multi-part canvas rig authored in this repository from the published Max reference. No static portrait is animated as gameplay art.",
+      "rights": "Original code adaptation of project-supplied reference; owner review required before release.",
+      "review": "development-only", "humanApproved": false,
+      "geometryBudget": { "maxPrimitives": 400, "bounds": [-220, -230, 220, 85] }, "decodedBudgetBytes": 0,
+      "anchors": { "feet": [0,0], "hip": [0,-73], "chest": [0,-115], "head": [0,-158], "hat": [0,-190], "chain": [3,-123], "frontHand": [38,-102], "rearHand": [-25,-106], "effect": [53,-112] },
+      "clips": ["idle","walk-forward","walk-back","crouch","jump","landing","anticipation","active","recovery","guard","hit","knockdown","wake-up","victory","defeat"],
+      "variants": ["canonical", "silhouette-debug", "anchor-debug"], "games": ["rekt-rumble"]
+    },
+    {
+      "id": "diamond-rig-v1", "role": "articulated-character-rig", "source": "lib/arcade/rumble-render.js",
+      "reference": "diamond-reference-v1", "character": "diamond",
+      "provenance": "Original code-native articulated frog rig: separate limbs, jaw/head, leather panels, chain attachment and faceted ice fist. Derived from the published collection reference.",
+      "rights": "Original code adaptation of project-supplied reference; underlying character rights and visual adaptation need owner approval.",
+      "review": "development-only", "humanApproved": false,
+      "geometryBudget": { "maxPrimitives": 400, "bounds": [-220, -230, 220, 85] }, "decodedBudgetBytes": 0,
+      "anchors": { "feet": [0,0], "hip": [0,-73], "chest": [0,-115], "head": [0,-158], "hat": [0,-190], "chain": [3,-123], "frontHand": [38,-102], "rearHand": [-25,-106], "effect": [53,-112] },
+      "clips": ["idle","walk-forward","walk-back","crouch","jump","landing","anticipation","active","recovery","guard","hit","knockdown","wake-up","victory","defeat"],
+      "variants": ["canonical", "silhouette-debug", "anchor-debug"], "games": ["rekt-rumble"]
+    },
+    {
+      "id": "dead-mall-backdrop-v1", "role": "stage-background", "source": "public/arcade/dead-mall-v1.webp",
+      "provenance": "AI-generated original environment, inspected by implementation agent. Generation brief recorded in docs/arcade/ASSET-PROMPTS.md. No copyrighted game environment reference was requested.",
+      "rights": "Generated for this project; ownership, visual approval and production clearance remain subject to human review.",
+      "review": "development-only", "humanApproved": false,
+      "dimensions": { "width": 1600, "height": 900 }, "decodedBudgetBytes": 5760000,
+      "variants": ["high-webp", "code-fallback"], "games": ["rekt-rumble"]
+    },
+    {
+      "id": "laundromat-backdrop-v1", "role": "stage-background", "source": "public/arcade/laundromat-v1.webp",
+      "provenance": "AI-generated original environment, inspected by implementation agent. Generation brief recorded in docs/arcade/ASSET-PROMPTS.md. Gameplay steam lanes are a separate authored overlay.",
+      "rights": "Generated for this project; ownership, visual approval and production clearance remain subject to human review.",
+      "review": "development-only", "humanApproved": false,
+      "dimensions": { "width": 1600, "height": 900 }, "decodedBudgetBytes": 5760000,
+      "variants": ["high-webp", "code-fallback"], "games": ["rekt-rumble"]
+    },
+    {
+      "id": "rumble-stage-layers-v1", "role": "stage-foreground-and-effects", "source": "lib/arcade/rumble-render.js",
+      "provenance": "Original authored cabinet geometry, spectator rigs, spinning washers, perspective floor, steam telegraphs, hit sparks and paper-receipt finisher.",
+      "rights": "Original code-native assets; no external samples or models.",
+      "review": "development-only", "humanApproved": false,
+      "geometryBudget": { "maxPrimitives": 1800, "sharedPixelSurfaceWidth": 200, "sharedPixelSurfaceHeight": 180 }, "decodedBudgetBytes": 144000,
+      "variants": ["high", "low", "reduced-motion"], "games": ["rekt-rumble"]
+    },
+    {
+      "id": "rumble-synth-score-v1", "role": "music-ambience-and-effects", "source": "lib/arcade/rumble-audio.js",
+      "provenance": "Original Web Audio composition and synthesis. Fixed authored note sequence and deterministic generated noise; no downloaded audio or voice recordings.",
+      "rights": "Original code-authored music and effects. Human listening/mix approval pending.",
+      "review": "development-only", "humanApproved": false,
+      "geometryBudget": { "maxVoices": 40, "noiseBufferSeconds": 0.6 }, "decodedBudgetBytes": 230400,
+      "clips": ["ui","light","heavy","block","armor","throw","tech","jump","land","dash","special","super","warning","fight","win","loss"],
+      "variants": ["dead-mall-score", "laundromat-score", "separate-music-sfx", "mute"], "games": ["rekt-rumble"]
+    }
+  ]
+}
