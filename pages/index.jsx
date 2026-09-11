@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
@@ -176,10 +177,11 @@ function Site({ data }) {
             <a href="#art">ART</a>
             <a href="#degens">DEGENS</a>
             <a href="#tape">TAPE</a>
+            <Link className={styles.os} href="/os">BOOT OS ↗</Link>
             {CONTRACT ? (
-              <a className={styles.os} href={`${CHAIN.explorer}/address/${CONTRACT}`} target="_blank" rel="noreferrer">CONTRACT ↗</a>
+              <a className={`${styles.os} ${styles.contractNav}`} href={`${CHAIN.explorer}/address/${CONTRACT}`} target="_blank" rel="noreferrer">CONTRACT ↗</a>
             ) : (
-              <a className={styles.os} href="#top">MINT</a>
+              <a className={`${styles.os} ${styles.contractNav}`} href="#top">MINT</a>
             )}
             <WalletButton />
           </div>
@@ -248,6 +250,7 @@ function Site({ data }) {
 
         <section className={styles.motto}>
           <p>A celebration of art, memes<br />and degenerate behavior.</p>
+          <Link className={styles.osLaunch} href="/os">PLAY RUG RUNNER <span>Grab green. Dodge red. Bank before the rug. ↗</span></Link>
         </section>
 
         <Story data={data} />
@@ -284,17 +287,20 @@ function Site({ data }) {
 
         <section className={styles.section}>
           <div className={styles.sectionHead}>
-            <h2>There is no roadmap</h2>
+            <h2>Your terminal is awake</h2>
           </div>
           <div className={styles.plain}>
             <p>
-              No utility. No staking. No token. No game. No discord grind, no points, no
-              second collection already lined up for whoever misses this one.
+              TERMINL OS is open. Run through a meme coin meltdown, dodge red candles,
+              and bank your bag before the crowd dumps. Race a friend&rsquo;s ghost
+              through the same course and see who makes it out with more.
             </p>
             <p>
-              There might be more later. Depends how the mint goes, honestly. If that
-              changes we&rsquo;ll say so.
+              Win in-game credits, collect trophies, and give your desktop a new look.
+              Free to play, with progress saved in your browser. The money is fictional.
+              The receipts are worth keeping.
             </p>
+            <p><Link href="/os">Boot TERMINL OS ↗</Link></p>
             <p>
               What you get today: {data.supply} pieces of pixel art, every trait published,
               stored on Arweave forever, and {data.traitTotals.Companion} degens who are all

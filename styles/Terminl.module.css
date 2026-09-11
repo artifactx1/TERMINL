@@ -22,6 +22,10 @@
 .navRight a:hover { color: var(--accent); }
 .os { padding: 7px 13px; border: 1px solid #2e3b33; color: var(--ink) !important; white-space: nowrap; }
 .os:hover { border-color: var(--accent); background: rgba(125,255,92,.08); }
+.osLaunch { display: inline-flex; flex-direction: column; gap: 10px; margin-top: 26px; padding: 17px 22px; border: 1px solid #465b36; background: #111c0e; text-decoration: none; color: var(--accent); font: 12px ui-monospace, monospace; letter-spacing: .12em; }
+.osLaunch span { color: #93a887; font-size: 9px; letter-spacing: 0; }
+.osLaunch:hover { background: #1b2a14; border-color: var(--accent); }
+@media (max-width: 600px) { .navRight .contractNav { display: none; } }
 /* The wallet control shares the CONTRACT link's footprint. Connected, it
    turns green and shows the address — a fact about the visitor, in the same
    voice as the chain badge. */
