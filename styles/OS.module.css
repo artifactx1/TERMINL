@@ -311,6 +311,109 @@
 .nameField input, .shareField textarea { color: var(--ink); }
 .modal .darkButton { color: #061003; }
 .xpTrack span { background: var(--accent); }
+.libraryHeading { display: flex; align-items: center; justify-content: space-between; color: var(--dim); font: 9px monospace; letter-spacing: 1px; margin-bottom: 13px; }
+.libraryHeading small { color: var(--muted); font-size: 7px; }
+.gameShelf { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.gameShelf > button { display: flex; align-items: center; gap: 13px; border: 1px solid #293c31; background: #0c130f; color: #9aa89f; padding: 17px; text-align: left; }
+.gameShelf .selectedCartridge { border-color: var(--accent); background: #122018; color: var(--accent); box-shadow: inset 0 -3px var(--accent); }
+.cartridgeIcon { display: grid; place-items: center; width: 40px; height: 40px; background: #18281e; border: 1px solid #38533b; font: 27px monospace; flex-shrink: 0; }
+.gameShelf b { display: block; font: bold 12px monospace; }
+.gameShelf small { display: block; font: 6px monospace; letter-spacing: .4px; color: #9aa89f; margin-top: 7px; }
+.gameShelf > button > span:last-child { margin-left: auto; font: 9px monospace; opacity: .5; }
+.moonFeatureArt { position: absolute; inset: 0; }
+.moonFeatureArt canvas { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
+.moonFeatureArt::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,#080e0af5 0%,#080e0ad9 30%,#080e0a00 85%); }
+
+/* Moon Mission is a full-screen video game; the OS is its launcher. */
+.moonGame { position: fixed; inset: 0; z-index: 75; display: flex; flex-direction: column; background: #090f19; color: #edf7ee; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overscroll-behavior: none; }
+.moonHeader { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 12px 22px; min-height: 60px; background: #080e13; border-bottom: 1px solid #294037; }
+.moonHeader > div { font: bold 14px monospace; letter-spacing: 2px; text-align: center; color: #cbebba; }
+.moonHeader > div span { display: block; font: 7px monospace; letter-spacing: 1.2px; color: #7d938c; margin-top: 6px; }
+.moonHeader button { background: #101c20; border: 1px solid #30443e; color: #a7bdb1; padding: 10px 13px; font: 9px monospace; }
+.moonScene { flex: 1; min-height: 0; position: relative; overflow: hidden; isolation: isolate; }
+.moonScene canvas { display: block; width: 100%; height: 100%; touch-action: none; image-rendering: pixelated; }
+.moonHud { position: absolute; top: 22px; left: 28px; right: 28px; display: flex; gap: 35px; pointer-events: none; text-shadow: 3px 3px #071020; }
+.moonHud > div > span { display: block; font: bold 9px monospace; letter-spacing: 1px; color: #b7c9b0; }
+.moonHud b { display: block; font: bold 30px monospace; color: #ffe096; margin-top: 6px; }
+.moonHud > div:last-child { margin-left: auto; text-align: right; }
+.moonHud .moonHearts { color: #ff9490; letter-spacing: 4px; }
+.moonHearts i { color: #576273; font-style: normal; }
+.moonProgress { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #10291f; }
+.moonProgress span { display: block; height: 100%; background: #9ee884; box-shadow: 0 0 9px #9ee88488; }
+.moonIntro { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(90deg,#07102070,#07102020); padding: 25px; }
+.moonIntroPanel { background: #08121de8; padding: 35px 55px 30px; text-align: center; border: 2px solid #506a58; box-shadow: 8px 8px 0 #07101dcc, inset 0 0 50px #17382633; max-height: 100%; overflow-y: auto; }
+.moonEyebrow { color: #95ae9e; font: 8px monospace; letter-spacing: 3px; }
+.moonIntroPanel h2 { color: #edf3d6; font: 900 clamp(42px,6.2vw,86px)/.91 monospace; letter-spacing: -5px; text-shadow: 4px 4px #365b49,8px 8px #050c18; margin: 23px 0 24px; }
+.moonIntroPanel h2 em { font-style: normal; color: #a0f480; }
+.moonIntroPanel > p { font: 12px/1.7 monospace; color: #a6bbaa; }
+.moonHowto { display: flex; gap: 22px; justify-content: center; padding: 19px 0; margin-top: 12px; }
+.moonHowto > span { font: bold 13px monospace; color: #e8ebd1; }
+.moonHowto b { display: block; color: #8fa98f; font: 7px monospace; letter-spacing: .7px; margin-top: 6px; }
+.moonIntroPanel .moonInstruction { font-size: 10px; color: #c1ccaf; }
+.moonIntroPanel > button, .moonPause button { margin-top: 24px; background: #9cec78; color: #172715; border: 0; padding: 16px 23px; font: bold 11px monospace; letter-spacing: .5px; box-shadow: 0 5px #456c3b; }
+.moonIntroPanel > small { display: block; margin-top: 20px; font: 7px monospace; color: #7e9b8a; letter-spacing: .5px; }
+.moonPause, .moonComplete { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 25px; background: #080f22b8; backdrop-filter: blur(3px); }
+.moonPause > span { font: bold 14px monospace; letter-spacing: 5px; color: #9cec78; }
+.moonPause h3 { font: bold 28px/1.3 monospace; max-width: 450px; margin: 20px 0 14px; }
+.moonPause p { font: 11px monospace; color: #abc0aa; }
+.moonComplete { background: #122017b8; }
+.moonComplete > span { font: bold 13px monospace; color: #ffda88; letter-spacing: 3px; }
+.moonComplete h3 { font: bold clamp(35px,6vw,78px) monospace; color: #a7fa8a; text-shadow: 5px 5px #294335; margin: 25px 0; }
+.moonComplete p { font: 12px monospace; color: #e2edce; }
+.moonHint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 11px 17px; border: 1px solid #5b7c5a; background: #09170deb; color: #d0e9bc; font: 9px monospace; white-space: nowrap; pointer-events: none; }
+.moonControls { padding: 14px 25px max(14px,env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: center; gap: 20px; background: #080e13; border-top: 1px solid #294037; touch-action: none; }
+.moonControls > div { display: flex; gap: 10px; }
+.moonControls button { width: 62px; min-height: 51px; background: #19292b; border: 1px solid #465c50; color: #b9d4bd; box-shadow: 0 4px #10191c; font: 22px monospace; touch-action: none; user-select: none; -webkit-user-select: none; }
+.moonControls button:active { background: #45633f; transform: translateY(3px); box-shadow: none; }
+.moonControls .moonJump { width: 114px; background: #243b2b; color: #bcf098; border-color: #527f44; }
+.moonJump span { font: bold 10px monospace; margin-left: 8px; }
+.moonControls p { text-align: center; }
+.moonControls p b { display: block; font: 8px monospace; color: #acbfa8; letter-spacing: 1.3px; }
+.moonControls p span { display: block; font: 8px monospace; color: #6f8c80; margin-top: 7px; }
+@media (max-width: 740px) {
+  .gameShelf { gap: 8px; }
+  .gameShelf > button { padding: 13px 10px; gap: 8px; }
+  .gameShelf b { font-size: 9px; }
+  .gameShelf small { font-size: 5px; line-height: 1.7; }
+  .cartridgeIcon { width: 25px; height: 30px; font-size: 22px; }
+  .gameShelf > button > span:last-child { display: none; }
+  .moonHeader { min-height: 53px; padding: 10px; gap: 7px; }
+  .moonHeader > div { font-size: 10px; letter-spacing: 1px; }
+  .moonHeader > div span { font-size: 5px; letter-spacing: 0; }
+  .moonHeader button { font-size: 7px; padding: 8px; }
+  .moonHud { left: 15px; right: 15px; top: 18px; gap: 24px; }
+  .moonHud > div > span { font-size: 7px; }
+  .moonHud b { font-size: 23px; }
+  .moonHud .moonHearts { font-size: 21px; letter-spacing: 1px; }
+  .moonIntro { padding: 16px; }
+  .moonIntroPanel { padding: 25px 20px; width: 100%; }
+  .moonIntroPanel h2 { font-size: 54px; letter-spacing: -3px; }
+  .moonEyebrow { font-size: 6px; letter-spacing: 2px; }
+  .moonIntroPanel > p { font-size: 10px; }
+  .moonHowto { gap: 18px; }
+  .moonHowto > span { font-size: 12px; }
+  .moonHowto b { font-size: 6px; }
+  .moonIntroPanel .moonInstruction { font-size: 9px; }
+  .moonIntroPanel > button { padding: 15px 12px; font-size: 9px; width: 100%; }
+  .moonIntroPanel > small { font-size: 6px; line-height: 1.8; }
+  .moonControls { padding: 14px 18px max(18px,env(safe-area-inset-bottom)); }
+  .moonControls p { display: none; }
+  .moonControls button { width: 64px; min-height: 57px; }
+  .moonControls .moonJump { width: 106px; }
+  .moonHint { font-size: 6px; padding: 10px 8px; width: max-content; max-width: 95%; text-align: center; white-space: normal; line-height: 1.8; }
+  .moonPause h3 { font-size: 24px; }
+  .moonComplete > span { font-size: 10px; letter-spacing: 1px; }
+  .moonComplete p { font-size: 9px; }
+}
+@media (max-height: 700px) {
+  .moonIntroPanel { padding: 15px 30px; }
+  .moonIntroPanel h2 { font-size: 46px; margin: 12px 0; }
+  .moonIntroPanel > p:not(.moonInstruction), .moonIntroPanel > small, .moonHowto { display: none; }
+  .moonIntroPanel > button { margin-top: 13px; padding: 12px; }
+  .moonControls { padding-top: 8px; padding-bottom: 8px; }
+  .moonControls button { min-height: 40px; }
+  .moonHeader { min-height: 44px; }
+}
 
 /* Rug Runner: the game takes priority over the desktop chrome. */
 .runner { scroll-margin-top: 12px; }

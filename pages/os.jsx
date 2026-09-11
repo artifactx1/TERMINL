@@ -3,8 +3,8 @@ import TerminlOS from "../components/os/TerminlOS";
 
 export default function OS({ machines }) {
   return <><Head>
-    <title>TERMINL OS — Rug Runner</title>
-    <meta name="description" content="Grab green. Dodge red. Bank before the rug. Race your friends' ghosts through a 45-second meme coin meltdown." />
+    <title>TERMINL OS — The Arcade</title>
+    <meta name="description" content="Two games. One questionable operating system. Bank before the rug in Rug Runner or jump, stomp, and reach the rocket in Moon Mission." />
     <link rel="icon" href="/favicon-32.png" />
     <meta name="theme-color" content="#060907" />
   </Head><TerminlOS machines={machines} /></>;

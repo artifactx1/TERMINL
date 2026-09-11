@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start -p 4000",
     "lint": "next lint",
-    "test:os": "node --test scripts/terminl-game.test.mjs",
+    "test:os": "node --test scripts/terminl-game.test.mjs scripts/moon-mission.test.mjs",
     "snapshot": "node scripts/snapshot.mjs",
     "upload-art": "node scripts/upload-art.mjs",
     "og": "node scripts/og.mjs",

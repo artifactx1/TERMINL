@@ -250,7 +250,7 @@ function Site({ data }) {
 
         <section className={styles.motto}>
           <p>A celebration of art, memes<br />and degenerate behavior.</p>
-          <Link className={styles.osLaunch} href="/os">PLAY RUG RUNNER <span>Grab green. Dodge red. Bank before the rug. ↗</span></Link>
+          <Link className={styles.osLaunch} href="/os">PLAY THE ARCADE <span>Rug Runner + Moon Mission. Insert questionable judgment. ↗</span></Link>
         </section>
 
         <Story data={data} />

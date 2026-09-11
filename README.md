@@ -6,9 +6,10 @@ sell the art without giving it away.
 
 > A celebration of art, memes and degenerate behavior.
 
-**TERMINL OS is playable at `/os`.** Rug Runner is a 45-second arcade with candle
-dodging, simulated meme coin tokenomics, ghost duels, asynchronous friend
-challenges, trophies, and unlockable phosphor colors. See
+**TERMINL OS is playable at `/os`.** Choose Rug Runner for candle dodging and
+simulated meme coin tokenomics, or Moon Mission for a side-scrolling pixel
+platform adventure. Both have ghost duels, asynchronous friend challenges,
+shared credits, trophies, and unlockable phosphor colors. See
 [TERMINL_OS.md](TERMINL_OS.md) for rules, rewards, and verification.
 
 ## Run it
@@ -179,7 +180,7 @@ styles/                CRT/terminal treatment
 - **Trait tables are trimmed server-side** to the rows actually rendered.
   Shipping every variant and slicing in the component had put all 150 companion
   names and all 93 screen names in the markup.
-- **The arcade is playable today.** TERMINL OS adds a free guest game with local
+- **The arcade is playable today.** TERMINL OS adds two free guest games with local
   cosmetic rewards. There is no staking, reward token, or financial prize promise.
 - **The wallet is ArtifactX's; the mint is still hand-encoded.** The
   connector is the same Reown AppKit + wagmi stack the marketplace uses
