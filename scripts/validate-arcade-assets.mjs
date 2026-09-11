@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { ANIMATION_CLIPS, RIG_ANCHORS, fighterPose, attachmentAnchors } from '../lib/arcade/rumble-render.js';
 import { SOUND_CUES } from '../lib/arcade/rumble-audio.js';
+import { RACE_SOUND_CUES } from '../lib/arcade/race-audio.js';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const release=process.argv.includes('--release');
@@ -50,6 +51,7 @@ for(const a of manifest.assets){
     }
   }
   if(a.role==='music-ambience-and-effects')for(const clip of SOUND_CUES)if(!a.clips?.includes(clip))fail(a.id,`Missing audio cue ${clip}`);
+  if(a.role==='racing-music-ambience-and-effects')for(const clip of RACE_SOUND_CUES)if(!a.clips?.includes(clip))fail(a.id,`Missing racing cue ${clip}`);
 }
 if(!Number.isInteger(manifest.decodedMemoryBudgetBytes)||decoded>manifest.decodedMemoryBudgetBytes)fail('manifest','Aggregate decoded-memory budget exceeded');
 if(release&&manifest.releaseApproved!==true)fail('manifest','Release approval gate is closed');

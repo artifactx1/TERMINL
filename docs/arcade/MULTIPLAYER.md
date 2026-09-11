@@ -1,6 +1,6 @@
-# REKT RUMBLE authority — development slice, protocol v1
+# Shared arcade authority — REKT RUMBLE + WEN LAMBO, protocol v1
 
-This is a real, standalone Node 20 WebSocket authority, not a bot presented as another person. Two independent browser connections submit control masks to one renderer-independent fight simulation. The first slice supports two players, up to eight invited spectators, two fighter archetypes, and two stages. It does **not** yet provide production accounts, NFT ownership verification, public matchmaking, ranked seasons, cross-region routing, or infrastructure provisioning. Guests receive no financial or mint-related rewards.
+This is a real, standalone Node 20 WebSocket authority, not a bot presented as another person. Two independent browser connections submit control masks to one renderer-independent fight simulation. The current slice supports two players, up to eight invited spectators, six fighter archetypes/two stages or two racing cars/two tracks. It does **not** yet provide production accounts, NFT ownership verification, public matchmaking, ranked seasons, cross-region routing, or infrastructure provisioning. Guests receive no financial or mint-related rewards.
 
 ## Run locally
 
@@ -48,14 +48,14 @@ Connect using WebSocket with an allowlisted `Origin`. JSON messages must be at m
 | `join {code, token, name, character, spectator?}` | Scoped invite required. Player seat only in lobby; spectators can join a live match. |
 | `resume {code, session}` | Reclaims a disconnected player's existing seat during grace; cannot replace a still-connected player. |
 | `ready {ready}` | Lobby readiness. Both connected players ready starts a journaled match. |
-| `input {seq, tick, input}` | Player-only control mask, integer 0–2047. |
+| `input {seq, tick, input}` | Player-only control mask: Rumble 0–2047, racing 0–127. |
 | `rematch` | Votes to restart. Both connected players must vote; gets a new match ID. |
 | `leave` | Leaves room. Leaving an active fight forfeits immediately. |
 | `ping {time}` | Returns client timestamp plus server clock; use for measured RTT, not trusted simulation time. |
 
 | Server message | Fields |
 | --- | --- |
-| `welcome` | `version: 1` |
+| `welcome` | `version: 1`, `games`, `characters`, `vehicles`, `build` |
 | `joined` | `code`, scoped invite `token`, private resume `session`, `slot` (0/1; **−1 spectator**) |
 | `room` | Public `room` with code, phase, stage, matchId, player names/archetypes/readiness/connectivity/rematch votes, actual spectator count, expiresAt, region, result; full `state` if started |
 | `snapshot` | `matchId`, complete `state`, currently held `inputs`, `confirmedTick`, `acks`, cumulative `corrections` |
@@ -117,3 +117,15 @@ Run `node --test scripts/arcade-server.test.mjs` where localhost ports are permi
 The transport tests inject **50/100/150 ms total round-trip latency**, split across sends/receives, with deterministic ±3 ms one-way jitter. They verify acknowledged inputs, rollback corrections, deadline bounds, and matching authoritative snapshots across two actual sockets. They are transport correctness tests, **not** claims of competitive-quality remote game feel or deployment latency. They do not simulate packet loss, mobile radio stalls, NAT failure, cross-region infrastructure, or sustained production load.
 
 Before public release, perform independent-browser human play at those latencies, keyboard/controller/touch checks, packet-loss and long-stall tests, reconnect during each round/result transition, authenticated production-origin tests, TLS/proxy timeouts, full-capacity load and memory/CPU profiling, disk-full/corrupt-journal recovery drills, backup restore, and planned/unplanned restart drills. The final game's full content/visual/online release gates remain separate from this runnable first slice.
+
+## Railway/content expansion
+
+Use the existing repository/service and start command `node server/arcade/index.mjs`.
+The process accepts `ARCADE_PORT`, otherwise Railway's `PORT`, otherwise 4010.
+Keep the existing persistent `ARCADE_DATA_DIR`, explicit allowed origins and `ARCADE_HOST=0.0.0.0`.
+Use one replica per journal; this is not a shared-volume horizontally scaled runtime.
+
+Deploy the backend update before the new client content. Health/welcome must advertise `games: ["rekt-rumble","wen-lambo"]`, six character IDs, two vehicles and `build: "arcade-content-2"`.
+The client waits for welcome before creating/resuming a room and displays an update-required notice for unsupported content. No extra service or database is needed for this slice.
+
+Racing create/join packets carry `game:"wen-lambo", rulesVersion:1`; character means vehicle ID and stage means track ID. Cross-game invitations are rejected. Legacy Rumble packets without game still select Rumble. Race results include `game`, `rulesVersion` and per-race times/points. Replay with `replayFight(replay,RACE_RULES)`.

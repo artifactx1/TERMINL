@@ -67,6 +67,15 @@ keyboard handlers; they observe messages but never inject damage or scores.
   flag, while `/os/asset-lab` still returns 404. The launcher labels the game a
   playable preview, not a finished release.
 
+## September 11 roster and California racing update
+
+- `npm run test:arcade`: 46/46 passing, including six-fighter coverage, original replay compatibility, race physics/cup/replay tests, wheel geometry and server authority tests.
+- `npm run test:os`: 22/22 passing for the existing games.
+- Lint passes. Development asset validation passes for 22 assets within the decoded-memory budget; human release approval remains pending. Private catalog validation passes without exporting private traits or images.
+- Latest Chromium smoke passes reverse, progressive steering, both tracks, mobile overflow checks and six-fighter menu visibility, with no page errors.
+- The latest three-context multiplayer browser cup did **not** pass: it reached the 300-second wall-clock timeout while the authority was still on the first track at tick 6816. Earlier cup coverage does not certify the final handling changes. Final full-cup browser verification and live Railway verification remain outstanding.
+- Rear wheels stay fixed while front wheels steer; rear tread width is now 0.135 of body width. Ground contact and player body anchors are covered by renderer tests.
+
 ## Limits and release gates
 
 Transport tests inject 50/100/150 ms RTT with ±3 ms one-way jitter, not packet loss

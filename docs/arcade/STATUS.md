@@ -1,58 +1,26 @@
-# Arcade implementation status — first verified slice
+# Arcade status — roster and California racing expansion
 
-The master brief is a multi-release target. This implements its requested first
-slice: shared foundations and a playable REKT RUMBLE development build, not all
-five completed games. Rug Runner and Moon Mission retain existing saves/rules.
+Four playable games remain accessible from /os: Rug Runner, Moon Mission, REKT RUMBLE and WEN LAMBO. The new games are previews, not the completed five-game master release.
 
 ## Implemented
 
-- TERMINL-styled `/os/rumble`, visible by default as a playable preview in `/os`.
-  Only `/os/asset-lab` and its review link require `ARCADE_LABS=1`.
-- Two freely selectable pixelated fighters: Margin Call Max and Diamond Hands
-  Pepe, 15 animation states each, 11 authored moves each, guard heights, throw
-  escape, hit-stop, armor, meter, bounded combos and best-of-three rounds.
-- Two illustrated stages: Dead Mall Exchange and Liquidation Laundromat;
-  server-owned, telegraphed steam boundaries distinguish the laundromat.
-- Interactive lessons, labeled bot practice, keyboard remapping, pointer
-  controls, controller mapping, offline pause, reduced motion, separate audio
-  levels, full mute, original synthesized music and 16 effect cues.
-- Real private two-player rooms, invited spectators, both-player readiness,
-  60 Hz authority, bounded rollback/client prediction, reconnect, forfeit,
-  rematch and durable/idempotent results with input replay hashes.
-- Scoped guest credentials, origin/schema/rate/payload limits, neutral input
-  on disconnect and crash-abort journal. No value-bearing reward writes.
-- Asset/provenance manifest, pose/attachment/hitbox gallery, decoded asset
-  budget validation and aggregate-only private catalog compatibility check.
+- REKT RUMBLE now has six freely selectable canonical pixel fighters: Max, Diamond Hands Pepe, Buy-High Brian, MEV Mia, Bridge Burn Bernie and Cold Storage Chloe. Each has an articulated rig and eleven authored moves. Original Max/Diamond rules retain eight pre-expansion replay hashes.
+- Two Rumble stages, training, selectable bot opponent, private two-player PvP, spectator/reconnect/rematch and durable results.
+- WEN LAMBO at /os/lambo: California-style behind-car Canvas perspective, two generated environments, two open-cockpit roadsters with Pepe, independently animated wheels, front-only steering, progressive handling, reverse, drift-earned boost, keyboard/touch controls and a guided lesson.
+- Pacific Coast Run and Sunset Canyon, three laps each, two-race points cup, labeled bot practice and genuine private two-driver online racing with spectators and authoritative checkpoint/finish logic.
+- Shared server advertises game/roster/car capabilities; old backend builds give an update-required notice. Race/combat rooms validate different input masks and content IDs. Replay reproduction uses the matching rules module.
+- No money/NFT prizes, paid entry, ownership-based power, hidden collection exports or fake live population.
 
-No unpublished collection data/art was exported. Two public base rigs are freely
-available; NFT-owned trait cosmetics are not implemented. The pixel-art request
-is implemented; canonical identities are retained pending clarification of
-“shouldn look like the characters.” See [QA.md](QA.md) for evidence and limits.
+See [RACING.md](RACING.md), [ROSTER.md](ROSTER.md), [MULTIPLAYER.md](MULTIPLAYER.md), [CALIFORNIA-ART.md](CALIFORNIA-ART.md) and [QA.md](QA.md).
 
-## Not implemented / not released
+## Remaining release work
 
-- Remaining REKT RUMBLE roster/stages, human art/audio approval, owner cosmetics,
-  ranked ladder, public matchmaking, permanent accounts, host/admin UI,
-  multi-region routing and production operational hardening.
-- WEN LAMBO: racing physics, vehicles/tracks, online races and cup progression.
-- RUG OR BOND: LMSR markets, isolated fictional ledger, five-round tournaments,
-  verified future randomness proofs and crash-safe settlement.
-- EXIT LIQUIDITY: heist maps, objectives and duel/team networking.
-- CANDLE CLASH: puzzle engine, cascades, cancellation, PvP and scenarios.
+Human art/audio approval, physical controller/touch testing, public matchmaking, permanent accounts, ownership cosmetics, ranked seasons, multi-region routing, production load/backup/restore drills and operational hardening remain pending. The eventual larger roster/stage/track/player targets are not claimed complete. RUG OR BOND, EXIT LIQUIDITY and CANDLE CLASH remain unimplemented, not launcher buttons.
 
-These are next steps, not buttons pretending to be games. No paid infrastructure,
-production authority, financial/NFT prizes, redeemable credits, entry fees, mint
-entitlements or ownership power advantages were added.
+The user has a Railway authority; this change reuses its process and journal, not a second paid service. A local test does not verify that user's deployment. The exact live endpoint was not supplied for this iteration.
 
-## Play and continue
+## Play
 
-Run `npm run dev:arcade` and `npm run arcade:server` in separate terminals; open
-`http://localhost:4000/os/rumble`. Learn by Fighting works alone. For PvP, create
-a room, copy its full invitation into another browser profile and ready both
-players. A third can spectate. Localhost works on one computer; remote friends
-require a reachable shared TLS authority.
+Run npm run dev:arcade and npm run arcade:server separately. Open http://localhost:4000/os. Both new routes are visible without ARCADE_LABS; that flag only exposes the asset review lab.
 
-Next: human review of this slice; physical touch/controller and latency
-playtests; production-host/persistence decision with explicit approval; then
-expand REKT RUMBLE before subsequent game slices. The preview is not a finished
-release; asset-review tooling and asset release approval remain gated.
+Online requires the deployed authority running this update and NEXT_PUBLIC_ARCADE_WS_URL pointing at it. Both guests ready up; a third can spectate. Practice needs no backend.

@@ -4,7 +4,7 @@ import TerminlOS from "../components/os/TerminlOS";
 export default function OS({ machines }) {
   return <><Head>
     <title>TERMINL OS — The Arcade</title>
-    <meta name="description" content="Two games. One questionable operating system. Bank before the rug in Rug Runner or jump, stomp, and reach the rocket in Moon Mission." />
+    <meta name="description" content="Four games. One questionable operating system. Race the California coast in WEN LAMBO, fight with six pixel characters in REKT RUMBLE, or play Rug Runner and Moon Mission." />
     <link rel="icon" href="/favicon-32.png" />
     <meta name="theme-color" content="#060907" />
   </Head><TerminlOS machines={machines} /></>;

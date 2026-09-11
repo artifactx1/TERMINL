@@ -22,17 +22,21 @@
 .selectLayout { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(290px,.8fr); gap:28px; }
 .sectionLabel { display:flex; justify-content:space-between; gap:15px; color:#a8b29e; font-size:8px; letter-spacing:1.3px; margin-bottom:16px; }
 .sectionLabel span:last-child { color:#73846a; }
-.roster { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.roster { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
 .roster > button { border:1px solid #39402f; background:radial-gradient(ellipse at 50% 40%,#35432e,#161d16 65%); color:var(--ink); position:relative; text-align:left; padding:0; overflow:hidden; }
 .roster > button:nth-child(2) { background:radial-gradient(ellipse at 50% 40%,#263d3c,#121f1d 65%); }
 .roster > button.chosen { border-color:var(--green); box-shadow:inset 0 -4px var(--green); }
-.roster img { display:block; width:100%; height:350px; object-fit:contain; padding:25px 22px 0; filter:drop-shadow(8px 8px 10px #0008); transition:transform .2s; }
+.roster img { display:block; width:100%; height:230px; object-fit:contain; padding:20px 10px 0; filter:drop-shadow(8px 8px 10px #0008); transition:transform .2s; }
 .roster > button:hover img { transform:translateY(-4px); }
 .fighterIndex { position:absolute; top:16px; left:18px; font-size:12px; color:#93ab82; }
-.roster > button > div { padding:18px 20px 17px; background:linear-gradient(transparent,#0b130c 35%); }
+.roster > button > div { padding:14px 12px 12px; background:linear-gradient(transparent,#0b130c 35%); }
 .roster small { font-size:7px; letter-spacing:.8px; color:#a1b08f; }
-.roster h2 { font-size:22px; letter-spacing:-1px; margin:10px 0; line-height:1.1; }
+.roster h2 { font-size:18px; letter-spacing:-.5px; margin:10px 0; line-height:1.1; min-height:40px; }
 .roster p { font-size:9px; color:#b8c2ae; line-height:1.8; margin:0; }
+.roster > button:nth-child(3) { background:radial-gradient(ellipse at 50% 40%,#514334,#211b18 65%); }
+.roster > button:nth-child(4) { background:radial-gradient(ellipse at 50% 40%,#533a4b,#241923 65%); }
+.roster > button:nth-child(5) { background:radial-gradient(ellipse at 50% 40%,#523a2e,#201c18 65%); }
+.roster > button:nth-child(6) { background:radial-gradient(ellipse at 50% 40%,#304666,#172131 65%); }
 .selectionMark { padding:11px 20px; display:block; font-size:8px; color:var(--green); border-top:1px solid #3e5433; }
 .characterTip { color:#96a68a; font-size:10px; line-height:1.7; padding:14px 0 20px; }
 .playPanel { border:1px solid #424b34; padding:27px; background:#12180f; }
@@ -43,7 +47,7 @@
 .primary:hover { background:#c4ff9b; }
 .secondary { background:transparent; color:#d1dec4; border:1px solid #526442; margin-top:10px; }
 .playPanel label,.dialog label { display:block; font-size:8px; letter-spacing:1px; color:#a7b79a; margin:16px 0 12px; }
-.playPanel input,.lobby > input,.dialog input:not([type=checkbox]):not([type=range]),.dialog select { width:100%; background:#080f08; border:1px solid #405234; color:#e3ead7; padding:12px; margin-top:8px; font-size:11px; border-radius:0; }
+.playPanel input,.playPanel select,.lobby > input,.dialog input:not([type=checkbox]):not([type=range]),.dialog select { width:100%; background:#080f08; border:1px solid #405234; color:#e3ead7; padding:12px; margin-top:8px; font-size:11px; border-radius:0; }
 .playPanel input::placeholder { font-size:9px; color:#8e9c82; }
 .playPanel > small,.lobby > small { display:block; font-size:8px; line-height:1.9; color:#8c9c80; margin-top:16px; }
 .onlineDivider { font-size:8px; color:#c3d5b2; letter-spacing:1px; padding-top:20px; margin-top:22px; border-top:1px solid #46563b; }
@@ -130,4 +134,6 @@
 @media(max-width:900px){.menu{padding:30px 24px}.selectLayout{grid-template-columns:1fr}.playPanel{display:block}.roster img{height:330px}.rulesStamp{display:none}.titleRow h1{font-size:65px;letter-spacing:-4px}.stages img{height:160px}.hud{padding:12px 16px;gap:90px}.touchControls{padding-left:10px;padding-right:10px;gap:7px}.touchControls button{padding:8px;min-width:35px}.touchControls>div{gap:4px}.connectionBar{padding:9px 12px;font-size:7px}.buildTag{font-size:6px}.fightFooter p{font-size:7px}}
 @media(max-width:600px){.header{padding:0 14px;height:58px}.header a{font-size:13px}.buildTag{display:none}.menu{padding:30px 16px}.titleRow h1{font-size:46px;letter-spacing:-3px}.titleRow h1 sup{font-size:10px;margin-left:6px}.titleRow p{font-size:10px}.eyebrow{font-size:7px;letter-spacing:1.2px}.roster{gap:9px}.roster img{height:245px;padding:20px 7px 0}.roster>button>div{padding:14px 11px}.roster small{font-size:5px}.roster h2{font-size:18px}.roster p{font-size:8px}.selectionMark{font-size:7px;padding:10px}.sectionLabel{font-size:6px;letter-spacing:.8px}.sectionLabel span:last-child{display:none}.playPanel{padding:22px}.stages{grid-template-columns:1fr}.stages img{height:185px}.menuFooter{display:block}.menuFooter a{display:block;margin:16px 0}.hud{gap:56px;padding:10px 12px}.hud>div:not(.clock)>div:first-child{font-size:8px;display:block;min-height:31px}.hud>div>div>span{font-size:6px;display:block;margin-top:5px}.clock strong{font-size:29px}.clock span{font-size:5px}.clock{top:15px}.health{height:13px}.meter{height:10px}.meter>span{font-size:5px!important}.touchControls{display:block;padding:9px 10px max(12px,env(safe-area-inset-bottom))}.touchControls>div{justify-content:center;gap:6px;margin-top:7px}.touchControls button{min-width:39px;min-height:42px;font-size:6px;padding:6px}.touchControls>div:first-child button{min-width:60px;font-size:18px}.fightFooter{padding:7px 10px}.fightFooter p{display:none}.fightFooter span{font-size:7px}.connectionBar b{font-size:6px}.connectionBar span{font-size:6px}.connectionBar button{font-size:6px}.inGame .header{height:43px}.inGame .header a{font-size:11px}.header button{font-size:7px;padding:8px}.lesson{max-width:210px;left:10px;top:10px;padding:9px 12px}.lesson h3{font-size:16px}.lesson p{font-size:8px}.gameOverlay h2{font-size:35px;letter-spacing:-2px}.gameOverlay p{font-size:9px}.lobby{padding:20px 15px}.lobby h1{font-size:27px}.roomCode{gap:12px}.roomCode b{font-size:23px}.lobbyPlayers article{padding:10px;min-height:205px}.lobbyPlayers img{height:140px}.lobbyPlayers b{font-size:10px}.lobbyPlayers span{font-size:6px}.moveTable{grid-template-columns:1fr}.keyGrid{grid-template-columns:1fr 1fr}.lab{padding:20px}.labInfo{grid-template-columns:1fr}}
 @media(max-height:520px){.inGame .header{height:35px}.connectionBar{padding:5px 15px}.hud{padding-top:8px;padding-bottom:5px}.hud>div:not(.clock)>div:first-child{margin-bottom:4px}.clock strong{font-size:27px}.clock{top:7px}.health{height:10px}.meter{height:8px}.touchControls{padding-top:4px;padding-bottom:5px}.touchControls button{min-height:28px;padding:5px 8px}.fightFooter{display:none}.lesson{max-width:260px;padding:8px 12px}.lesson h3{font-size:15px;margin:5px 0}.lesson p{font-size:7px}.gameOverlay h2{font-size:30px;margin:5px}.gameOverlay p{margin:5px}.gameOverlay .primary{min-height:35px;padding:8px 15px;margin-top:8px}.lobbyPlayers img{height:90px}.lobbyPlayers article{min-height:150px}}
+@media(max-width:900px){.roster img{height:260px}}
+@media(max-width:600px){.roster{grid-template-columns:repeat(2,minmax(0,1fr))}.roster img{height:230px}.roster small{font-size:6px}.roster h2{font-size:17px}.roster p{min-height:30px}}
 @media(prefers-reduced-motion:reduce){.shell *{transition:none!important}.roster>button:hover img{transform:none}}

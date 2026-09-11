@@ -1,79 +1,893 @@
 {
   "version": 1,
   "releaseApproved": false,
-  "decodedMemoryBudgetBytes": 33554432,
-  "runtimePolicy": "The development slice preloads both stage plates. Aggregate decoded assets and one reusable 200x180 RGBA fighter pixel surface total 13.42 MB. Each active canvas owns one 144 KB scratch surface, reused between both fighters; no per-frame canvas allocation. Display canvas backing buffers are additional viewport-dependent memory. Dispose image references and audio when leaving the game; per-match-only loading is a future optimization.",
+  "decodedMemoryBudgetBytes": 50331648,
+  "runtimePolicy": "Six public character portraits and two Rumble stage plates; California racing loads two generated panoramas, one transparent scenery atlas and one transparent Pepe body atlas. Race wheels and road geometry are code-native. Declared assets stay below 48 MiB decoded; viewport-dependent display canvases are additional. No unpublished collection assets are exported.",
   "assets": [
     {
-      "id": "max-reference-v1", "role": "character-reference-portrait", "source": "public/degens/margin-call-max.webp",
+      "id": "max-reference-v1",
+      "role": "character-reference-portrait",
+      "source": "public/degens/margin-call-max.webp",
       "provenance": "Existing project-supplied TERMINL public character portrait; visually inspected against current public lore.",
       "rights": "Project-supplied reference. No new third-party license or ownership claim is asserted.",
-      "review": "development-only", "humanApproved": false,
-      "dimensions": { "width": 340, "height": 560 }, "decodedBudgetBytes": 761600,
-      "variants": ["canonical"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 340,
+        "height": 560
+      },
+      "decodedBudgetBytes": 761600,
+      "variants": [
+        "canonical"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
     },
     {
-      "id": "diamond-reference-v1", "role": "character-reference-portrait", "source": "public/degens/diamond-hands-pepe.webp",
+      "id": "diamond-reference-v1",
+      "role": "character-reference-portrait",
+      "source": "public/degens/diamond-hands-pepe.webp",
       "provenance": "Existing project-supplied TERMINL public character portrait; visually inspected against current public lore.",
       "rights": "Project-supplied reference. Pepe character rights require owner confirmation for commercial game release; no independent license is claimed.",
-      "review": "development-only", "humanApproved": false,
-      "dimensions": { "width": 340, "height": 560 }, "decodedBudgetBytes": 761600,
-      "variants": ["canonical"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 340,
+        "height": 560
+      },
+      "decodedBudgetBytes": 761600,
+      "variants": [
+        "canonical"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
     },
     {
-      "id": "max-rig-v1", "role": "articulated-character-rig", "source": "lib/arcade/rumble-render.js",
-      "reference": "max-reference-v1", "character": "max",
+      "id": "max-rig-v1",
+      "role": "articulated-character-rig",
+      "source": "lib/arcade/rumble-render.js",
+      "reference": "max-reference-v1",
+      "character": "max",
       "provenance": "Original code-native multi-part canvas rig authored in this repository from the published Max reference. No static portrait is animated as gameplay art.",
       "rights": "Original code adaptation of project-supplied reference; owner review required before release.",
-      "review": "development-only", "humanApproved": false,
-      "geometryBudget": { "maxPrimitives": 400, "bounds": [-220, -230, 220, 85] }, "decodedBudgetBytes": 0,
-      "anchors": { "feet": [0,0], "hip": [0,-73], "chest": [0,-115], "head": [0,-158], "hat": [0,-190], "chain": [3,-123], "frontHand": [38,-102], "rearHand": [-25,-106], "effect": [53,-112] },
-      "clips": ["idle","walk-forward","walk-back","crouch","jump","landing","anticipation","active","recovery","guard","hit","knockdown","wake-up","victory","defeat"],
-      "variants": ["canonical", "silhouette-debug", "anchor-debug"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 400,
+        "bounds": [
+          -220,
+          -230,
+          220,
+          85
+        ]
+      },
+      "decodedBudgetBytes": 0,
+      "anchors": {
+        "feet": [
+          0,
+          0
+        ],
+        "hip": [
+          0,
+          -73
+        ],
+        "chest": [
+          0,
+          -115
+        ],
+        "head": [
+          0,
+          -158
+        ],
+        "hat": [
+          0,
+          -190
+        ],
+        "chain": [
+          3,
+          -123
+        ],
+        "frontHand": [
+          38,
+          -102
+        ],
+        "rearHand": [
+          -25,
+          -106
+        ],
+        "effect": [
+          53,
+          -112
+        ]
+      },
+      "clips": [
+        "idle",
+        "walk-forward",
+        "walk-back",
+        "crouch",
+        "jump",
+        "landing",
+        "anticipation",
+        "active",
+        "recovery",
+        "guard",
+        "hit",
+        "knockdown",
+        "wake-up",
+        "victory",
+        "defeat"
+      ],
+      "variants": [
+        "canonical",
+        "silhouette-debug",
+        "anchor-debug"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
     },
     {
-      "id": "diamond-rig-v1", "role": "articulated-character-rig", "source": "lib/arcade/rumble-render.js",
-      "reference": "diamond-reference-v1", "character": "diamond",
+      "id": "diamond-rig-v1",
+      "role": "articulated-character-rig",
+      "source": "lib/arcade/rumble-render.js",
+      "reference": "diamond-reference-v1",
+      "character": "diamond",
       "provenance": "Original code-native articulated frog rig: separate limbs, jaw/head, leather panels, chain attachment and faceted ice fist. Derived from the published collection reference.",
       "rights": "Original code adaptation of project-supplied reference; underlying character rights and visual adaptation need owner approval.",
-      "review": "development-only", "humanApproved": false,
-      "geometryBudget": { "maxPrimitives": 400, "bounds": [-220, -230, 220, 85] }, "decodedBudgetBytes": 0,
-      "anchors": { "feet": [0,0], "hip": [0,-73], "chest": [0,-115], "head": [0,-158], "hat": [0,-190], "chain": [3,-123], "frontHand": [38,-102], "rearHand": [-25,-106], "effect": [53,-112] },
-      "clips": ["idle","walk-forward","walk-back","crouch","jump","landing","anticipation","active","recovery","guard","hit","knockdown","wake-up","victory","defeat"],
-      "variants": ["canonical", "silhouette-debug", "anchor-debug"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 400,
+        "bounds": [
+          -220,
+          -230,
+          220,
+          85
+        ]
+      },
+      "decodedBudgetBytes": 0,
+      "anchors": {
+        "feet": [
+          0,
+          0
+        ],
+        "hip": [
+          0,
+          -73
+        ],
+        "chest": [
+          0,
+          -115
+        ],
+        "head": [
+          0,
+          -158
+        ],
+        "hat": [
+          0,
+          -190
+        ],
+        "chain": [
+          3,
+          -123
+        ],
+        "frontHand": [
+          38,
+          -102
+        ],
+        "rearHand": [
+          -25,
+          -106
+        ],
+        "effect": [
+          53,
+          -112
+        ]
+      },
+      "clips": [
+        "idle",
+        "walk-forward",
+        "walk-back",
+        "crouch",
+        "jump",
+        "landing",
+        "anticipation",
+        "active",
+        "recovery",
+        "guard",
+        "hit",
+        "knockdown",
+        "wake-up",
+        "victory",
+        "defeat"
+      ],
+      "variants": [
+        "canonical",
+        "silhouette-debug",
+        "anchor-debug"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
     },
     {
-      "id": "dead-mall-backdrop-v1", "role": "stage-background", "source": "public/arcade/dead-mall-v1.webp",
+      "id": "dead-mall-backdrop-v1",
+      "role": "stage-background",
+      "source": "public/arcade/dead-mall-v1.webp",
       "provenance": "AI-generated original environment, inspected by implementation agent. Generation brief recorded in docs/arcade/ASSET-PROMPTS.md. No copyrighted game environment reference was requested.",
       "rights": "Generated for this project; ownership, visual approval and production clearance remain subject to human review.",
-      "review": "development-only", "humanApproved": false,
-      "dimensions": { "width": 1600, "height": 900 }, "decodedBudgetBytes": 5760000,
-      "variants": ["high-webp", "code-fallback"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1600,
+        "height": 900
+      },
+      "decodedBudgetBytes": 5760000,
+      "variants": [
+        "high-webp",
+        "code-fallback"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
     },
     {
-      "id": "laundromat-backdrop-v1", "role": "stage-background", "source": "public/arcade/laundromat-v1.webp",
+      "id": "laundromat-backdrop-v1",
+      "role": "stage-background",
+      "source": "public/arcade/laundromat-v1.webp",
       "provenance": "AI-generated original environment, inspected by implementation agent. Generation brief recorded in docs/arcade/ASSET-PROMPTS.md. Gameplay steam lanes are a separate authored overlay.",
       "rights": "Generated for this project; ownership, visual approval and production clearance remain subject to human review.",
-      "review": "development-only", "humanApproved": false,
-      "dimensions": { "width": 1600, "height": 900 }, "decodedBudgetBytes": 5760000,
-      "variants": ["high-webp", "code-fallback"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1600,
+        "height": 900
+      },
+      "decodedBudgetBytes": 5760000,
+      "variants": [
+        "high-webp",
+        "code-fallback"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
     },
     {
-      "id": "rumble-stage-layers-v1", "role": "stage-foreground-and-effects", "source": "lib/arcade/rumble-render.js",
+      "id": "rumble-stage-layers-v1",
+      "role": "stage-foreground-and-effects",
+      "source": "lib/arcade/rumble-render.js",
       "provenance": "Original authored cabinet geometry, spectator rigs, spinning washers, perspective floor, steam telegraphs, hit sparks and paper-receipt finisher.",
       "rights": "Original code-native assets; no external samples or models.",
-      "review": "development-only", "humanApproved": false,
-      "geometryBudget": { "maxPrimitives": 1800, "sharedPixelSurfaceWidth": 200, "sharedPixelSurfaceHeight": 180 }, "decodedBudgetBytes": 144000,
-      "variants": ["high", "low", "reduced-motion"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 1800,
+        "sharedPixelSurfaceWidth": 200,
+        "sharedPixelSurfaceHeight": 180
+      },
+      "decodedBudgetBytes": 144000,
+      "variants": [
+        "high",
+        "low",
+        "reduced-motion"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
     },
     {
-      "id": "rumble-synth-score-v1", "role": "music-ambience-and-effects", "source": "lib/arcade/rumble-audio.js",
+      "id": "rumble-synth-score-v1",
+      "role": "music-ambience-and-effects",
+      "source": "lib/arcade/rumble-audio.js",
       "provenance": "Original Web Audio composition and synthesis. Fixed authored note sequence and deterministic generated noise; no downloaded audio or voice recordings.",
       "rights": "Original code-authored music and effects. Human listening/mix approval pending.",
-      "review": "development-only", "humanApproved": false,
-      "geometryBudget": { "maxVoices": 40, "noiseBufferSeconds": 0.6 }, "decodedBudgetBytes": 230400,
-      "clips": ["ui","light","heavy","block","armor","throw","tech","jump","land","dash","special","super","warning","fight","win","loss"],
-      "variants": ["dead-mall-score", "laundromat-score", "separate-music-sfx", "mute"], "games": ["rekt-rumble"]
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxVoices": 40,
+        "noiseBufferSeconds": 0.6
+      },
+      "decodedBudgetBytes": 230400,
+      "clips": [
+        "ui",
+        "light",
+        "heavy",
+        "block",
+        "armor",
+        "throw",
+        "tech",
+        "jump",
+        "land",
+        "dash",
+        "special",
+        "super",
+        "warning",
+        "fight",
+        "win",
+        "loss"
+      ],
+      "variants": [
+        "dead-mall-score",
+        "laundromat-score",
+        "separate-music-sfx",
+        "mute"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "brian-reference-v1",
+      "role": "character-reference-portrait",
+      "source": "public/degens/buy-high-brian.webp",
+      "provenance": "Existing project-supplied TERMINL public portrait; visually inspected alongside published canonical lore for this expansion.",
+      "rights": "Project-supplied reference. No new third-party license or ownership claim is asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 340,
+        "height": 560
+      },
+      "decodedBudgetBytes": 761600,
+      "variants": [
+        "canonical"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "brian-rig-v1",
+      "role": "articulated-character-rig",
+      "source": "lib/arcade/rumble-render.js",
+      "reference": "brian-reference-v1",
+      "character": "brian",
+      "provenance": "Original code-native articulated pixel rig. Floral overshirt, BUY HIGH tee, mullet/visor, cargo shorts, sandals, and a wrist-attached ramen cup. No static portrait is used as a gameplay sprite.",
+      "rights": "Original code adaptation of project-supplied reference; owner review required before release.",
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 400,
+        "bounds": [
+          -220,
+          -230,
+          220,
+          85
+        ]
+      },
+      "decodedBudgetBytes": 0,
+      "anchors": {
+        "feet": [
+          0,
+          0
+        ],
+        "hip": [
+          0,
+          -73
+        ],
+        "chest": [
+          0,
+          -115
+        ],
+        "head": [
+          0,
+          -158
+        ],
+        "hat": [
+          0,
+          -190
+        ],
+        "chain": [
+          3,
+          -123
+        ],
+        "frontHand": [
+          38,
+          -102
+        ],
+        "rearHand": [
+          -25,
+          -106
+        ],
+        "effect": [
+          53,
+          -112
+        ]
+      },
+      "clips": [
+        "idle",
+        "walk-forward",
+        "walk-back",
+        "crouch",
+        "jump",
+        "landing",
+        "anticipation",
+        "active",
+        "recovery",
+        "guard",
+        "hit",
+        "knockdown",
+        "wake-up",
+        "victory",
+        "defeat"
+      ],
+      "variants": [
+        "canonical",
+        "silhouette-debug",
+        "anchor-debug"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "mia-reference-v1",
+      "role": "character-reference-portrait",
+      "source": "public/degens/mev-mia.webp",
+      "provenance": "Existing project-supplied TERMINL public portrait; visually inspected alongside published canonical lore for this expansion.",
+      "rights": "Project-supplied reference. No new third-party license or ownership claim is asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 340,
+        "height": 560
+      },
+      "decodedBudgetBytes": 761600,
+      "variants": [
+        "canonical"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "mia-rig-v1",
+      "role": "articulated-character-rig",
+      "source": "lib/arcade/rumble-render.js",
+      "reference": "mia-reference-v1",
+      "character": "mia",
+      "provenance": "Original code-native articulated pixel rig. Ponytail, perched shades, MEVD crop top, denim shorts, pink sneakers, phone and articulated receipt ribbon. No static portrait is used as a gameplay sprite.",
+      "rights": "Original code adaptation of project-supplied reference; owner review required before release.",
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 400,
+        "bounds": [
+          -220,
+          -230,
+          220,
+          85
+        ]
+      },
+      "decodedBudgetBytes": 0,
+      "anchors": {
+        "feet": [
+          0,
+          0
+        ],
+        "hip": [
+          0,
+          -73
+        ],
+        "chest": [
+          0,
+          -115
+        ],
+        "head": [
+          0,
+          -158
+        ],
+        "hat": [
+          0,
+          -190
+        ],
+        "chain": [
+          3,
+          -123
+        ],
+        "frontHand": [
+          38,
+          -102
+        ],
+        "rearHand": [
+          -25,
+          -106
+        ],
+        "effect": [
+          53,
+          -112
+        ]
+      },
+      "clips": [
+        "idle",
+        "walk-forward",
+        "walk-back",
+        "crouch",
+        "jump",
+        "landing",
+        "anticipation",
+        "active",
+        "recovery",
+        "guard",
+        "hit",
+        "knockdown",
+        "wake-up",
+        "victory",
+        "defeat"
+      ],
+      "variants": [
+        "canonical",
+        "silhouette-debug",
+        "anchor-debug"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "bernie-reference-v1",
+      "role": "character-reference-portrait",
+      "source": "public/degens/bridge-burn-bernie.webp",
+      "provenance": "Existing project-supplied TERMINL public portrait; visually inspected alongside published canonical lore for this expansion.",
+      "rights": "Project-supplied reference. No new third-party license or ownership claim is asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 340,
+        "height": 560
+      },
+      "decodedBudgetBytes": 761600,
+      "variants": [
+        "canonical"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "bernie-rig-v1",
+      "role": "articulated-character-rig",
+      "source": "lib/arcade/rumble-render.js",
+      "reference": "bernie-reference-v1",
+      "character": "bernie",
+      "provenance": "Original code-native articulated pixel rig. WAGMI cap, FIXIN THIS BRIDGE work shirt, tool belt, patched knees, work shoes, and a wrist-attached wrench. No static portrait is used as a gameplay sprite.",
+      "rights": "Original code adaptation of project-supplied reference; owner review required before release.",
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 400,
+        "bounds": [
+          -220,
+          -230,
+          220,
+          85
+        ]
+      },
+      "decodedBudgetBytes": 0,
+      "anchors": {
+        "feet": [
+          0,
+          0
+        ],
+        "hip": [
+          0,
+          -73
+        ],
+        "chest": [
+          0,
+          -115
+        ],
+        "head": [
+          0,
+          -158
+        ],
+        "hat": [
+          0,
+          -190
+        ],
+        "chain": [
+          3,
+          -123
+        ],
+        "frontHand": [
+          38,
+          -102
+        ],
+        "rearHand": [
+          -25,
+          -106
+        ],
+        "effect": [
+          53,
+          -112
+        ]
+      },
+      "clips": [
+        "idle",
+        "walk-forward",
+        "walk-back",
+        "crouch",
+        "jump",
+        "landing",
+        "anticipation",
+        "active",
+        "recovery",
+        "guard",
+        "hit",
+        "knockdown",
+        "wake-up",
+        "victory",
+        "defeat"
+      ],
+      "variants": [
+        "canonical",
+        "silhouette-debug",
+        "anchor-debug"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "chloe-reference-v1",
+      "role": "character-reference-portrait",
+      "source": "public/degens/cold-storage-chloe.webp",
+      "provenance": "Existing project-supplied TERMINL public portrait; visually inspected alongside published canonical lore for this expansion.",
+      "rights": "Project-supplied reference. No new third-party license or ownership claim is asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 340,
+        "height": 560
+      },
+      "decodedBudgetBytes": 761600,
+      "variants": [
+        "canonical"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "chloe-rig-v1",
+      "role": "articulated-character-rig",
+      "source": "lib/arcade/rumble-render.js",
+      "reference": "chloe-reference-v1",
+      "character": "chloe",
+      "provenance": "Original code-native articulated pixel rig. Swept hair and bun, mirrored shades, fur-collar blue puffer, COLD tee, cargo pants, blue sneakers and a wrist-attached safe. No static portrait is used as a gameplay sprite.",
+      "rights": "Original code adaptation of project-supplied reference; owner review required before release.",
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 400,
+        "bounds": [
+          -220,
+          -230,
+          220,
+          85
+        ]
+      },
+      "decodedBudgetBytes": 0,
+      "anchors": {
+        "feet": [
+          0,
+          0
+        ],
+        "hip": [
+          0,
+          -73
+        ],
+        "chest": [
+          0,
+          -115
+        ],
+        "head": [
+          0,
+          -158
+        ],
+        "hat": [
+          0,
+          -190
+        ],
+        "chain": [
+          3,
+          -123
+        ],
+        "frontHand": [
+          38,
+          -102
+        ],
+        "rearHand": [
+          -25,
+          -106
+        ],
+        "effect": [
+          53,
+          -112
+        ]
+      },
+      "clips": [
+        "idle",
+        "walk-forward",
+        "walk-back",
+        "crouch",
+        "jump",
+        "landing",
+        "anticipation",
+        "active",
+        "recovery",
+        "guard",
+        "hit",
+        "knockdown",
+        "wake-up",
+        "victory",
+        "defeat"
+      ],
+      "variants": [
+        "canonical",
+        "silhouette-debug",
+        "anchor-debug"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "rights": "Generated for this project with built-in image generation. Human art, character and design-rights review pending; no vehicle-brand affiliation.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "games": [
+        "wen-lambo"
+      ],
+      "id": "california-coast-v1",
+      "role": "racing-panorama",
+      "source": "public/arcade/california-coast-v1.png",
+      "provenance": "Original generated Pacific-coast horizon; final prompt in docs/arcade/CALIFORNIA-ART.md.",
+      "variants": [
+        "coast"
+      ]
+    },
+    {
+      "rights": "Generated for this project with built-in image generation. Human art, character and design-rights review pending; no vehicle-brand affiliation.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "games": [
+        "wen-lambo"
+      ],
+      "id": "california-desert-v1",
+      "role": "racing-panorama",
+      "source": "public/arcade/california-desert-v1.png",
+      "provenance": "Original generated California desert horizon; final prompt in docs/arcade/CALIFORNIA-ART.md.",
+      "variants": [
+        "desert"
+      ]
+    },
+    {
+      "rights": "Generated for this project with built-in image generation. Human art, character and design-rights review pending; no vehicle-brand affiliation.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "games": [
+        "wen-lambo"
+      ],
+      "id": "california-scenery-v1",
+      "role": "racing-scenery-atlas",
+      "source": "public/arcade/california-scenery-v1.png",
+      "provenance": "Original generated transparent roadside objects, used as perspective billboards.",
+      "variants": [
+        "palm",
+        "rock",
+        "motel",
+        "palm-cluster",
+        "lifeguard",
+        "diner"
+      ]
+    },
+    {
+      "rights": "Generated for this project with built-in image generation. Human art, character and design-rights review pending; no vehicle-brand affiliation.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "games": [
+        "wen-lambo"
+      ],
+      "id": "california-pepe-bodies-v1",
+      "role": "racing-body-atlas",
+      "source": "public/arcade/california-pepe-bodies-v1.png",
+      "provenance": "Generated wheel-less open-cockpit bodies with public Diamond Hands Pepe identity; original wheels separately animated.",
+      "variants": [
+        "comet",
+        "spectre"
+      ],
+      "frames": [
+        {
+          "x": 0,
+          "y": 80,
+          "width": 485,
+          "height": 360
+        },
+        {
+          "x": 0,
+          "y": 550,
+          "width": 485,
+          "height": 380
+        }
+      ]
+    },
+    {
+      "id": "race-wheel-rig-v1",
+      "role": "articulated-wheel-rig",
+      "source": "lib/arcade/race-wheels.js",
+      "provenance": "Original code-native four-wheel rig: front-only steering, distance-driven tire tread and spokes, fixed rear alignment.",
+      "rights": "Original project code, no external models or textures.",
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxPrimitives": 700
+      },
+      "decodedBudgetBytes": 0,
+      "variants": [
+        "front-steer",
+        "rear-roll",
+        "reverse"
+      ],
+      "games": [
+        "wen-lambo"
+      ]
+    },
+    {
+      "id": "race-synth-v1",
+      "role": "racing-music-ambience-and-effects",
+      "source": "lib/arcade/race-audio.js",
+      "provenance": "Original gesture-gated synthesized engine, tire loop, music and ten event cues.",
+      "rights": "Original procedural audio; human listening review pending.",
+      "review": "development-only",
+      "humanApproved": false,
+      "geometryBudget": {
+        "maxVoices": 40,
+        "noiseBufferSeconds": 0.6
+      },
+      "decodedBudgetBytes": 230400,
+      "variants": [
+        "coast",
+        "desert",
+        "mute"
+      ],
+      "clips": [
+        "countdown",
+        "go",
+        "checkpoint",
+        "lap",
+        "drift",
+        "boost",
+        "wall",
+        "reset",
+        "finish",
+        "cup"
+      ],
+      "games": [
+        "wen-lambo"
+      ]
     }
   ]
 }

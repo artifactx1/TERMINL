@@ -12,9 +12,11 @@ platform adventure. Both have ghost duels, asynchronous friend challenges,
 shared credits, trophies, and unlockable phosphor colors. See
 [TERMINL_OS.md](TERMINL_OS.md) for rules, rewards, and verification.
 
-**New development slice: REKT RUMBLE** — two pixelated fighters, two stages,
-practice/training, and authoritative private online rooms. Existing games stay
-available. This is not the completed five-game release from the master brief.
+**Arcade expansion:** REKT RUMBLE now has six pixel fighters and two stages.
+WEN LAMBO adds California-style chase-view racing, two tracks, two roadsters with
+Pepe in the cockpit, reverse, drifting and private two-player cups. Practice,
+training and authoritative online rooms are included; the original games remain.
+This is not the completed five-game master release. See [racing guide](docs/arcade/RACING.md).
 
 ```bash
 npm run dev:arcade       # terminal 1: http://localhost:4000/os/rumble
@@ -27,8 +29,8 @@ J/K/L attack, Shift guards, E throws, R uses a full-meter super. Touch controls 
 remapping are included. Remote friends need a shared hosted authority; localhost
 links alone do not make your computer accessible over the internet.
 
-REKT RUMBLE is visible by default as a playable preview at `/os/rumble` and in
-the `/os` launcher. `ARCADE_LABS=1` enables only the asset-review route/link. No
+REKT RUMBLE (`/os/rumble`) and WEN LAMBO (`/os/lambo`) are visible by default
+as playable previews in the `/os` launcher. `ARCADE_LABS=1` enables only the asset-review route/link. No
 multiplayer infrastructure is provisioned by pushing this repository. See
 [implementation status](docs/arcade/STATUS.md), [network setup](docs/arcade/MULTIPLAYER.md),
 and [art provenance](docs/arcade/ASSET-PROMPTS.md). No cash/NFT prizes or paid advantages.

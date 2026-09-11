@@ -5,6 +5,8 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { WebSocketServer, WebSocket } from 'ws';
 import { RollbackFight } from '../../lib/arcade/rollback.mjs';
+import { CHARACTERS } from '../../lib/arcade/rumble-sim.mjs';
+import { VEHICLES, TRACKS, RACE_RULES } from '../../lib/arcade/race-sim.mjs';
 import { openJournal } from './journal.mjs';
 
 const STEP = 1000 / 60;
@@ -13,8 +15,11 @@ const FUTURE = 6;
 const secret = () => randomBytes(24).toString('base64url');
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
-const characters = new Set(['max', 'diamond']);
+const characters = new Set(Object.keys(CHARACTERS));
 const stages = new Set(['dead-mall', 'laundromat']);
+const games=['rekt-rumble','wen-lambo'];
+const validCharacter=(game,id)=>game==='wen-lambo'?Object.hasOwn(VEHICLES,id):characters.has(id);
+const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),build:'arcade-content-2'};
 const nameOf = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 24 && !/[\u0000-\u001f\u007f]/.test(value) ? value.trim() : null;
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
@@ -43,7 +48,7 @@ export async function startArcadeServer(options = {}) {
   };
   const error = (peer, code, message) => send(peer, { type: 'error', code, message });
   const members = (room) => [...room.players.filter(Boolean).map((p) => p.peer), ...room.spectators.values()].filter(Boolean);
-  const publicRoom = (room) => ({ code: room.code, phase: room.phase, stage: room.stage, matchId: room.matchId || null, players: room.players.map((p) => p ? { name: p.name, character: p.character, ready: p.ready, connected: !!p.peer, rematch: !!p.rematch } : null), spectators: room.spectators.size, expiresAt: room.expiresAt, region, result: room.result || null });
+  const publicRoom = (room) => ({ code: room.code, game:room.game, rulesVersion:1, phase: room.phase, stage: room.stage, matchId: room.matchId || null, players: room.players.map((p) => p ? { name: p.name, character: p.character, ready: p.ready, connected: !!p.peer, rematch: !!p.rematch } : null), spectators: room.spectators.size, expiresAt: room.expiresAt, region, result: room.result || null });
   const broadcastRoom = (room) => members(room).forEach((peer) => send(peer, { type: 'room', room: publicRoom(room), ...(room.state ? { state: room.state } : {}) }));
   const snapshot = (room) => members(room).forEach((peer) => send(peer, { type: 'snapshot', matchId: room.matchId, state: room.state, inputs: room.inputs, confirmedTick: Math.max(0, room.clock - LATE), acks: room.acks, corrections: room.corrections }));
   const publicResult = (result) => { const { participants: _participants, kind: _kind, replay: _replay, ...value } = result; return value; };
@@ -53,7 +58,7 @@ export async function startArcadeServer(options = {}) {
     let path;
     try { path = new URL(request.url, 'http://arcade.local').pathname; }
     catch { return json(response, 400, { error: 'invalid_url' }); }
-    if (path === '/health') return json(response, draining || storageFailed ? 503 : 200, { ok: !draining && !storageFailed, version: 1, region, rooms: rooms.size, players: [...rooms.values()].reduce((n, room) => n + room.players.filter((p) => p?.peer).length, 0), spectators: [...rooms.values()].reduce((n, room) => n + room.spectators.size, 0), connections: peers.size, droppedCatchups });
+    if (path === '/health') return json(response, draining || storageFailed ? 503 : 200, { ok: !draining && !storageFailed, version: 1, ...capabilities, region, rooms: rooms.size, players: [...rooms.values()].reduce((n, room) => n + room.players.filter((p) => p?.peer).length, 0), spectators: [...rooms.values()].reduce((n, room) => n + room.spectators.size, 0), connections: peers.size, droppedCatchups });
     if (path.startsWith('/results/') || path.startsWith('/replays/')) {
       const result = journal.results.get(path.slice(9));
       const credential = (request.headers.authorization || '').replace(/^Bearer /, '');
@@ -79,7 +84,7 @@ export async function startArcadeServer(options = {}) {
     if (room.settling || room.phase !== 'playing') return;
     room.settling = true;
     try {
-      const result = await journal.finish({ id: room.matchId, room: room.code, endedAt: Date.now(), status: 'completed', reason, winner, wins: room.state.wins, tick: room.state.tick, stage: room.stage, rewards: false, replay: room.sim.exportReplay(), participants: room.players.filter(Boolean).map((p) => digest(p.session)) });
+      const result = await journal.finish({ id: room.matchId, room: room.code, game:room.game, rulesVersion:1, endedAt: Date.now(), status: 'completed', reason, winner, wins: room.state.wins, tick: room.state.tick, stage: room.stage, ...(room.game==='wen-lambo'?{races:room.state.raceResults}:{}), rewards: false, replay: room.sim.exportReplay(), participants: room.players.filter(Boolean).map((p) => digest(p.session)) });
       room.result = publicResult(result); room.phase = 'finished'; room.expiresAt = Date.now() + inviteMs;
       snapshot(room); broadcastRoom(room);
       members(room).forEach((peer) => send(peer, { type: 'result', result: room.result }));
@@ -91,9 +96,9 @@ export async function startArcadeServer(options = {}) {
     if (!['lobby', 'finished'].includes(room.phase) || !room.players.every((p) => p?.peer && p.ready) || storageFailed || draining) return;
     room.phase = 'starting'; room.result = null; room.matchId = randomBytes(16).toString('hex');
     broadcastRoom(room);
-    try { await journal.start({ id: room.matchId, room: room.code, startedAt: Date.now(), stage: room.stage, participants: room.players.map((p) => digest(p.session)) }); }
+    try { await journal.start({ id: room.matchId, room: room.code, game:room.game, rulesVersion:1, startedAt: Date.now(), stage: room.stage, participants: room.players.map((p) => digest(p.session)) }); }
     catch { failStorage(); room.phase = 'aborted'; broadcastRoom(room); return; }
-    room.sim = new RollbackFight({ stage: room.stage, characters: room.players.map((p) => p.character) });
+    room.sim = room.game==='wen-lambo'?new RollbackFight({track:room.stage,vehicles:room.players.map(p=>p.character),cup:true},RACE_RULES):new RollbackFight({ stage: room.stage, characters: room.players.map((p) => p.character) });
     room.state = room.sim.state;
     room.clock = 0; room.inputs = [0, 0]; room.acks = [-1, -1]; room.corrections = 0; room.accumulator = 0;
     room.players.forEach((p) => { p.lastSeq = -1; p.rematch = false; });
@@ -146,7 +151,7 @@ export async function startArcadeServer(options = {}) {
     try { if (binary) throw new Error(); message = JSON.parse(data.toString()); } catch { error(peer, 'invalid_message', 'Expected a JSON object'); return; }
     if (!message || typeof message !== 'object' || Array.isArray(message) || typeof message.type !== 'string') return error(peer, 'invalid_message', 'Expected a typed object');
     if (message.type !== 'input' && ++peer.controls > 15) return error(peer, 'rate_limit', 'Too many control messages');
-    const schemas = { create: ['type', 'name', 'character', 'stage'], join: ['type', 'code', 'token', 'name', 'character', 'spectator'], resume: ['type', 'code', 'session'], ready: ['type', 'ready'], input: ['type', 'seq', 'tick', 'input'], rematch: ['type'], leave: ['type'], ping: ['type', 'time'] };
+    const schemas = { create: ['type', 'name', 'character', 'stage','game','rulesVersion'], join: ['type', 'code', 'token', 'name', 'character', 'spectator','game','rulesVersion'], resume: ['type', 'code', 'session','game'], ready: ['type', 'ready'], input: ['type', 'seq', 'tick', 'input'], rematch: ['type'], leave: ['type'], ping: ['type', 'time'] };
     if (!schemas[message.type] || Object.keys(message).some((key) => !schemas[message.type].includes(key))) return error(peer, 'invalid_message', 'Unknown message fields');
     if (message.type === 'ping') {
       if (typeof message.time !== 'number' || !Number.isFinite(message.time)) return error(peer, 'invalid_message', 'Invalid ping');
@@ -156,17 +161,20 @@ export async function startArcadeServer(options = {}) {
       if (peer.room) return error(peer, 'already_joined', 'Leave the current room first');
       if (draining || storageFailed) return error(peer, 'unavailable', 'Rooms temporarily unavailable');
       if (message.type === 'create') {
+        const game=message.game||'rekt-rumble';
+        if(!games.includes(game)||message.rulesVersion!==undefined&&message.rulesVersion!==1)return error(peer,'unsupported_game','This server needs the matching arcade update.');
         const name = nameOf(message.name);
-        if (!name || !characters.has(message.character) || !stages.has(message.stage)) return error(peer, 'invalid_message', 'Invalid name, character, or stage');
+        if (!name || !validCharacter(game,message.character) || !(game==='wen-lambo'?Object.hasOwn(TRACKS,message.stage):stages.has(message.stage))) return error(peer, 'invalid_message', 'Invalid name, character, or stage');
         if (rooms.size >= maxRooms) return error(peer, 'capacity', 'Arcade is full');
         let code; do { code = randomBytes(4).toString('hex').toUpperCase(); } while (rooms.has(code));
         const session = secret();
-        const room = { code, token: secret(), expiresAt: now + inviteMs, phase: 'lobby', stage: message.stage, players: [{ name, character: message.character, ready: false, session, peer }, null], spectators: new Map() };
+        const room = { code, game, token: secret(), expiresAt: now + inviteMs, phase: 'lobby', stage: message.stage, players: [{ name, character: message.character, ready: false, session, peer }, null], spectators: new Map() };
         rooms.set(code, room); return attach(peer, room, 0, session);
       }
       if (typeof message.code !== 'string' || message.code.length > 12) return error(peer, 'invalid_message', 'Invalid room code');
       const room = rooms.get(message.code.toUpperCase());
       if (!room) return error(peer, 'not_found', 'Room unavailable');
+      if(message.game!==undefined&&message.game!==room.game||message.rulesVersion!==undefined&&message.rulesVersion!==1)return error(peer,'wrong_game','This invitation belongs to a different game or rules version.');
       if (message.type === 'resume') {
         const slot = room.players.findIndex((p) => p && equal(message.session, p.session));
         if (slot < 0 || (room.players[slot].disconnectedAt && now - room.players[slot].disconnectedAt > graceMs)) return error(peer, 'invalid_session', 'Reconnect session expired');
@@ -175,7 +183,7 @@ export async function startArcadeServer(options = {}) {
         player.peer = peer; player.disconnectedAt = null; return attach(peer, room, slot, player.session);
       }
       const name = nameOf(message.name);
-      if (!name || !characters.has(message.character) || (message.spectator !== undefined && typeof message.spectator !== 'boolean')) return error(peer, 'invalid_message', 'Invalid guest details');
+      if (!name || !validCharacter(room.game,message.character) || (message.spectator !== undefined && typeof message.spectator !== 'boolean')) return error(peer, 'invalid_message', 'Invalid guest details');
       if (room.expiresAt <= now || !equal(message.token, room.token)) return error(peer, 'invalid_invite', 'Invite expired or invalid');
       const session = secret();
       if (message.spectator) {
@@ -205,7 +213,7 @@ export async function startArcadeServer(options = {}) {
     }
     if (message.type === 'input') {
       if (room.phase !== 'playing' || room.settling) return error(peer, 'invalid_phase', 'Match is not accepting inputs');
-      if (!integer(message.seq, 0, 2147483647) || !integer(message.tick, 0, 1000000) || !integer(message.input, 0, 2047)) return error(peer, 'invalid_input', 'Invalid input values');
+      if (!integer(message.seq, 0, 2147483647) || !integer(message.tick, 0, 1000000) || !integer(message.input, 0, room.game==='wen-lambo'?127:2047)) return error(peer, 'invalid_input', 'Invalid input values');
       if (message.seq <= player.lastSeq) return error(peer, 'duplicate_input', 'Input sequence must increase');
       if (message.tick < room.clock - LATE || message.tick > room.clock + FUTURE) return error(peer, 'input_deadline', 'Input outside rollback window');
       const accepted = room.sim.submit(peer.slot, message.tick, message.input, message.seq);
@@ -218,7 +226,7 @@ export async function startArcadeServer(options = {}) {
     const ip = request.socket.remoteAddress || 'unknown';
     connections.set(ip, (connections.get(ip) || 0) + 1);
     const peer = { socket, room: null, slot: -1, rateAt: Date.now(), messages: 0, controls: 0, alive: true };
-    peers.add(peer); send(peer, { type: 'welcome', version: 1 });
+    peers.add(peer); send(peer, { type: 'welcome', version: 1, ...capabilities });
     socket.on('pong', () => { peer.alive = true; });
     socket.on('message', (data, binary) => {
       try { onMessage(peer, data, binary); } catch { error(peer, 'invalid_message', 'Message could not be processed'); }
@@ -259,7 +267,7 @@ export async function startArcadeServer(options = {}) {
   }, 8);
   const heartbeat = setInterval(() => { for (const peer of peers) { if (!peer.alive) peer.socket.terminate(); else { peer.alive = false; peer.socket.ping(); } } }, 10000);
   try {
-    await new Promise((resolveReady, reject) => { server.once('error', reject); server.listen(options.port ?? Number(process.env.ARCADE_PORT || 4010), options.host || process.env.ARCADE_HOST || '127.0.0.1', resolveReady); });
+    await new Promise((resolveReady, reject) => { server.once('error', reject); server.listen(options.port ?? Number(process.env.ARCADE_PORT || process.env.PORT || 4010), options.host || process.env.ARCADE_HOST || '127.0.0.1', resolveReady); });
   } catch (error) {
     clearInterval(timer); clearInterval(heartbeat); wss.close(); await journal.close(); throw error;
   }
