@@ -27,7 +27,8 @@ J/K/L attack, Shift guards, E throws, R uses a full-meter super. Touch controls 
 remapping are included. Remote friends need a shared hosted authority; localhost
 links alone do not make your computer accessible over the internet.
 
-`ARCADE_LABS=1` enables the new routes. Normal builds keep the lab hidden; no
+REKT RUMBLE is visible by default as a playable preview at `/os/rumble` and in
+the `/os` launcher. `ARCADE_LABS=1` enables only the asset-review route/link. No
 multiplayer infrastructure is provisioned by pushing this repository. See
 [implementation status](docs/arcade/STATUS.md), [network setup](docs/arcade/MULTIPLAYER.md),
 and [art provenance](docs/arcade/ASSET-PROMPTS.md). No cash/NFT prizes or paid advantages.

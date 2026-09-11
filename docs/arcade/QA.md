@@ -10,6 +10,10 @@ npm run lint
 npm run build
 ```
 
+Default-build visibility regression: run `npm run start` without `ARCADE_LABS`,
+then `node scripts/arcade-visibility.mjs`. It checks both original game selectors,
+the preview link, running practice, return navigation and the gated review route.
+
 With `npm run dev:arcade` and `npm run arcade:server` running:
 
 ```sh
@@ -58,8 +62,10 @@ keyboard handlers; they observe messages but never inject damage or scores.
   concurrent CPU-heavy checks; the isolated 150 ms case passed. Run real-time
   socket checks separately from builds/browser suites. Deadline rejection is
   intentionally enforced; loaded-host timing is not certified by these tests.
-- Optimized production build passed. With the lab flag absent, HTTP checks
-  returned 200 for `/os` and 404 for both `/os/rumble` and `/os/asset-lab`.
+- Initial production gating returned 404 for the game too, making it invisible
+  on main. The visibility fix makes `/os` and `/os/rumble` available without a
+  flag, while `/os/asset-lab` still returns 404. The launcher labels the game a
+  playable preview, not a finished release.
 
 ## Limits and release gates
 

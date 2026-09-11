@@ -21,8 +21,9 @@ Do not mistake a connected wallet or selected guest station for proof of ownersh
 - Reuse Canvas for 2D games; no Phaser migration or second UI framework.
 - Renderer-independent `.mjs` simulation with a typed `.d.ts` module/protocol
   boundary, matching the repo's executable-JS tooling. No divergent server copy.
-- REKT RUMBLE gets a lazily loaded route at `/os/rumble`; development-only routes
-  and launcher link require `ARCADE_LABS=1`. Nothing else becomes a released tile.
+- REKT RUMBLE gets a lazily loaded public preview at `/os/rumble`, linked in `/os`.
+  Only asset-review tooling requires `ARCADE_LABS=1`. No unfinished roadmap game
+  becomes a released tile; the fighter is explicitly labeled a development build.
 - Dedicated Node/ws service on 4010, fixed 60 Hz simulation, 20 Hz snapshots,
   bounded late-input rollback. React handles menus/HUD; animation uses refs/RAF.
 - Anonymous room-scoped guest sessions are not a second wallet connector or a

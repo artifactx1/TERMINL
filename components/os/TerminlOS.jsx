@@ -32,7 +32,7 @@ function Modal({ title, children, close }) {
   </dialog>;
 }
 
-export default function TerminlOS({ machines, arcadeLabs = false }) {
+export default function TerminlOS({ machines }) {
   const [profile, setProfile] = useState(freshProfile);
   const profileRef = useRef(profile);
   const [ready, setReady] = useState(false);
@@ -171,7 +171,7 @@ export default function TerminlOS({ machines, arcadeLabs = false }) {
       <main className={s.main}>
         <div className={s.breadcrumb}><span>DESKTOP / {APPS.find(a => a.id === app)?.name.toUpperCase()}</span><span><i className={s.statusDot} /> PLAYABLE GUEST EDITION</span></div>
         {storageUnavailable && <div className={s.warning}>Browser storage is unavailable. Credits and unlocks will be lost when you leave.</div>}
-        {arcadeLabs && <div className={s.invite}><div><b>ARCADE LABS / REKT RUMBLE</b><span>Two fighters. Two stages. Private online rooms. Development playtest.</span></div><Link className={s.darkButton} href="/os/rumble">ENTER THE FIGHT LAB ↗</Link></div>}
+        <div className={s.invite}><div><b>REKT RUMBLE / PLAYABLE PREVIEW</b><span>Two pixel fighters. Two stages. Training and bot practice are ready. Online rooms need a configured server.</span></div><Link className={s.darkButton} href="/os/rumble">PLAY REKT RUMBLE ↗</Link></div>
         {incoming && !run && app === "arcade" && <div className={s.invite}><div><b>{incoming.name} left you a challenge.</b><span>{incoming.game === "moon" ? "Moon Mission. Same level. Beat their ghost." : "Rug Runner. Same course. Beat their ghost."}</span></div><button className={s.darkButton} onClick={() => start("challenge")}>Accept challenge <Icon name="swords" size={17} /></button></div>}
 
         <div className={s.pageHeading}><div><h1>{app === "arcade" ? "Welcome to the trenches." : app === "trophies" ? "Proof you were here." : app === "shop" ? "Spend your bad decisions." : "Make yourself at home."}</h1><p>{app === "arcade" ? "Two games. One terminal. Absolutely no adult supervision." : app === "trophies" ? "Small victories. Spectacular failures. All worth keeping." : app === "shop" ? "Entirely unnecessary upgrades. Extremely necessary energy." : "A little personality for your corner of the internet."}</p></div><div className={s.creditPill}><Icon name="bolt" size={18} /><b>{fmt(profile.credits)}</b><span>CR</span></div></div>

@@ -6,7 +6,8 @@ five completed games. Rug Runner and Moon Mission retain existing saves/rules.
 
 ## Implemented
 
-- TERMINL-styled `/os/rumble` and `/os/asset-lab`, gated by `ARCADE_LABS=1`.
+- TERMINL-styled `/os/rumble`, visible by default as a playable preview in `/os`.
+  Only `/os/asset-lab` and its review link require `ARCADE_LABS=1`.
 - Two freely selectable pixelated fighters: Margin Call Max and Diamond Hands
   Pepe, 15 animation states each, 11 authored moves each, guard heights, throw
   escape, hit-stop, armor, meter, bounded combos and best-of-three rounds.
@@ -53,5 +54,5 @@ require a reachable shared TLS authority.
 
 Next: human review of this slice; physical touch/controller and latency
 playtests; production-host/persistence decision with explicit approval; then
-expand REKT RUMBLE before subsequent game slices. Keep the lab flag off in
-production until release gates are met. Asset release approval remains closed.
+expand REKT RUMBLE before subsequent game slices. The preview is not a finished
+release; asset-review tooling and asset release approval remain gated.
