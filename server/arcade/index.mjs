@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { WebSocketServer, WebSocket } from 'ws';
 import { RollbackFight } from '../../lib/arcade/rollback.mjs';
 import { CHARACTERS } from '../../lib/arcade/rumble-sim.mjs';
-import { VEHICLES, TRACKS, RACE_RULES } from '../../lib/arcade/race-sim.mjs';
+import { VEHICLES, TRACKS, RACE_RULES, RACE_RULES_VERSION } from '../../lib/arcade/race-sim.mjs';
 import { openJournal } from './journal.mjs';
 
 const STEP = 1000 / 60;
@@ -19,7 +19,8 @@ const characters = new Set(Object.keys(CHARACTERS));
 const stages = new Set(['dead-mall', 'laundromat']);
 const games=['rekt-rumble','wen-lambo'];
 const validCharacter=(game,id)=>game==='wen-lambo'?Object.hasOwn(VEHICLES,id):characters.has(id);
-const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),build:'arcade-content-2'};
+const rulesVersion=game=>game==='wen-lambo'?RACE_RULES_VERSION:1;
+const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-3'};
 const nameOf = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 24 && !/[\u0000-\u001f\u007f]/.test(value) ? value.trim() : null;
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
@@ -48,7 +49,7 @@ export async function startArcadeServer(options = {}) {
   };
   const error = (peer, code, message) => send(peer, { type: 'error', code, message });
   const members = (room) => [...room.players.filter(Boolean).map((p) => p.peer), ...room.spectators.values()].filter(Boolean);
-  const publicRoom = (room) => ({ code: room.code, game:room.game, rulesVersion:1, phase: room.phase, stage: room.stage, matchId: room.matchId || null, players: room.players.map((p) => p ? { name: p.name, character: p.character, ready: p.ready, connected: !!p.peer, rematch: !!p.rematch } : null), spectators: room.spectators.size, expiresAt: room.expiresAt, region, result: room.result || null });
+  const publicRoom = (room) => ({ code: room.code, game:room.game, rulesVersion:rulesVersion(room.game), phase: room.phase, stage: room.stage, matchId: room.matchId || null, players: room.players.map((p) => p ? { name: p.name, character: p.character, ready: p.ready, connected: !!p.peer, rematch: !!p.rematch } : null), spectators: room.spectators.size, expiresAt: room.expiresAt, region, result: room.result || null });
   const broadcastRoom = (room) => members(room).forEach((peer) => send(peer, { type: 'room', room: publicRoom(room), ...(room.state ? { state: room.state } : {}) }));
   const snapshot = (room) => members(room).forEach((peer) => send(peer, { type: 'snapshot', matchId: room.matchId, state: room.state, inputs: room.inputs, confirmedTick: Math.max(0, room.clock - LATE), acks: room.acks, corrections: room.corrections }));
   const publicResult = (result) => { const { participants: _participants, kind: _kind, replay: _replay, ...value } = result; return value; };
@@ -84,7 +85,7 @@ export async function startArcadeServer(options = {}) {
     if (room.settling || room.phase !== 'playing') return;
     room.settling = true;
     try {
-      const result = await journal.finish({ id: room.matchId, room: room.code, game:room.game, rulesVersion:1, endedAt: Date.now(), status: 'completed', reason, winner, wins: room.state.wins, tick: room.state.tick, stage: room.stage, ...(room.game==='wen-lambo'?{races:room.state.raceResults}:{}), rewards: false, replay: room.sim.exportReplay(), participants: room.players.filter(Boolean).map((p) => digest(p.session)) });
+      const result = await journal.finish({ id: room.matchId, room: room.code, game:room.game, rulesVersion:rulesVersion(room.game), endedAt: Date.now(), status: 'completed', reason, winner, wins: room.state.wins, tick: room.state.tick, stage: room.stage, ...(room.game==='wen-lambo'?{races:room.state.raceResults}:{}), rewards: false, replay: room.sim.exportReplay(), participants: room.players.filter(Boolean).map((p) => digest(p.session)) });
       room.result = publicResult(result); room.phase = 'finished'; room.expiresAt = Date.now() + inviteMs;
       snapshot(room); broadcastRoom(room);
       members(room).forEach((peer) => send(peer, { type: 'result', result: room.result }));
@@ -96,7 +97,7 @@ export async function startArcadeServer(options = {}) {
     if (!['lobby', 'finished'].includes(room.phase) || !room.players.every((p) => p?.peer && p.ready) || storageFailed || draining) return;
     room.phase = 'starting'; room.result = null; room.matchId = randomBytes(16).toString('hex');
     broadcastRoom(room);
-    try { await journal.start({ id: room.matchId, room: room.code, game:room.game, rulesVersion:1, startedAt: Date.now(), stage: room.stage, participants: room.players.map((p) => digest(p.session)) }); }
+    try { await journal.start({ id: room.matchId, room: room.code, game:room.game, rulesVersion:rulesVersion(room.game), startedAt: Date.now(), stage: room.stage, participants: room.players.map((p) => digest(p.session)) }); }
     catch { failStorage(); room.phase = 'aborted'; broadcastRoom(room); return; }
     room.sim = room.game==='wen-lambo'?new RollbackFight({track:room.stage,vehicles:room.players.map(p=>p.character),cup:true},RACE_RULES):new RollbackFight({ stage: room.stage, characters: room.players.map((p) => p.character) });
     room.state = room.sim.state;
@@ -151,7 +152,7 @@ export async function startArcadeServer(options = {}) {
     try { if (binary) throw new Error(); message = JSON.parse(data.toString()); } catch { error(peer, 'invalid_message', 'Expected a JSON object'); return; }
     if (!message || typeof message !== 'object' || Array.isArray(message) || typeof message.type !== 'string') return error(peer, 'invalid_message', 'Expected a typed object');
     if (message.type !== 'input' && ++peer.controls > 15) return error(peer, 'rate_limit', 'Too many control messages');
-    const schemas = { create: ['type', 'name', 'character', 'stage','game','rulesVersion'], join: ['type', 'code', 'token', 'name', 'character', 'spectator','game','rulesVersion'], resume: ['type', 'code', 'session','game'], ready: ['type', 'ready'], input: ['type', 'seq', 'tick', 'input'], rematch: ['type'], leave: ['type'], ping: ['type', 'time'] };
+    const schemas = { create: ['type', 'name', 'character', 'stage','game','rulesVersion'], join: ['type', 'code', 'token', 'name', 'character', 'spectator','game','rulesVersion'], resume: ['type', 'code', 'session','game','rulesVersion'], ready: ['type', 'ready'], input: ['type', 'seq', 'tick', 'input'], rematch: ['type'], leave: ['type'], ping: ['type', 'time'] };
     if (!schemas[message.type] || Object.keys(message).some((key) => !schemas[message.type].includes(key))) return error(peer, 'invalid_message', 'Unknown message fields');
     if (message.type === 'ping') {
       if (typeof message.time !== 'number' || !Number.isFinite(message.time)) return error(peer, 'invalid_message', 'Invalid ping');
@@ -162,7 +163,7 @@ export async function startArcadeServer(options = {}) {
       if (draining || storageFailed) return error(peer, 'unavailable', 'Rooms temporarily unavailable');
       if (message.type === 'create') {
         const game=message.game||'rekt-rumble';
-        if(!games.includes(game)||message.rulesVersion!==undefined&&message.rulesVersion!==1)return error(peer,'unsupported_game','This server needs the matching arcade update.');
+        if(!games.includes(game)||(message.rulesVersion??1)!==rulesVersion(game))return error(peer,'unsupported_game','This server needs the matching arcade update.');
         const name = nameOf(message.name);
         if (!name || !validCharacter(game,message.character) || !(game==='wen-lambo'?Object.hasOwn(TRACKS,message.stage):stages.has(message.stage))) return error(peer, 'invalid_message', 'Invalid name, character, or stage');
         if (rooms.size >= maxRooms) return error(peer, 'capacity', 'Arcade is full');
@@ -174,7 +175,7 @@ export async function startArcadeServer(options = {}) {
       if (typeof message.code !== 'string' || message.code.length > 12) return error(peer, 'invalid_message', 'Invalid room code');
       const room = rooms.get(message.code.toUpperCase());
       if (!room) return error(peer, 'not_found', 'Room unavailable');
-      if(message.game!==undefined&&message.game!==room.game||message.rulesVersion!==undefined&&message.rulesVersion!==1)return error(peer,'wrong_game','This invitation belongs to a different game or rules version.');
+      if(message.game!==undefined&&message.game!==room.game||(message.rulesVersion??1)!==rulesVersion(room.game))return error(peer,'wrong_game','This invitation belongs to a different game or rules version.');
       if (message.type === 'resume') {
         const slot = room.players.findIndex((p) => p && equal(message.session, p.session));
         if (slot < 0 || (room.players[slot].disconnectedAt && now - room.players[slot].disconnectedAt > graceMs)) return error(peer, 'invalid_session', 'Reconnect session expired');

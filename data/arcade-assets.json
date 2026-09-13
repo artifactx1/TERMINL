@@ -1,8 +1,8 @@
 {
   "version": 1,
   "releaseApproved": false,
-  "decodedMemoryBudgetBytes": 50331648,
-  "runtimePolicy": "Six public character portraits and two Rumble stage plates; California racing loads two generated panoramas, one transparent scenery atlas and one transparent Pepe body atlas. Race wheels and road geometry are code-native. Declared assets stay below 48 MiB decoded; viewport-dependent display canvases are additional. No unpublished collection assets are exported.",
+  "decodedMemoryBudgetBytes": 83886080,
+  "runtimePolicy": "Six public portraits, two Rumble stage plates, six generated racing panoramas, one scenery atlas and one Pepe body atlas. Road, course props and wheels are code-native. Declared assets below 80 MiB decoded; display canvases additional. Overview cache capped at two tracks (8 MiB). No unpublished art exported.",
   "assets": [
     {
       "id": "max-reference-v1",
@@ -884,6 +884,86 @@
         "reset",
         "finish",
         "cup"
+      ],
+      "games": [
+        "wen-lambo"
+      ]
+    },
+    {
+      "id": "california-redwood-v1",
+      "role": "racing-panorama",
+      "source": "public/arcade/california-redwood-v1.png",
+      "provenance": "Built-in image generation; final prompt in docs/arcade/GRAND-TOUR-ART.md.",
+      "rights": "Generated for this project. Human art and rights review pending.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "variants": [
+        "redwood"
+      ],
+      "games": [
+        "wen-lambo"
+      ]
+    },
+    {
+      "id": "california-alpine-v1",
+      "role": "racing-panorama",
+      "source": "public/arcade/california-alpine-v1.png",
+      "provenance": "Built-in image generation; final prompt in docs/arcade/GRAND-TOUR-ART.md.",
+      "rights": "Generated for this project. Human art and rights review pending.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "variants": [
+        "alpine"
+      ],
+      "games": [
+        "wen-lambo"
+      ]
+    },
+    {
+      "id": "california-neon-v1",
+      "role": "racing-panorama",
+      "source": "public/arcade/california-neon-v1.png",
+      "provenance": "Built-in image generation; final prompt in docs/arcade/GRAND-TOUR-ART.md.",
+      "rights": "Generated for this project. Human art and rights review pending.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "variants": [
+        "neon"
+      ],
+      "games": [
+        "wen-lambo"
+      ]
+    },
+    {
+      "id": "california-vineyard-v1",
+      "role": "racing-panorama",
+      "source": "public/arcade/california-vineyard-v1.png",
+      "provenance": "Built-in image generation; final prompt in docs/arcade/GRAND-TOUR-ART.md.",
+      "rights": "Generated for this project. Human art and rights review pending.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "variants": [
+        "vineyard"
       ],
       "games": [
         "wen-lambo"

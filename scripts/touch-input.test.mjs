@@ -32,8 +32,8 @@ test('held touch corrections stay bounded instead of accumulating full steering 
     }
     return max;
   };
-  assert.ok(run(.5,5.6)<.12);assert.ok(run(1,5.6)<.43);
-  assert.ok(run(1,0)<.82);assert.ok(run(1,0)>run(1,5.6));
+  assert.ok(run(.5,5.6)<.12);assert.ok(run(1,5.6)>.65&&run(1,5.6)<.77);
+  assert.ok(run(1,0)>.95&&run(1,0)<=1);assert.ok(run(1,0)>run(1,5.6));
   assert.equal(run(.5,5.6),run(-.5,5.6));
   assert.equal(raceTouchSteeringInput(0,.4,6),0);
   assert.equal(raceTouchSteeringInput(-1,.4,6),1);

@@ -15,6 +15,7 @@
     "test:touch:browser": "node scripts/touch-browser.mjs",
     "test:race:smoke": "node scripts/race-smoke.mjs",
     "test:race:browser": "node scripts/race-browser.mjs",
+    "test:race:online-smoke": "node scripts/grand-tour-browser.mjs",
     "test:arcade:browser": "node scripts/arcade-browser.mjs",
     "validate:arcade-assets": "node scripts/validate-arcade-assets.mjs",
     "validate:arcade-catalog": "node scripts/validate-arcade-catalog.mjs",

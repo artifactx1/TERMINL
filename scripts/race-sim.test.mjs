@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, stepRace, raceBotInput, raceHash, trackGeometry, nearestRoad, RACE_RULES, RACE_INPUT as I } from '../lib/arcade/race-sim.mjs';
+import { createRace, stepRace, raceBotInput, raceHash, trackGeometry, nearestRoad, RACE_RULES, CUP_TRACKS, RACE_INPUT as I } from '../lib/arcade/race-sim.mjs';
+import {createRace as legacyRace,stepRace as legacyStep} from '../lib/arcade/race-sim-v1.mjs';
+import {raceProgress,rivalTelemetry} from '../lib/arcade/race-telemetry.mjs';
 import { RollbackFight, replayFight, HISTORY_LIMIT } from '../lib/arcade/rollback.mjs';
 
 function racing(options) { const s=createRace(options); s.phase='racing'; s.phaseTick=0; return s; }
@@ -54,14 +56,48 @@ test('fractional finish times determine points, exact ties draw, DNF never award
   s=racing({cup:false});s.players.forEach(p=>{p.finishedTick=100;p.cupTime=100;});s=stepRace(s);assert.deepEqual(s.wins,[8,8]);for(let i=0;i<480;i++)s=stepRace(s);assert.equal(s.winner,null);
   s=racing({cup:false});s.raceTicks=7199;s=stepRace(s);assert.deepEqual(s.wins,[0,0]);assert.deepEqual(s.raceResults[0].times,[null,null]);
 });
-test('both ordinary-input practice drivers finish both tracks in a deterministic cup',()=>{
-  let a=createRace(),b=createRace();while(a.phase!=='finished'&&a.tick<16000){const inputs=[raceBotInput(a,0),raceBotInput(a,1)];a=stepRace(a,inputs);b=stepRace(b,inputs);}
-  assert.equal(a.phase,'finished');assert.equal(raceHash(a),raceHash(b));assert.equal(a.raceResults.length,2);
-  for(const r of a.raceResults)assert.ok(r.times.every(n=>n!==null&&n<7200));assert.equal(a.players[0].points+a.players[1].points,32);
+test('both ordinary-input practice drivers finish all six tracks in a deterministic cup',()=>{
+  let a=createRace(),b=createRace();while(a.phase!=='finished'&&a.tick<48000){const inputs=[raceBotInput(a,0),raceBotInput(a,1)];a=stepRace(a,inputs);b=stepRace(b,inputs);}
+  assert.equal(a.phase,'finished');assert.equal(raceHash(a),raceHash(b));assert.equal(a.raceResults.length,6);
+  assert.deepEqual(a.raceResults.map(r=>r.track),CUP_TRACKS);
+  for(const r of a.raceResults)assert.ok(r.times.every(n=>n!==null&&n<7200),r.track);assert.equal(a.players[0].points+a.players[1].points,96);
 });
 test('racer shares bounded rollback, mask validation and exact authenticated-replay reproduction',()=>{
   const a=new RollbackFight({},RACE_RULES),b=new RollbackFight({},RACE_RULES);
   for(let i=0;i<500;i++){a.advance([i>180?I.THROTTLE:0,0]);b.advance([i>180?I.THROTTLE:0,0]);}
   assert.equal(a.submit(0,494,I.BRAKE,501).ok,true);assert.equal(b.submit(0,494,I.BRAKE,501).ok,true);assert.equal(a.corrections,1);assert.equal(raceHash(a.state),raceHash(b.state));
   assert.ok(a.history.size<=HISTORY_LIMIT+1);const replay=a.exportReplay();assert.equal(replay.game,'wen-lambo');assert.equal(raceHash(replayFight(replay,RACE_RULES)),replay.hash);assert.throws(()=>replayFight(replay));
+});
+test('reverse escapes the outer shoulder and barrier sliding preserves tangential motion',()=>{
+  let s=racing({cup:false});const g=trackGeometry(s.track),gate=g.gates[0],nx=-Math.sin(gate.angle),ny=Math.cos(gate.angle);
+  Object.assign(s.players[0],{x:gate.x+nx*(g.width/2+55),y:gate.y+ny*(g.width/2+55),angle:gate.angle+Math.PI/2});
+  for(let i=0;i<85;i++)s=stepRace(s,[I.BRAKE,0]);
+  assert.equal(s.players[0].gear,-1);assert.equal(s.players[0].offRoad,false);assert.equal(s.players[0].passed,0);
+  s=racing({cup:false});Object.assign(s.players[0],{x:gate.x+nx*(g.width/2+57),y:gate.y+ny*(g.width/2+57),angle:gate.angle,vx:-Math.cos(gate.angle),vy:-Math.sin(gate.angle),speed:1});
+  const next=stepRace(s,[I.BRAKE,0]);assert.ok(next.players[0].speed>.8,'barrier must not erase reverse velocity');
+  Object.assign(s.players[0],{yawRate:.03,steer:.9,boosting:true,drifting:true});
+  const reset=stepRace(s,[I.RESET,0]).players[0];assert.equal(reset.yawRate,0);assert.equal(reset.steer,0);assert.equal(reset.boosting,false);assert.equal(reset.offRoad,false);
+});
+
+test('brake overrides gas in authority, and reverse steering works on either lock',()=>{
+  let s=racing({cup:false});const p=s.players[0];p.vx=Math.cos(p.angle)*3;p.vy=Math.sin(p.angle)*3;p.speed=3;
+  for(let i=0;i<100;i++)s=stepRace(s,[I.BRAKE|I.THROTTLE,0]);
+  assert.equal(s.players[0].gear,-1,'held brake must actually pass through zero into reverse after driving forward');
+  for(let i=0;i<100;i++)s=stepRace(s,[I.THROTTLE,0]);assert.equal(s.players[0].gear,1);
+  for(const input of [I.LEFT,I.RIGHT]){let a=racing({cup:false});for(let i=0;i<55;i++)a=stepRace(a,[I.BRAKE,0]);const angle=a.players[0].angle;for(let i=0;i<15;i++)a=stepRace(a,[I.BRAKE|input,0]);assert.ok((a.players[0].angle-angle)*(input===I.RIGHT?-1:1)>.03);}
+});
+
+test('rival telemetry follows ordered sectors, finish state and both seats',()=>{
+  let s=racing({cup:false});s=cross(s,0);const g=trackGeometry(s.track),p=s.players[0];
+  Object.assign(p,{x:g.gates[1].x,y:g.gates[1].y});assert.ok(raceProgress(s,0)<=g.gates[1].s+.01);
+  const a=rivalTelemetry(s,0),b=rivalTelemetry(s,1);assert.equal(a.gap,-b.gap);assert.match(a.label,/BEHIND/);assert.match(b.label,/AHEAD/);
+  const sectorEnd=g.gates[1].s;Object.assign(p,{x:g.gates[6].x,y:g.gates[6].y});assert.ok(raceProgress(s,0)<=sectorEnd);
+  s.players[1].finishedTick=123;assert.equal(rivalTelemetry(s,0).label,'RIVAL FINISHED');
+});
+
+test('historical unversioned v1 racing replays still reproduce exactly',()=>{
+  let old=legacyRace();for(let i=0;i<700;i++)old=legacyStep(old,[6,4]);
+  const replay={version:1,game:'wen-lambo',options:{},ticks:700,inputs:[{tick:0,slots:[{input:6},{input:4}]}]};
+  assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(old));
+  assert.throws(()=>replayFight({...replay,rulesVersion:99},RACE_RULES));
 });

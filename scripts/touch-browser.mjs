@@ -30,7 +30,7 @@ async function layout(game){
 }
 try{
   await mkdir('artifacts/arcade',{recursive:true});
-  await page.goto(`${base}/os/lambo`);await button('PRACTICE CUP →').tap();
+  await page.goto(`${base}/os/lambo`);await button('SIX-COURSE CUP →').tap();
   await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.phase==='racing');
   await layout('lambo');
   // Manual mode: BOOST alone includes throttle and visibly consumes boost.
@@ -56,6 +56,10 @@ try{
   await lift(1);await lift(2);await mask(0);
   await press(1,steering,.58);await mask(0);
   await page.waitForFunction(()=>Number(document.querySelector('canvas').dataset.steer)===0);await lift(1);
+  // Deliberate full-rim steering can now make a tight turn at low speed.
+  await press(1,steering,.9);await press(2,button('BRAKE / REV'));
+  await page.waitForFunction(()=>Math.abs(Number(document.querySelector('canvas').dataset.steer))>.75);
+  await lift(1);await lift(2);await mask(0);
   // Auto-gas remains after a normal lift, but brake overrides it and reverse works.
   await button('AUTO GAS OFF').tap();await mask(4);
   await press(1,button('BRAKE / REV'));await mask(8);
@@ -99,6 +103,6 @@ try{
   await press(1,movement,.1);await neutral();
   await button('SETTINGS').tap();await mask(0);await button('Close panel').tap();await button('BACK TO IT →').tap();await mask(0);
   await button('← LEAVE').tap();assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({ok:true,realMultiTouch:true,boostWithOneThumb:true,reverse:true,slideSteering:true,gentleSteerMax:gentleMax,cancelAndPauseRelease:true,observedMoves:observed,layouts:[390,844,320,568],errors}));
+  console.log(JSON.stringify({ok:true,realMultiTouch:true,boostWithOneThumb:true,reverse:true,slideSteering:true,sharpTurn:true,gentleSteerMax:gentleMax,cancelAndPauseRelease:true,observedMoves:observed,layouts:[390,844,320,568],errors}));
 }catch(error){await page.screenshot({path:'artifacts/arcade/touch-failure.png'});console.error(await page.evaluate(()=>({events:window.__touchEvents,mask:document.querySelector('section[data-input]')?.dataset.input})));console.error(await page.locator('body').innerText());throw error;}
 finally{await context.close();await browser.close();}

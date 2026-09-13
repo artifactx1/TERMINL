@@ -110,3 +110,12 @@ review and remediate the application baseline before public release.
 unapproved development assets. Human art/rights/audio approval and manifest
 release approval must precede release. Do not bypass those flags for a green
 report. See [MULTIPLAYER.md](MULTIPLAYER.md) for production operations gates.
+
+## Grand Tour v4 / racing rules v2 (2026-09-13)
+
+- 60-test arcade regression suite plus the new all-course renderer regression pass, including both bots finishing all six courses deterministically, forward-to-reverse transition, off-road escape, tangential barrier sliding, rules-version rejection and historical v1 replay hashes.
+- Chromium real multi-touch: sharp rim steering, gentle held correction (maximum 0.15 in the measured test), boost, brake/reverse, cancellation and pause pass. Four tested layouts: 390×844, 844×390, 320×568, 568×320. Fighting move regression remains green.
+- Production-build WebKit smoke passes all six course selections, reverse, rival tracker, settings, six-fighter navigation and no mobile overflow; no page errors.
+- Two real browser clients start each of the six courses against an isolated local authority; reconnect, forfeit and six authenticated replay hashes pass. No position, checkpoint or result injection. This short check does NOT certify full six-course online cup completion; the separate full-cup browser/soak and live Railway checks remain outstanding.
+- New scenery is built-in image generation. 26 declared assets total 67,026,048 decoded bytes against an 80 MiB ceiling; human release approval remains pending. Overview canvas cache stays capped at two tracks (~8 MiB).
+- Real-money stakes were researched and documented only; deposits, escrow and payouts are not implemented. Results remain rewards:false.

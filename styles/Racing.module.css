@@ -10,3 +10,7 @@
 @media(prefers-reduced-motion:reduce) { .heroCar { transform:none; } }
 @media(any-pointer:coarse),(max-width:900px) { .controls>p { display:none; }.inRace { overscroll-behavior:none; }.inRace .header button { min-height:44px; }.boost>span { font-size:8px; } }
 @media(orientation:landscape) and (max-height:600px) { .inRace .header { padding:0 12px; min-height:44px; }.inRace .header>span { display:none; }.raceBar { padding:4px 12px; font-size:7px; }.hud { padding:4px 12px; }.hud strong { font-size:20px; }.hud small { font-size:7px; }.boost>div { margin-top:3px; height:6px; }.lesson { padding:6px 10px; font-size:9px; max-width:230px; }.lesson p { margin:3px 0 0; } }
+.rivalTracker { position:absolute; left:10px; bottom:10px; padding:9px 11px; background:#061018ed; border-left:3px solid #ff80bd; pointer-events:none; max-width:47%; }
+.rivalTracker b { display:block; color:#ffadd3; font-size:11px; }
+.rivalTracker span { display:block; margin-top:5px; color:#c3cdbf; font-size:7px; }
+@media(orientation:landscape) and (max-height:600px) { .rivalTracker { padding:5px 8px; bottom:6px; }.rivalTracker b { font-size:9px; }.rivalTracker span { font-size:6px; margin-top:2px; } }

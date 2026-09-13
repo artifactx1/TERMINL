@@ -64,14 +64,16 @@ async function start(a, b) {
 test('content capabilities, expanded fighters and race rooms enforce game-specific schemas and replay rules',async(t)=>{
   const runtime=await setup(t),a=await client(runtime.url),b=await client(runtime.url),watch=await client(runtime.url);
   const health=await fetch(`${runtime.http}/health`).then(r=>r.json());assert.equal(health.characters.length,6);assert.deepEqual(health.games,['rekt-rumble','wen-lambo']);assert.equal(health.vehicles.length,2);
+  assert.equal(health.tracks.length,6);assert.equal(health.rulesVersions['wen-lambo'],2);
   a.send({type:'create',game:'rekt-rumble',rulesVersion:1,name:'Mia',character:'mia',stage:'dead-mall'});const fighterInvite=await a.wait(m=>m.type==='joined');
   b.send({type:'join',name:'Chloe',character:'chloe',game:'rekt-rumble',rulesVersion:1,code:fighterInvite.code,token:fighterInvite.token});await b.wait(m=>m.type==='joined');await start(a,b);assert.deepEqual(a.state.players.map(p=>p.character),['mia','chloe']);
   a.send({type:'leave'});b.send({type:'leave'});
   const c=await client(runtime.url),d=await client(runtime.url);
-  c.send({type:'create',game:'wen-lambo',rulesVersion:1,name:'Driver A',character:'comet',stage:'night-market'});const invite=await c.wait(m=>m.type==='joined');
+  c.send({type:'create',game:'wen-lambo',rulesVersion:1,name:'Old driver',character:'comet',stage:'night-market'});await c.wait(m=>m.type==='error'&&m.code==='unsupported_game');
+  c.send({type:'create',game:'wen-lambo',rulesVersion:2,name:'Driver A',character:'comet',stage:'night-market'});const invite=await c.wait(m=>m.type==='joined');
   d.send({type:'join',game:'rekt-rumble',name:'Wrong game',character:'max',code:invite.code,token:invite.token});await d.wait(m=>m.type==='error'&&m.code==='wrong_game');
-  d.send({type:'join',game:'wen-lambo',name:'Driver B',character:'spectre',code:invite.code,token:invite.token});await d.wait(m=>m.type==='joined');
-  watch.send({type:'join',game:'wen-lambo',name:'Observer',character:'comet',spectator:true,code:invite.code,token:invite.token});await watch.wait(m=>m.type==='joined');await start(c,d);
+  d.send({type:'join',game:'wen-lambo',rulesVersion:2,name:'Driver B',character:'spectre',code:invite.code,token:invite.token});await d.wait(m=>m.type==='joined');
+  watch.send({type:'join',game:'wen-lambo',rulesVersion:2,name:'Observer',character:'comet',spectator:true,code:invite.code,token:invite.token});await watch.wait(m=>m.type==='joined');await start(c,d);
   c.send({type:'input',seq:0,tick:c.estimatedTick,input:128});await c.wait(m=>m.type==='error'&&m.code==='invalid_input');
   c.send({type:'input',seq:1,tick:c.estimatedTick,input:4,lap:999});await c.wait(m=>m.type==='error'&&m.code==='invalid_message');
   watch.send({type:'input',seq:1,tick:c.estimatedTick,input:4});await watch.wait(m=>m.type==='error'&&m.code==='spectator_read_only');
