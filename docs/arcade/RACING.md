@@ -14,6 +14,8 @@ Controller mapping: left stick/D-pad steer, RT/A gas, LT/B brake/reverse, X drif
 
 Mobile: slide the left thumb pad without lifting to change direction; the simulation still applies progressive steering. Auto-gas is on by default, starts only after touching a driving control, and can be switched off. BOOST includes GAS even in manual mode, so steering + boost takes two thumbs, not three fingers. BRAKE / REV overrides auto-gas, held gas and boost. Hold it at a stop to reverse. DRIFT banks charge on release as before. Touch interruption, pause, settings, resizing and leaving clear pointer ownership and cruise activation; resume requires fresh input. Controls adapt to portrait/landscape and respect safe-area padding.
 
+Touch steering uses a 28% center dead zone and a progressive thumb-distance curve. The client feathers existing direction inputs against actual/predicted wheel travel, so a held small correction cannot gradually become full lock. Normal target lock is capped from 75% at rest down to 36% at full Comet speed; keyboard/gamepad behavior and the server protocol are unchanged. Deliberate DRIFT keeps continuous directional input to preserve drift-charge banking. Physical handling and latency feel still need human evaluation.
+
 Choose LEARN TO DRIVE for a guided single-track practice run. PRACTICE CUP races a clearly labeled bot through both courses. All cars and the Pepe driver are free; no ownership or paid performance advantage is claimed.
 
 ## Cup rules

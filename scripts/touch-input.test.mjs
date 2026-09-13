@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {directionMask, touchMask} from '../lib/arcade/touch-input.mjs';
+import {directionMask, touchMask, raceSteeringTarget, raceTouchSteeringInput} from '../lib/arcade/touch-input.mjs';
 import {createFight, stepFight, CHARACTERS} from '../lib/arcade/rumble-sim.mjs';
 import {createRace, stepRace} from '../lib/arcade/race-sim.mjs';
 import {fighterPose} from '../lib/arcade/rumble-render.js';
@@ -11,6 +11,40 @@ test('thumb pad dead zone and eight directions preserve move combinations',()=>{
   for(const [x,y,mask] of [[-1,0,1],[1,0,2],[0,-1,4],[0,1,8],[-1,-1,5],[1,-1,6],[-1,1,9],[1,1,10]]) assert.equal(directionMask(x,y),mask);
   assert.equal(directionMask(.1,1,true),0);assert.equal(directionMask(.5,-1,true),2);
   assert.equal(directionMask(NaN,0),0);
+});
+
+test('racing has a forgiving center and a progressive, symmetric thumb curve',()=>{
+  for(const x of [0,.1,.2,.28,-.28,NaN])assert.equal(raceSteeringTarget(x),0);
+  assert.ok(raceSteeringTarget(.5)<.15);
+  assert.ok(raceSteeringTarget(.75)>raceSteeringTarget(.5));
+  assert.equal(raceSteeringTarget(1),1);
+  assert.equal(raceSteeringTarget(-.75),-raceSteeringTarget(.75));
+});
+
+test('held touch corrections stay bounded instead of accumulating full steering lock',()=>{
+  const run=(x,speed)=>{
+    let steer=0,max=0;
+    for(let i=0;i<600;i++){
+      const mask=raceTouchSteeringInput(raceSteeringTarget(x),steer,speed);
+      assert.ok([0,1,2].includes(mask));
+      const target=mask===1?-1:mask===2?1:0,step=target===0?.075:.065;
+      steer+=Math.max(-step,Math.min(step,target-steer));max=Math.max(max,Math.abs(steer));
+    }
+    return max;
+  };
+  assert.ok(run(.5,5.6)<.12);assert.ok(run(1,5.6)<.43);
+  assert.ok(run(1,0)<.82);assert.ok(run(1,0)>run(1,5.6));
+  assert.equal(run(.5,5.6),run(-.5,5.6));
+  assert.equal(raceTouchSteeringInput(0,.4,6),0);
+  assert.equal(raceTouchSteeringInput(-1,.4,6),1);
+});
+
+test('drift keeps a continuous direction so feathered steering cannot reset drift banking',()=>{
+  for(const steer of [-1,0,1]){
+    assert.equal(raceTouchSteeringInput(.5,steer,5.6,true),2);
+    assert.equal(raceTouchSteeringInput(-.5,steer,5.6,true),1);
+  }
+  assert.equal(raceTouchSteeringInput(0,.5,5.6,true),0);
 });
 test('independent fingers keep shared buttons held until the last release',()=>{
   const fingers=new Map([[1,16],[2,16],[3,2]]);

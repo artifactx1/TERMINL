@@ -6,6 +6,7 @@ import {drawRearCar,preloadRaceArt} from '../../lib/arcade/race-perspective';
 import {RaceAudio} from '../../lib/arcade/race-audio';
 import {RumbleClient} from '../../lib/arcade/rumble-client';
 import TouchControls from './TouchControls';
+import {raceTouchSteeringInput} from '../../lib/arcade/touch-input.mjs';
 import s from '../../styles/Racing.module.css';
 
 const KEYS={ArrowLeft:1,a:1,ArrowRight:2,d:2,ArrowUp:4,w:4,ArrowDown:8,s:8,' ':16,Shift:32,r:64};
@@ -23,8 +24,9 @@ export default function WenLambo(){
   const canvas=useRef(null),arena=useRef(null),shell=useRef(null),game=useRef(null),client=useRef(null),audio=useRef(null),input=useRef(0),keyboard=useRef(0),touch=useRef(0),pad=useRef(0),match=useRef(null);
   const current=useRef(null);current.current={mode,paused,prefs,tutorial,lesson};
   const held=useRef(new Set());
-  const applyInput=()=>{const next=keyboard.current|touch.current|pad.current;if(next!==input.current){input.current=next;client.current?.setInput(next);}};
-  const neutral=()=>{keyboard.current=0;touch.current=0;pad.current=0;input.current=0;held.current.clear();client.current?.setInput(0);setTouchReset(n=>n+1);};
+  const touchAxis=useRef(0),wheelState=useRef({steer:0,speed:0});
+  const applyInput=()=>{const steering=raceTouchSteeringInput(touchAxis.current,wheelState.current.steer,wheelState.current.speed,!!(touch.current&16));const next=keyboard.current|(touch.current&~3)|steering|pad.current;if(next!==input.current){input.current=next;client.current?.setInput(next);}};
+  const neutral=()=>{keyboard.current=0;touch.current=0;touchAxis.current=0;pad.current=0;input.current=0;held.current.clear();client.current?.setInput(0);setTouchReset(n=>n+1);};
   useEffect(()=>{
     try{const stored=JSON.parse(localStorage.getItem('terminl:race-prefs'));if(stored)setPrefs(p=>({...p,...stored}));else setPrefs(p=>({...p,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches}));setName(JSON.parse(localStorage.getItem('terminl-os:v2'))?.name||'ANON');setResume(JSON.parse(sessionStorage.getItem('terminl:race-session')));}catch{}
     if(invitation(location.href))setInvite(location.href);audio.current=new RaceAudio();
@@ -57,8 +59,8 @@ export default function WenLambo(){
       const controller=navigator.getGamepads?.()?.find?.(p=>p?.connected);
       if(controller&&!(o.mode==='practice'&&o.paused)){const down=i=>controller.buttons[i]?.pressed,x=controller.axes[0]||0;pad.current=(x<-.25||down(14)?1:0)|(x>.25||down(15)?2:0)|(down(7)||down(0)?4:0)|(down(6)||down(1)?8:0)|(down(2)?16:0)|(down(5)?32:0)|(down(3)?64:0);applyInput();}
       let state;
-      if(o.mode==='practice'&&game.current){if(!o.paused){accumulator+=elapsed;while(accumulator>=FRAME){game.current=stepRace(game.current,[input.current,raceBotInput(game.current,1)]);accumulator-=FRAME;}}state=game.current;}
-      else state=client.current?.predictedState();
+      if(o.mode==='practice'&&game.current){if(!o.paused){accumulator+=elapsed;while(accumulator>=FRAME){wheelState.current=game.current.players[0];applyInput();game.current=stepRace(game.current,[input.current,raceBotInput(game.current,1)]);accumulator-=FRAME;}}state=game.current;}
+      else {state=client.current?.predictedState();if(state){wheelState.current=state.players[Math.max(0,client.current?.slot??0)];applyInput();}}
       const el=canvas.current;if(state&&el){
         const ctx=el.getContext('2d');if(ctx)drawRace(ctx,state,{width:el.width,height:el.height,slot:Math.max(0,client.current?.slot??0),reducedMotion:o.prefs.reducedMotion,quality:o.prefs.quality});
         el.dataset.tick=String(state.tick);el.dataset.phase=state.phase;el.dataset.track=state.track;el.dataset.passed=String(state.players[0].passed);el.dataset.gear=String(state.players[0].gear||1);el.dataset.steer=String(state.players[0].steer);el.dataset.speed=String(state.players[0].speed);
@@ -113,7 +115,7 @@ export default function WenLambo(){
         {(view?.phase==='raceOver'||done)&&<div className={s.overlay}><span className={s.eyebrow}>{done?mode==='online'?'SERVER-CONFIRMED CUP RESULT':'PRACTICE CUP COMPLETE':'CHEQUERED FLAG'}</span><h2>{done?outcome?.winner===null?'DEAD HEAT.':seat?.slot===-1?'CUP COMPLETE.':outcome?.winner===(seat?.slot??0)?'BAG SECURED.':'NEXT CUP IS YOURS.':'ONE RACE DOWN.'}</h2><div className={s.scoreboard}>{view?.players.map((p,i)=><div key={i}><b>{room?.players[i]?.name||(i?'PRACTICE BOT':name)}</b><span>{p.points} PTS</span><small>{seconds(view.raceResults.at(-1)?.times[i]??null)}</small></div>)}</div>{done?<><p>{mode==='online'?'Recorded by the server. No financial prizes.':'Practice results stay local.'}</p>{seat?.slot!==-1&&<button className={s.primary} onClick={()=>mode==='practice'?practice(false):client.current?.send({type:'rematch'})}>{mode==='practice'?'RACE ANOTHER CUP →':room?.players[seat?.slot]?.rematch?'WAITING FOR RIVAL…':'VOTE REMATCH →'}</button>}<button onClick={leave}>BACK TO GARAGE</button></>:<p>{view.trackIndex+1<view.tracks.length?`NEXT: ${TRACKS[view.tracks[view.trackIndex+1]].name}`:'FINAL STANDINGS INCOMING'} · {Math.max(0,8-Math.floor(view.phaseTick/60))}s<br/>1st: 10 pts · 2nd: 6 pts · DNF: 0 · Equal finish: 8 each<br/>Cup ties: lower combined race time wins.</p>}</div>}
       </div>
       <div className={s.controls}><p>↑ GAS · ← → STEER · ↓ BRAKE / REVERSE · SPACE DRIFT · SHIFT BOOST · R RECOVER · ESC PAUSE PRACTICE <small>*Arcade speed display</small></p></div>
-      {seat?.slot!==-1&&<TouchControls racing resetKey={touchReset} feedback={me?.boosting?'BOOSTING · release to save charge':touch.current&32?me?.offRoad?'BOOST needs tarmac':me?.boost<1?'BOOST empty · drift and release to refill':'':''} disabled={paused||settings||done||view?.phase==='raceOver'||mode==='online'&&connection!=='connected'} onChange={value=>{touch.current=value;applyInput();}}/>}
+      {seat?.slot!==-1&&<TouchControls racing onSteer={value=>{touchAxis.current=value;}} resetKey={touchReset} feedback={me?.boosting?'BOOSTING · release to save charge':touch.current&32?me?.offRoad?'BOOST needs tarmac':me?.boost<1?'BOOST empty · drift and release to refill':'':''} disabled={paused||settings||done||view?.phase==='raceOver'||mode==='online'&&connection!=='connected'} onChange={value=>{touch.current=value;applyInput();}}/>}
     </main>}
     {settings&&<Settings prefs={prefs} setPrefs={setPrefs} close={()=>setSettings(false)}/>}
   </div>;

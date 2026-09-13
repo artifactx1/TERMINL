@@ -2,6 +2,8 @@
 
 ## September 13 mobile controls
 
+Steering follow-up: larger center dead zone, nonlinear thumb curve and speed-sensitive wheel-target tracking replace sustained full-lock touch steering. Ten touch/unit checks and eight race-simulation tests pass. The real multi-touch browser regression passes again, including a held half-travel correction with observed peak steering 0.15 (full lock is 1), neutral center, boost, reverse and the fighting controls. Server masks remain unchanged; this does not fix or certify the separate Railway configuration failure.
+
 Both games use a shared pointer-owned thumb pad and large action controls, with independent simultaneous fingers, slide-to-change direction, cancellation cleanup, pause/settings/rematch resets, and fixed-height feedback to prevent targets shifting under a finger. Touch adapters emit the existing input masks; server physics, move balance and replay rules are unchanged.
 
 WEN LAMBO's touch BOOST now includes throttle; brake overrides all touch throttle/boost sources. Optional auto-gas frees the right thumb for brake/drift/boost. Rumble exposes directional move hints and the full-meter super requirement. Heavy swings, lunges, grabs and supers have distinct code-native poses rather than reusing the jab pose.

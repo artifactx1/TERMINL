@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { directionMask, touchMask } from '../../lib/arcade/touch-input.mjs';
+import { directionMask, touchMask, raceSteeringTarget } from '../../lib/arcade/touch-input.mjs';
 import s from '../../styles/TouchControls.module.css';
 
 const RACE_ACTIONS = [[8, 'BRAKE / REV', 'brake'], [4, 'GAS', 'gas'], [16, 'DRIFT', 'drift'], [32, 'BOOST', 'boost']];
 const FIGHT_ACTIONS = [[16, 'LIGHT', 'light'], [32, 'HEAVY', 'heavy'], [64, 'SPECIAL', 'special'], [128, 'GUARD', 'guard'], [256, 'DASH', 'dash'], [512, 'THROW', 'throw'], [1024, 'SUPER', 'super']];
 
-export default function TouchControls({ racing = false, onChange, disabled = false, resetKey = 0, meter = 0, feedback = '' }) {
+export default function TouchControls({ racing = false, onChange, onSteer, disabled = false, resetKey = 0, meter = 0, feedback = '' }) {
   const sources = useRef(new Map()), padPointer = useRef(null), engaged = useRef(false);
   const callback = useRef(onChange); callback.current = onChange;
+  const steeringCallback = useRef(onSteer); steeringCallback.current = onSteer;
   const options = useRef({});
   const [autoGas, setAutoGas] = useState(true), [available, setAvailable] = useState(false);
   const [mask, setMask] = useState(0), [stick, setStick] = useState({ x: 0, y: 0 });
@@ -20,6 +21,7 @@ export default function TouchControls({ racing = false, onChange, disabled = fal
   }
   function clear() {
     sources.current.clear(); padPointer.current = null; engaged.current = false;
+    steeringCallback.current?.(0);
     setStick({ x: 0, y: 0 }); setMask(0); callback.current(0);
   }
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function TouchControls({ racing = false, onChange, disabled = fal
     return () => {
       query.removeEventListener('change', change); window.removeEventListener('blur', clear);
       window.removeEventListener('resize', clear); document.removeEventListener('visibilitychange', hidden);
-      callback.current(0);
+      steeringCallback.current?.(0); callback.current(0);
     };
     // Event handlers use current refs; changing a callback must not release held fingers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,7 +52,7 @@ export default function TouchControls({ racing = false, onChange, disabled = fal
   function release(e) {
     if (!sources.current.has(e.pointerId)) return;
     sources.current.delete(e.pointerId);
-    if (padPointer.current === e.pointerId) { padPointer.current = null; setStick({ x: 0, y: 0 }); }
+    if (padPointer.current === e.pointerId) { padPointer.current = null; steeringCallback.current?.(0); setStick({ x: 0, y: 0 }); }
     // OS interruption must stop auto-gas too. Normal finger lift keeps cruise enabled.
     if (e.type === 'pointercancel' || e.type === 'lostpointercapture') { clear(); return; }
     emit();
@@ -62,7 +64,9 @@ export default function TouchControls({ racing = false, onChange, disabled = fal
     let x = (e.clientX - r.left - r.width / 2) / radius;
     let y = racing ? 0 : (e.clientY - r.top - r.height / 2) / radius;
     const length = Math.max(1, Math.hypot(x, y)); x /= length; y /= length;
-    setStick({ x, y }); sources.current.set(e.pointerId, directionMask(x, y, racing)); emit();
+    setStick({ x, y });
+    if (racing) steeringCallback.current?.(raceSteeringTarget(x));
+    sources.current.set(e.pointerId, directionMask(x, y, racing)); emit();
   }
   function key(e, bit) {
     if (![' ', 'Enter'].includes(e.key)) return;
