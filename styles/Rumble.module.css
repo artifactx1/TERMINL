@@ -137,3 +137,6 @@
 @media(max-width:900px){.roster img{height:260px}}
 @media(max-width:600px){.roster{grid-template-columns:repeat(2,minmax(0,1fr))}.roster img{height:230px}.roster small{font-size:6px}.roster h2{font-size:17px}.roster p{min-height:30px}}
 @media(prefers-reduced-motion:reduce){.shell *{transition:none!important}.roster>button:hover img{transform:none}}
+@media(any-pointer:coarse),(max-width:900px) { .fightFooter { display:none; }.inGame { overscroll-behavior:none; }.inGame .header { min-height:44px; }.inGame .header button { min-height:44px; }.rotateTip { display:none; } }
+@media(orientation:landscape) and (max-height:600px) { .connectionBar { padding:4px 12px; }.hud { padding:5px 12px; }.hud>div:not(.clock)>div:first-child { margin-bottom:3px; }.health { height:9px; }.meter { height:7px; margin-top:3px; }.clock strong { font-size:24px; }.clock span { font-size:6px; }.clock { top:6px; }.lesson { top:4px; max-width:220px; padding:5px 8px; }.lesson h3 { font-size:12px; margin:2px 0; }.lesson p { font-size:7px; margin:3px 0; } }
+@media(orientation:landscape) and (max-height:600px) { .hud>div:not(.clock)>div:first-child { min-height:0; display:flex; align-items:center; font-size:8px; }.hud>div>div>span { display:inline; margin-top:0; }.lesson { max-width:175px; }.lesson b { font-size:6px; } }

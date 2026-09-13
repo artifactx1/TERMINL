@@ -1,0 +1,31 @@
+.dock { display:none; position:relative; flex-shrink:0; background:linear-gradient(180deg,#17251c,#09130f); border-top:1px solid #577048; color:#e0edca; padding:6px max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left)); touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; overscroll-behavior:contain; }
+.tools { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:24px; margin-bottom:5px; }
+.tools span { font-size:8px; letter-spacing:.6px; color:#a7b99a; }
+.dock .tools button { min-height:44px; padding:6px 10px; border-radius:8px; font-size:9px; background:#223526; color:#d8eac1; border:1px solid #536d46; touch-action:none; }
+.tools button[aria-pressed=true] { border-color:#bded88; }
+.deck { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.pad { width:140px; height:140px; flex-shrink:0; position:relative; border-radius:50%; border:2px solid #688254; background:radial-gradient(circle,#304833 0 30%,#172b21 31% 59%,#0d1b15 60%); box-shadow:inset 0 0 18px #0008,0 4px 0 #050c08; touch-action:none; }
+.pad span { position:absolute; font:28px/1 monospace; color:#a9c28b; pointer-events:none; }
+.left { left:7px; top:calc(50% - 14px); }.right { right:7px; top:calc(50% - 14px); }.up { top:5px; left:calc(50% - 8px); }.down { bottom:5px; left:calc(50% - 8px); }
+.knob { position:absolute; left:50%; top:50%; width:53px; height:53px; border-radius:50%; background:radial-gradient(circle at 35% 25%,#b9d18a,#52724c 75%); border:2px solid #bed796; box-shadow:0 5px 10px #0008; pointer-events:none; }
+.actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; width:230px; }
+.dock .action { min-height:54px; min-width:0; padding:5px; border-radius:14px; border:1px solid #799263; box-shadow:0 4px 0 #050d08; background:#2b432c; color:#edfad7; font-size:10px; font-weight:700; touch-action:none; transition:background .06s; }
+.dock .action[aria-pressed=true] { background:#c5ef94; color:#102016; transform:translateY(2px); box-shadow:0 2px 0 #050d08; }
+.action small { display:block; margin-top:3px; font:7px/1.2 monospace; opacity:.85; }
+.dock .heavy,.dock .brake { background:#653c2d; border-color:#d69972; }.dock .special,.dock .boost { background:#254c52; border-color:#7cb5bd; }.dock .guard { background:#43452b; border-color:#b2bd78; }
+.fighting .guard { grid-column:1 / -1; grid-row:2; min-height:46px; }
+.fighting .dash,.fighting .throw,.fighting .super { min-height:44px; font-size:9px; }
+.racing .actions { grid-template-columns:repeat(2,minmax(0,1fr)); width:190px; }
+.racing .action { min-height:64px; }.racing .tools .reset { min-height:44px; }
+.hint { font:10px/1.4 monospace; color:#a4b797; margin:8px 0 0; text-align:center; height:28px; overflow:hidden; }
+.pad[aria-disabled=true],.dock button:disabled { opacity:.4; }
+@media(any-pointer:coarse),(max-width:900px) { .dock { display:block; } }
+@media(max-width:420px) { .pad { width:124px; height:124px; }.deck { gap:12px; }.actions { width:200px; gap:6px; }.dock .action { font-size:8px; }.tools span { font-size:7px; }.racing .actions { width:180px; } }
+@media(max-width:350px) { .pad { width:108px; height:108px; }.deck { gap:9px; }.tools span { letter-spacing:0; font-size:6px; }.dock { padding-left:8px; padding-right:8px; } }
+@media(orientation:landscape) and (max-height:600px) {
+  .dock { padding-top:4px; padding-bottom:max(4px,env(safe-area-inset-bottom)); }.tools { margin-bottom:3px; min-height:20px; }.tools span { font-size:7px; }.hint { display:none; }
+  .pad { width:102px; height:102px; }.knob { width:42px; height:42px; }.actions { width:360px; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .dock .action { min-height:46px; }.fighting .guard { grid-column:auto; grid-row:auto; }.racing .actions { width:320px; grid-template-columns:repeat(4,minmax(0,1fr)); }.racing .action { min-height:66px; }
+  .racing .tools { position:absolute; left:145px; right:calc(350px + env(safe-area-inset-right)); height:100px; flex-direction:column; justify-content:center; }.racing .tools span { display:none; }.racing .tools button { width:100%; padding:4px; font-size:8px; }.racing .deck { gap:120px; }
+  .fighting .tools { display:none; }
+}

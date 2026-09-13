@@ -12,6 +12,8 @@ Play `/os/lambo`, or choose WEN LAMBO from `/os`. REKT RUMBLE, Rug Runner and Mo
 
 Controller mapping: left stick/D-pad steer, RT/A gas, LT/B brake/reverse, X drift, RB boost, Y recover. Physical controller and touch-device validation remains pending.
 
+Mobile: slide the left thumb pad without lifting to change direction; the simulation still applies progressive steering. Auto-gas is on by default, starts only after touching a driving control, and can be switched off. BOOST includes GAS even in manual mode, so steering + boost takes two thumbs, not three fingers. BRAKE / REV overrides auto-gas, held gas and boost. Hold it at a stop to reverse. DRIFT banks charge on release as before. Touch interruption, pause, settings, resizing and leaving clear pointer ownership and cruise activation; resume requires fresh input. Controls adapt to portrait/landscape and respect safe-area padding.
+
 Choose LEARN TO DRIVE for a guided single-track practice run. PRACTICE CUP races a clearly labeled bot through both courses. All cars and the Pepe driver are free; no ownership or paid performance advantage is claimed.
 
 ## Cup rules

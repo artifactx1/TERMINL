@@ -6,6 +6,7 @@ import { drawRumble } from "../../lib/arcade/rumble-render";
 import { RumbleAudio } from "../../lib/arcade/rumble-audio";
 import { RumbleClient } from "../../lib/arcade/rumble-client";
 import { RUMBLE_ROSTER as ROSTER } from "../../lib/arcade/rumble-roster.mjs";
+import TouchControls from './TouchControls';
 import s from "../../styles/Rumble.module.css";
 
 const LEVELS=[{id:"dead-mall",name:"Dead Mall Exchange",sub:"Room to breathe. Nowhere to cash out.",rule:"Wide arena · Spacing and corner pressure",image:"/arcade/dead-mall-v1.webp"},{id:"laundromat",name:"Liquidation Laundromat",sub:"Your portfolio is on the spin cycle.",rule:"Telegraphed steam boundaries · Watch your space",image:"/arcade/laundromat-v1.webp"}];
@@ -22,6 +23,7 @@ export default function Rumble({assetLabEnabled=false}){
   const [room,setRoom]=useState(null),[view,setView]=useState(null),[joined,setJoined]=useState(null),[result,setResult]=useState(null);
   const [notice,setNotice]=useState(""),[settings,setSettings]=useState(false),[movesOpen,setMovesOpen]=useState(false);
   const [paused,setPaused]=useState(false),[training,setTraining]=useState(false),[lesson,setLesson]=useState(0);
+  const [touchReset,setTouchReset]=useState(0);
   const [prefs,setPrefs]=useState({music:.12,sfx:.45,shake:false,reducedMotion:false,quality:"high",keys:DEFAULT_KEYS});
   const [rtt,setRtt]=useState(0),[assetError,setAssetError]=useState(false),[resume,setResume]=useState(null);
   const canvas=useRef(null),arena=useRef(null),images=useRef({}),audio=useRef(null),client=useRef(null),game=useRef(null);
@@ -41,7 +43,7 @@ export default function Rumble({assetLabEnabled=false}){
   },[]);
   useEffect(()=>{audio.current?.setVolumes({music:prefs.music,sfx:prefs.sfx});try{localStorage.setItem("terminl:rumble-prefs",JSON.stringify(prefs));}catch{}},[prefs]);
   useEffect(()=>{audio.current?.setPaused(mode==="menu"||(mode==="practice"&&paused));},[mode,paused]);
-  const resetInput=()=>{input.current=0;keyboard.current=0;touch.current=0;pad.current=0;keys.current.clear();client.current?.setInput(0);};
+  const resetInput=()=>{input.current=0;keyboard.current=0;touch.current=0;pad.current=0;keys.current.clear();client.current?.setInput(0);setTouchReset(n=>n+1);};
   const updateInput=()=>{const value=keyboard.current|touch.current|pad.current;if(value!==input.current){input.current=value;client.current?.setInput(value);}};
   const updateInputRef=useRef(updateInput);updateInputRef.current=updateInput;
   useEffect(()=>{
@@ -91,6 +93,7 @@ export default function Rumble({assetLabEnabled=false}){
         if(ctx){const scale=Math.min(el.width/1000,el.height/600);ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle="#090e0b";ctx.fillRect(0,0,el.width,el.height);ctx.setTransform(scale,0,0,scale,(el.width-1000*scale)/2,(el.height-600*scale)/2);drawRumble(ctx,draw,{width:1000,height:600,images:images.current,reducedMotion:current.prefs.reducedMotion,quality:current.prefs.quality,shake:current.prefs.shake,effectTick:draw.effectTick??draw.tick});}
         const renderMs=performance.now()-started;metrics.current.frames++;metrics.current.totalMs+=renderMs;metrics.current.maxMs=Math.max(metrics.current.maxMs,renderMs);
         el.dataset.tick=String(draw.tick);el.dataset.phase=draw.phase;el.dataset.p0=String(Math.round(draw.players[0].x));el.dataset.hp=draw.players.map(p=>p.hp).join(",");
+        el.dataset.input=String(input.current);el.dataset.action=draw.players[0].action?.id||'';el.dataset.grounded=String(draw.players[0].grounded);
         // Audio follows authoritative events only; never predicted hit effects.
         audio.current?.update(current.mode==="online"?client.current.state:draw);
         if(now-lastUI.current>100){setView(draw);lastUI.current=now;}
@@ -130,7 +133,6 @@ export default function Rumble({assetLabEnabled=false}){
   const leave=()=>{client.current?.dispose();client.current=null;resetInput();game.current=null;setMode("menu");setRoom(null);setView(null);setJoined(null);setResult(null);setPaused(false);audio.current?.setVolumes({music:0,sfx:prefs.sfx});};
   const share=async()=>{if(!joined)return;const url=`${window.location.origin}/os/rumble#room=${joined.code}&token=${joined.token}`;setInvite(url);try{await navigator.clipboard.writeText(url);setNotice("Invitation copied. The other player needs the same running game server.");}catch{setNotice("Copy the invitation from the field below.");}};
   const fullscreen=()=>{const el=document.querySelector(`.${s.shell}`);if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});else el?.requestFullscreen?.().catch(()=>setNotice("Fullscreen is unavailable in this browser."));};
-  const control=bit=>({onPointerDown:e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);touch.current|=bit;updateInputRef.current();},onPointerUp:()=>{touch.current&=~bit;updateInputRef.current();},onPointerCancel:()=>{touch.current&=~bit;updateInputRef.current();},onLostPointerCapture:()=>{touch.current&=~bit;updateInputRef.current();}});
   const finished=mode==="practice"?view?.phase==="finished":!!result||room?.phase==="finished";
   const outcome=mode==="online"?(result||room?.result):view;
   const winner=outcome?.winner;
@@ -156,14 +158,14 @@ export default function Rumble({assetLabEnabled=false}){
         <div className={s.arena} ref={arena}><canvas ref={canvas} aria-label="REKT RUMBLE fighting arena. Use arrow keys and J for light attacks; Shift guards. Full controls are in Move List." tabIndex={0} />
           <span className={s.rotateTip}>Rotate your phone for a bigger arena.</span>
           {assetError&&<span className={s.assetWarning}>Backdrop unavailable · authored fallback scene</span>}
-          {training&&lesson<3&&!paused&&<div className={s.lesson}><b>LESSON {lesson+1} / 3</b><h3>{["Find your range.","Land your first hit.","Now protect that face."][lesson]}</h3><p>{["Use ← → to move. Get close enough to threaten a hit.","Move within reach, then tap J for a light attack. Try ↓ + K for a sweep.","Hold Shift near the opponent. Block a hit. Low attacks need ↓ + Shift."][lesson]}</p></div>}
-          {training&&lesson===3&&<div className={s.lesson}><b>BASICS COMPLETE ✓</b><p>Now try a throw with E, specials with L, and an R super when the meter fills.</p><button onClick={()=>setTraining(false)}>KEEP FIGHTING →</button></div>}
+          {training&&lesson<3&&!paused&&<div className={s.lesson}><b>LESSON {lesson+1} / 3</b><h3>{["Find your range.","Land your first hit.","Now protect that face."][lesson]}</h3><p>{["Slide the thumb pad left/right (or use ← →). Get within reach.","Tap LIGHT (J), or HEAVY (K). Hold the pad down + HEAVY for a low sweep.","Hold GUARD (Shift) to block. For low attacks, hold the pad down + GUARD."][lesson]}</p></div>}
+          {training&&lesson===3&&<div className={s.lesson}><b>BASICS COMPLETE ✓</b><p>Try THROW (E) up close. Down + SPECIAL uppercuts; toward your rival + SPECIAL lunges. SUPER (R) needs 100% meter.</p><button onClick={()=>setTraining(false)}>KEEP FIGHTING →</button></div>}
           {paused&&mode==="practice"&&!settings&&!movesOpen&&<div className={s.gameOverlay}><h2>TAKE A BREATHER.</h2><p>Practice is paused. Online matches never pause for one player.</p><button className={s.primary} onClick={()=>{setPaused(false);audio.current?.unlock();}}>BACK TO IT →</button></div>}
           {mode==="online"&&connection!=="connected"&&<div className={s.reconnect}>CONNECTION LOST · Reconnecting. Match clock continues.</div>}
           {finished&&<div className={s.gameOverlay}><span className={s.eyebrow}>{mode==="online"?"SERVER-CONFIRMED RESULT":"PRACTICE COMPLETE"}</span><h2>{winner===null||winner===-1?"MUTUAL COPING.":slot===-1?`${room?.players[winner]?.name||"FIGHTER"} WINS`:winner===slot?"BAG SECURED.":"LIQUIDATED."}</h2><p>{(outcome?.wins||view?.wins)?.join(" — ")} · {mode==="online"?"Recorded by the room server. No cash or NFT rewards.":"Practice does not affect online records."}</p><button className={s.primary} onClick={()=>mode==="practice"?practice(false):client.current?.send({type:"rematch"})}>{mode==="practice"?"RUN IT BACK →":room?.players[joined?.slot]?.rematch?"WAITING FOR OPPONENT…":"VOTE REMATCH →"}</button><button className={s.textButton} onClick={leave}>BACK TO THE ARCADE LAB</button></div>}
         </div>
         <div className={s.fightFooter}><p><b>← → MOVE</b> · ↑ JUMP · ↓ CROUCH · J LIGHT · K HEAVY · L SPECIAL · SHIFT GUARD · Q DASH · E THROW · R SUPER</p><span>{view?.events?.at(-1)?.text||"Missed specials are punishable. Guards lose to throws."}</span></div>
-        {slot!==-1&&<div className={s.touchControls} aria-label="Touch fighting controls"><div>{[[1,"←"],[8,"↓"],[4,"↑"],[2,"→"]].map(([bit,label])=><button aria-label={ACTIONS.find(a=>a[0]===bit)[1]} key={bit} {...control(bit)}>{label}</button>)}</div><div>{[[16,"LIGHT"],[32,"HEAVY"],[64,"SPECIAL"],[128,"GUARD"],[256,"DASH"],[512,"THROW"],[1024,"SUPER"]].map(([bit,label])=><button aria-label={label} key={bit} {...control(bit)}>{label}</button>)}</div></div>}
+        {slot!==-1&&<TouchControls resetKey={touchReset} meter={view?.players[slot||0]?.meter||0} feedback={view?.players[slot||0]?.action?MOVES[view.players[slot||0].character][view.players[slot||0].action.id]?.name:touch.current&1024&&(view?.players[slot||0]?.meter||0)<1000?'SUPER needs 100% meter · earn it by fighting':''} disabled={paused||settings||movesOpen||finished||mode==='online'&&connection!=='connected'} onChange={value=>{touch.current=value;updateInputRef.current();}}/>}
       </>}
     </main>}
     {settings&&<Panel title="SYSTEM SETTINGS" close={()=>setSettings(false)}><p>Online matches keep running while this panel is open.</p>{[["music","MUSIC"],["sfx","SOUND EFFECTS"]].map(([key,label])=><label key={key}>{label}<input type="range" min="0" max="1" step=".05" value={prefs[key]} onChange={e=>{audio.current?.unlock();setPrefs(p=>({...p,[key]:Number(e.target.value)}));}} /></label>)}<button className={s.secondary} onClick={()=>setPrefs(p=>({...p,music:0,sfx:0}))}>MUTE ALL</button><label><input type="checkbox" checked={prefs.reducedMotion} onChange={e=>setPrefs(p=>({...p,reducedMotion:e.target.checked}))} /> REDUCED MOTION</label><label><input type="checkbox" checked={prefs.shake} onChange={e=>setPrefs(p=>({...p,shake:e.target.checked}))} /> CAMERA SHAKE</label><label>QUALITY<select value={prefs.quality} onChange={e=>setPrefs(p=>({...p,quality:e.target.value}))}><option value="high">High</option><option value="low">Low / mobile</option></select></label><h3>Keyboard mapping</h3><p>Focus a field and press a key. Duplicate assignments are replaced.</p><div className={s.keyGrid}>{ACTIONS.map(([bit,label])=><label key={bit}>{label}<input aria-label={`Key for ${label}`} readOnly value={Object.keys(prefs.keys).find(k=>prefs.keys[k]===bit)||"—"} onKeyDown={e=>{e.preventDefault();e.stopPropagation();if(["Tab","Escape","Meta","Control","Alt"].includes(e.key))return;setPrefs(p=>{const map=Object.fromEntries(Object.entries(p.keys).filter(([k,v])=>v!==bit&&k!==e.key));map[e.key]=bit;return {...p,keys:map};});}} /></label>)}</div><p>Controller: stick/D-pad move; A jump; X light; Y heavy; B special; LB guard; RB dash; LT throw; RT super. Hardware validation pending.</p></Panel>}

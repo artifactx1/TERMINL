@@ -1,5 +1,17 @@
 # Arcade QA and evidence
 
+## September 13 mobile controls
+
+Both games use a shared pointer-owned thumb pad and large action controls, with independent simultaneous fingers, slide-to-change direction, cancellation cleanup, pause/settings/rematch resets, and fixed-height feedback to prevent targets shifting under a finger. Touch adapters emit the existing input masks; server physics, move balance and replay rules are unchanged.
+
+WEN LAMBO's touch BOOST now includes throttle; brake overrides all touch throttle/boost sources. Optional auto-gas frees the right thumb for brake/drift/boost. Rumble exposes directional move hints and the full-meter super requirement. Heavy swings, lunges, grabs and supers have distinct code-native poses rather than reusing the jab pose.
+
+`npm run test:touch:browser` passes using real Chromium multi-touch events through React into local game simulation: one-thumb boost consumes charge and increases speed, steering changes without lifting, releasing one finger preserves the other, reverse works, cancel/pause neutralize input, ten attack variants start, crouch-guard and dash work, and unfunded super UI explains the meter requirement. No game state is injected. Layout checks cover 390×844, 844×390, 320×568 and 568×320, including 44px-minimum buttons and no horizontal overflow. No page errors were observed.
+
+Seven additional unit tests cover dead zones/diagonals, independent pointer masks, boost/brake precedence and real simulation acceleration. All eleven attacks activate and damage an unguarded opponent in range for all six fighters, including funded supers. Pose checks distinguish the major moves from light attacks. Physical iOS/Android device testing and human ergonomic feedback remain outstanding; this does not certify live Railway multiplayer or resolve the earlier full-cup browser timeout.
+
+The updated full arcade suite passes 53/53 tests; lint, development asset validation and the production build pass. The WebKit race smoke test also passes against the local production build (reverse, progressive steering, both courses, mobile layout, settings and six-fighter navigation; zero page errors). The browser skills' visual/input verification caught and corrected feedback-driven target movement and inadequate small-landscape arena space. Production deployment is not verified by these local checks.
+
 ## Reproduce
 
 ```sh

@@ -18,7 +18,7 @@ try{
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:`artifacts/arcade/${name}-california-mobile.png`});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.getByRole('button',{name:'SETTINGS',exact:true}).click();await page.getByLabel('Reduced motion / no speed zoom or particles').check();await page.getByRole('button',{name:'MUTE ALL',exact:true}).click();await page.getByRole('button',{name:'Close settings'}).click();await page.getByRole('button',{name:'BACK ON TRACK →',exact:true}).click();
   await page.getByRole('button',{name:'← LEAVE',exact:true}).click();await page.goto((process.env.ARCADE_TEST_URL||'http://localhost:4000')+'/os/rumble');
-  for(const fighter of ['Buy-High Brian','MEV Mia','Bridge Burn Bernie','Cold Storage Chloe'])assert.equal(await page.getByRole('button',{name:new RegExp(fighter)}).count(),1);
+  for(const fighter of ['Buy-High Brian','MEV Mia','Bridge Burn Bernie','Cold Storage Chloe']){const choice=page.getByRole('button',{name:new RegExp(fighter)});await choice.waitFor();assert.equal(await choice.count(),1);}
   await page.screenshot({path:`artifacts/arcade/${name}-six-fighters.png`,fullPage:true});assert.deepEqual(errors,[]);console.log(JSON.stringify({browser:name,reverse:true,progressiveSteer:Number(turning),coast:true,desert:true,mobileOverflow:false,sixFighters:true,errors}));
 }catch(e){await page.screenshot({path:`artifacts/arcade/${name}-smoke-failure.png`});console.error(await page.locator('body').innerText());console.error(errors);throw e;}
 finally{await context.close();await browser.close();}
