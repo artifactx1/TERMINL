@@ -40,6 +40,8 @@ Automated correctness is not a substitute for your steering-feel feedback or hum
 
 ## Rival tracker and version compatibility
 
+On phones, touch devices and windows up to 900px wide, the map is hidden by default. A compact rival gap/bearing button lives in the existing HUD, outside the road. Tap MAP for a four-second glance, or tap again to close early. Rotation, leaving, track changes and settings close it too. The large rival text panel is hidden on mobile. Desktop keeps its persistent map and tracker. This is presentation-only; handling and online rules are unchanged.
+
 The live map uses lime for YOU, pink for RIVAL and a pale square for the next gate. Heading markers stay readable on high-DPI phones. The nearby rival panel reports approximate course distance ahead/behind and physical bearing relative to the car, including rivals outside the chase camera. These are display-only estimates using validated sectors, not race authority or time gaps. Distance uses the same arcade scale as the speed display.
 
 Racing rules version 2 requires matching frontend/backend versions. Old racing clients are rejected; old authorities show an update notice. Rumble stays version 1. Archived v1 race replays still reproduce their original hashes through `race-sim-v1.mjs`; new replays carry `rulesVersion:2`. The bounded race replay limit is 48,000 ticks for a maximum-duration six-course cup. Results remain reward-free.

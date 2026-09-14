@@ -22,8 +22,9 @@ export default function WenLambo(){
   const [connection,setConnection]=useState('offline'),[rtt,setRtt]=useState(0),[notice,setNotice]=useState(''),[paused,setPaused]=useState(false),[tutorial,setTutorial]=useState(false),[lesson,setLesson]=useState(0),[settings,setSettings]=useState(false),[resume,setResume]=useState(null);
   const [prefs,setPrefs]=useState({music:.12,sfx:.4,reducedMotion:false,quality:'high'});
   const [touchReset,setTouchReset]=useState(0);
+  const [mapOpen,setMapOpen]=useState(false),compact=useRef(true);
   const canvas=useRef(null),arena=useRef(null),shell=useRef(null),game=useRef(null),client=useRef(null),audio=useRef(null),input=useRef(0),keyboard=useRef(0),touch=useRef(0),pad=useRef(0),match=useRef(null);
-  const current=useRef(null);current.current={mode,paused,prefs,tutorial,lesson};
+  const current=useRef(null);current.current={mode,paused,prefs,tutorial,lesson,mapOpen};
   const held=useRef(new Set());
   const touchAxis=useRef(0),wheelState=useRef({steer:0,speed:0});
   const applyInput=()=>{const steering=raceTouchSteeringInput(touchAxis.current,wheelState.current.steer,wheelState.current.speed,!!(touch.current&16));const next=keyboard.current|(touch.current&~3)|steering|pad.current;if(next!==input.current){input.current=next;client.current?.setInput(next);}};
@@ -33,6 +34,7 @@ export default function WenLambo(){
     if(invitation(location.href))setInvite(location.href);audio.current=new RaceAudio();
     const key=e=>{
       if(current.current.mode==='menu'||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName)||e.ctrlKey||e.metaKey)return;
+      if(e.target?.closest?.('[data-testid="mobile-rival"]')&&[' ','Enter'].includes(e.key))return;
       if(e.key==='Escape'&&e.type==='keydown'){neutral();if(current.current.mode==='practice')setPaused(p=>!p);return;}
       const bit=KEYS[e.key]||KEYS[e.key.toLowerCase()];if(!bit)return;e.preventDefault();
       if(e.type==='keydown')held.current.add(e.key);else held.current.delete(e.key);
@@ -46,6 +48,14 @@ export default function WenLambo(){
   useEffect(()=>{audio.current?.setVolumes(prefs);try{localStorage.setItem('terminl:race-prefs',JSON.stringify(prefs));}catch{}},[prefs]);
   useEffect(()=>{audio.current?.setPaused(mode==='menu'||mode==='practice'&&paused);},[mode,paused]);
   const playing=mode==='practice'||!!view;
+  useEffect(()=>{
+    const query=matchMedia('(any-pointer: coarse), (max-width: 900px)');
+    const update=()=>{compact.current=query.matches;setMapOpen(false);};
+    update();query.addEventListener('change',update);window.addEventListener('resize',update);
+    return()=>{query.removeEventListener('change',update);window.removeEventListener('resize',update);};
+  },[]);
+  useEffect(()=>{setMapOpen(false);},[mode,view?.track,paused,settings]);
+  useEffect(()=>{if(!mapOpen)return;const timer=setTimeout(()=>setMapOpen(false),4000);return()=>clearTimeout(timer);},[mapOpen]);
   useEffect(()=>{
     if(!playing)return;const element=canvas.current,container=arena.current;if(!element||!container)return;let disposed=false;
     const previous=document.body.style.overflow;document.body.style.overflow='hidden';
@@ -63,7 +73,9 @@ export default function WenLambo(){
       if(o.mode==='practice'&&game.current){if(!o.paused){accumulator+=elapsed;while(accumulator>=FRAME){wheelState.current=game.current.players[0];applyInput();game.current=stepRace(game.current,[input.current,raceBotInput(game.current,1)]);accumulator-=FRAME;}}state=game.current;}
       else {state=client.current?.predictedState();if(state){wheelState.current=state.players[Math.max(0,client.current?.slot??0)];applyInput();}}
       const el=canvas.current;if(state&&el){
-        const ctx=el.getContext('2d');if(ctx)drawRace(ctx,state,{width:el.width,height:el.height,slot:Math.max(0,client.current?.slot??0),reducedMotion:o.prefs.reducedMotion,quality:o.prefs.quality});
+        const showMap=!compact.current||o.mapOpen;
+        const ctx=el.getContext('2d');if(ctx)drawRace(ctx,state,{width:el.width,height:el.height,slot:Math.max(0,client.current?.slot??0),reducedMotion:o.prefs.reducedMotion,quality:o.prefs.quality,showMap});
+        el.dataset.mapVisible=String(showMap);
         el.dataset.tick=String(state.tick);el.dataset.phase=state.phase;el.dataset.track=state.track;el.dataset.passed=String(state.players[0].passed);el.dataset.gear=String(state.players[0].gear||1);el.dataset.steer=String(state.players[0].steer);el.dataset.speed=String(state.players[0].speed);
         el.dataset.input=String(input.current);el.dataset.boost=String(state.players[0].boost);el.dataset.boosting=String(state.players[0].boosting);
         audio.current?.update(o.mode==='online'?client.current.state:state,Math.max(0,client.current?.slot??0));
@@ -106,7 +118,7 @@ export default function WenLambo(){
       <footer className={s.footer}><p>Pepe in the cockpit. Skill-earned boost. All performance classes free. No real car brand affiliation.</p><Link href='/os'>BACK TO THE ARCADE ↗</Link></footer>
     </main>:!playing?<main className={s.lobby}><span className={s.eyebrow}>GRID ASSEMBLY / {connection.toUpperCase()}</span><h1>{room?'Your rival is one link away.':'Connecting to the race server…'}</h1>{room?<><p>{TRACKS[room.stage]?.name} first · six-course cup · {room.spectators} spectators</p><div className={s.lobbyCars}>{room.players.map((p,i)=><article key={i}>{p?<><VehiclePreview vehicle={p.character}/><h2>{p.name}</h2><p>{p.connected?p.ready?'READY ✓':'NOT READY':'RECONNECTING'}</p></>:<><h2>OPEN GRID SLOT</h2><p>Invite another real driver.</p></>}</article>)}</div><label>Room invitation<input readOnly value={inviteURL} onFocus={e=>e.target.select()}/></label><button onClick={async()=>{try{await navigator.clipboard.writeText(inviteURL);setNotice('Race invitation copied.');}catch{setNotice('Select and copy the invitation above.');}}}>COPY INVITATION ↗</button>{seat?.slot>=0&&<button className={s.primary} onClick={()=>client.current?.send({type:'ready',ready:!room.players[seat.slot]?.ready})}>{room.players[seat.slot]?.ready?'CANCEL READY':"I'M READY →"}</button>}<p>Both drivers ready up. Leaving an active cup forfeits it. Reconnect grace: 15 seconds.</p></>:<><p>The server must include the latest WEN LAMBO update. You can still race in practice.</p><button className={s.primary} onClick={leave}>BACK TO GARAGE</button></>}</main>:<main className={s.raceMain}>
       <div className={s.raceBar}><b>{mode==='practice'?'PRACTICE / BOT RIVAL':seat?.slot===-1?'LIVE SPECTATOR':'ONLINE / SERVER AUTHORITATIVE'}</b><span>{TRACKS[view?.track]?.name} · RACE {(view?.trackIndex||0)+1}/{view?.tracks.length}</span><span>{mode==='online'?`${connection.toUpperCase()} · ${rtt}ms`:'NO MATCH REWARDS'}</span></div>
-      <div className={s.hud}><div><small>POSITION</small><strong>{me?.place||'—'}<i>/2</i></strong></div><div><small>LAP</small><strong>{Math.min((me?.lap||0)+1,3)}<i>/3</i></strong></div><div><small>RACE TIME</small><b>{((view?.raceTicks||0)/60).toFixed(1)}s</b></div><div className={s.boost}><small>BOOST</small><div><i style={{width:`${me?.boost||0}%`}}/></div><span>{me?.drifting?`DRIFT BANK +${Math.floor(me.driftCharge)}`:`${Math.floor(me?.boost||0)}% · RELEASE DRIFT TO BANK`}</span></div><div><small>SPEED</small><strong>{me?.gear===-1?'R ':''}{Math.round((me?.speed||0)*42)}<i>km/h*</i></strong></div></div>
+      <div className={s.hud}><div><small>POSITION</small><strong>{me?.place||'—'}<i>/2</i></strong></div><div><small>LAP</small><strong>{Math.min((me?.lap||0)+1,3)}<i>/3</i></strong></div><div><small>RACE TIME</small><b>{((view?.raceTicks||0)/60).toFixed(1)}s</b></div><div className={s.boost}><small>BOOST</small><div><i style={{width:`${me?.boost||0}%`}}/></div><span>{me?.drifting?`DRIFT BANK +${Math.floor(me.driftCharge)}`:`${Math.floor(me?.boost||0)}% · RELEASE DRIFT TO BANK`}</span></div><div><small>SPEED</small><strong>{me?.gear===-1?'R ':''}{Math.round((me?.speed||0)*42)}<i>km/h*</i></strong></div>{rival&&<button className={s.mobileRival} data-testid='mobile-rival' aria-label={`${mapOpen?'Hide':'Show'} track map. ${rival.label}. ${rival.direction}. Map closes after four seconds.`} aria-pressed={mapOpen} onClick={()=>setMapOpen(open=>!open)}><small><span aria-hidden='true' style={{display:'inline-block',transform:`rotate(${rival.bearing}rad)`}}>↑</span> RIVAL · {mapOpen?'CLOSE':'MAP'}</small><b>{rival.label.replace('RIVAL ','')}</b></button>}</div>
       <div className={s.arena} ref={arena}><canvas ref={canvas} tabIndex={0} aria-label='WEN LAMBO race. Up accelerates, left and right steer, down brakes and reverses, space drifts, Shift boosts, R recovers.'/>
         {rival&&<div className={s.rivalTracker} data-testid='rival-tracker'><b>{rival.label}</b><span>{rival.direction} · COURSE DISTANCE*</span></div>}
         {view?.phase==='countdown'&&<div className={s.countdown}><span>{TRACKS[view.track].name}</span><strong>{Math.max(1,3-Math.floor(view.phaseTick/60))}</strong><p>TOUCH STEERING PAD OR HOLD ↑ TO LAUNCH</p></div>}

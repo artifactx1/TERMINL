@@ -22,6 +22,14 @@ async function layout(game){
     await page.setViewportSize(viewport);await page.waitForTimeout(150);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${game} overflow ${viewport.width}`);
     const arena=await canvas.boundingBox();assert.ok(arena.height>=90,`${game} arena ${arena.height} at ${viewport.width}`);
+    if(game==='lambo'){
+      await page.waitForFunction(()=>document.querySelector('canvas').dataset.mapVisible==='false');
+      assert.equal(await page.getByTestId('rival-tracker').isVisible(),false);
+      const toggle=page.getByTestId('mobile-rival'),box=await toggle.boundingBox();
+      assert.ok(box.width>=44&&box.height>=44);assert.ok(box.y+box.height<=arena.y,'rival HUD stays outside the road');
+      await toggle.tap();await page.waitForFunction(()=>document.querySelector('canvas').dataset.mapVisible==='true');
+      await toggle.tap();await page.waitForFunction(()=>document.querySelector('canvas').dataset.mapVisible==='false');
+    }
     const boxes=await page.locator('section[data-input] button').evaluateAll(nodes=>nodes.map(n=>{const r=n.getBoundingClientRect();return{label:n.getAttribute('aria-label')||n.textContent,w:r.width,h:r.height,x:r.x,y:r.y};}));
     for(const box of boxes){assert.ok(box.w>=44&&box.h>=44,`${game} target ${JSON.stringify(box)}`);assert.ok(box.x>=0&&box.x+box.w<=viewport.width+1&&box.y+box.h<=viewport.height+1,`${game} clipped ${JSON.stringify(box)}`);}
     await page.screenshot({path:`artifacts/arcade/touch-${game}-${viewport.width}.png`});
@@ -33,6 +41,10 @@ try{
   await page.goto(`${base}/os/lambo`);await button('SIX-COURSE CUP →').tap();
   await page.waitForFunction(()=>document.querySelector('canvas')?.dataset.phase==='racing');
   await layout('lambo');
+  await page.getByTestId('mobile-rival').tap();
+  await page.waitForFunction(()=>document.querySelector('canvas').dataset.mapVisible==='true');
+  await page.waitForFunction(()=>document.querySelector('canvas').dataset.mapVisible==='false',null,{timeout:6000});
+  assert.equal(await page.getByTestId('mobile-rival').getAttribute('aria-pressed'),'false');
   // Manual mode: BOOST alone includes throttle and visibly consumes boost.
   await button('AUTO GAS ON').tap();await mask(0);
   const initial=Number(await canvas.getAttribute('data-boost'));

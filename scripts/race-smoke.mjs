@@ -28,7 +28,8 @@ try{
       for(let i=0;i<pixels.length;i+=404)colors.add(`${pixels[i]},${pixels[i+1]},${pixels[i+2]}`);
       return colors.size>24;
     });
-    await page.getByTestId('rival-tracker').waitFor();
+    await page.getByTestId('mobile-rival').waitFor();
+    await page.waitForFunction(()=>document.querySelector('canvas').dataset.mapVisible==='false');
     await page.screenshot({path:`artifacts/arcade/${name}-${id}-mobile.png`});
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   }

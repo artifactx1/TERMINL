@@ -18,6 +18,12 @@ test('wheels are separate, continuous, rotation-driven and balanced canvas rigs'
   assert.equal(draw({rotation:0}),draw({rotation:0}));assert.notEqual(draw({rotation:0}),draw({rotation:1}));assert.notEqual(draw({steer:.25}),draw({steer:.26}));assert.ok(WHEEL_RIG.rear.x<.37);assert.equal(WHEEL_RIG.rear.y,0,'Rear tire contact equals the road anchor');
   assert.equal(draw({front:false,steer:-1}),draw({front:false,steer:1}),'Rear wheels must never steer');
 });
+test('hidden map removes the entire circuit overlay without changing race authority',()=>{
+  const state=createRace(),before=JSON.stringify(state),c=context();
+  drawRace(c.ctx,state,{width:390,height:452,showMap:false});
+  assert.equal(c.calls.some(([fn,value])=>fn==='fillText'&&['LIVE CIRCUIT','▲ YOU','▲ RIVAL'].includes(value)),false);
+  assert.equal(JSON.stringify(state),before);assert.equal(c.depth(),0);
+});
 test('player body anchor/scale is independent of speed, acceleration, camera lag and boost',()=>{
   assert.deepEqual(playerCarFrame(1000,600),playerCarFrame(1000,600));assert.equal(playerCarFrame(1000,600).y,522);
   const s=createRace(),before=JSON.stringify(s),c=context();drawPerspectiveRace(c.ctx,s,{width:1000,height:600,slot:0});assert.equal(JSON.stringify(s),before);assert.equal(c.depth(),0);
