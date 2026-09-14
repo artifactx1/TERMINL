@@ -323,9 +323,25 @@
 .moonFeatureArt { position: absolute; inset: 0; }
 .moonFeatureArt canvas { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; }
 .moonFeatureArt::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,#080e0af5 0%,#080e0ad9 30%,#080e0a00 85%); }
+.moonWorldPicker { margin: 0 0 20px; padding: 17px; border: 1px solid var(--line); background: #0a1214; }
+.moonWorldPicker .sectionLabel { margin: 0 0 15px; padding: 0; }
+.moonWorldGrid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; }
+.moonWorldGrid button { position: relative; overflow: hidden; min-height: 110px; text-align: left; padding: 12px; color: #e9f5ec; border: 1px solid #34434c; background: linear-gradient(150deg,#101827 20%,var(--world-sky)); }
+.moonWorldGrid button::after { content: ""; position: absolute; width: 42px; height: 42px; border-radius: 50%; right: -8px; bottom: -16px; border: 1px solid var(--world-accent); box-shadow: 0 0 28px var(--world-accent); opacity: .2; pointer-events: none; }
+.moonWorldGrid button[aria-pressed="true"] { border-color: var(--world-accent); box-shadow: inset 0 -3px var(--world-accent); }
+.moonWorldGrid button:hover { filter: brightness(1.18); }
+.moonWorldGrid button:focus-visible { outline: 2px solid var(--world-accent); outline-offset: 3px; }
+.moonWorldGrid span { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; color: var(--world-accent); font: 12px monospace; }
+.moonWorldGrid i { font: normal 6px monospace; letter-spacing: .4px; }
+.moonWorldGrid b { display: block; margin: 12px 0 8px; font: bold 10px/1.5 monospace; }
+.moonWorldGrid small { font: 6px monospace; color: #c2cdd8; letter-spacing: .8px; }
+.moonWorldPicker > p { margin-top: 14px; color: #afc0ca; font: 10px/1.8 monospace; }
+.moonWorldPicker > p b { color: #e7f4ec; }
+@media (max-width: 1000px) { .moonWorldGrid { grid-template-columns: repeat(2,minmax(0,1fr)); } .moonWorldGrid button { min-height: 90px; } }
+@media (max-width: 740px) { .moonWorldPicker { padding: 12px; } .moonWorldPicker .sectionLabel { gap: 8px; font-size: 7px; } .moonWorldPicker > p { font-size: 9px; } }
 
 /* Moon Mission is a full-screen video game; the OS is its launcher. */
-.moonGame { position: fixed; inset: 0; z-index: 75; display: flex; flex-direction: column; background: #090f19; color: #edf7ee; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overscroll-behavior: none; }
+.moonGame { position: fixed; inset: 0; z-index: 75; display: flex; flex-direction: column; background: #090f19; color: #edf7ee; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; overscroll-behavior: none; height: 100dvh; }
 .moonHeader { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 12px 22px; min-height: 60px; background: #080e13; border-bottom: 1px solid #294037; }
 .moonHeader > div { font: bold 14px monospace; letter-spacing: 2px; text-align: center; color: #cbebba; }
 .moonHeader > div span { display: block; font: 7px monospace; letter-spacing: 1.2px; color: #7d938c; margin-top: 6px; }
@@ -345,7 +361,8 @@
 .moonEyebrow { color: #95ae9e; font: 8px monospace; letter-spacing: 3px; }
 .moonIntroPanel h2 { color: #edf3d6; font: 900 clamp(42px,6.2vw,86px)/.91 monospace; letter-spacing: -5px; text-shadow: 4px 4px #365b49,8px 8px #050c18; margin: 23px 0 24px; }
 .moonIntroPanel h2 em { font-style: normal; color: #a0f480; }
-.moonIntroPanel > p { font: 12px/1.7 monospace; color: #a6bbaa; }
+.moonIntroPanel > p { font: 12px/1.7 monospace; color: #a6bbaa; max-width: 440px; margin-inline: auto; }
+.moonIntroPanel > p strong { color: #e0ffd4; font-size: 16px; }
 .moonHowto { display: flex; gap: 22px; justify-content: center; padding: 19px 0; margin-top: 12px; }
 .moonHowto > span { font: bold 13px monospace; color: #e8ebd1; }
 .moonHowto b { display: block; color: #8fa98f; font: 7px monospace; letter-spacing: .7px; margin-top: 6px; }

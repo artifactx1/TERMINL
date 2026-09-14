@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { newMoon, stepMoon, MOON_TICK_MS, MOON_END_TICK, LEFT, RIGHT, JUMP } from "../../lib/moon-mission.mjs";
+import { newMoon, stepMoon, moonWorld, MOON_TICK_MS, MOON_END_TICK, LEFT, RIGHT, JUMP } from "../../lib/moon-mission.mjs";
 import { drawMoon } from "../../lib/moon-draw";
 import s from "../../styles/OS.module.css";
 
 export default function MoonMission({run,active,onComplete,leave,sound,machine}) {
-  const canvas=useRef(null),scene=useRef(null),game=useRef(newMoon(run.seed)),moves=useRef([]),art=useRef(null);
-  const ghost=useRef(run.rivalRecord?newMoon(run.seed):null),ghostIndex=useRef(0);
+  const world=moonWorld(run.level);
+  const canvas=useRef(null),scene=useRef(null),game=useRef(newMoon(run.seed,world.level)),moves=useRef([]),art=useRef(null);
+  const ghost=useRef(run.rivalRecord?newMoon(run.seed,run.rivalRecord.level):null),ghostIndex=useRef(0);
   const [phase,setPhase]=useState("ready"),[view,setView]=useState(game.current);
   const phaseRef=useRef(phase);phaseRef.current=phase;
   const callbacks=useRef({onComplete,sound});callbacks.current={onComplete,sound};
@@ -94,7 +95,7 @@ export default function MoonMission({run,active,onComplete,leave,sound,machine})
     if(phase!=="complete")return;
     const timer=setTimeout(()=>{
       if(completed.current)return;completed.current=true;
-      callbacks.current.onComplete({seed:run.seed,moves:moves.current.filter(m=>m.tick<game.current.tick),endTick:game.current.tick},"MOON");
+      callbacks.current.onComplete({seed:run.seed,level:game.current.level,moves:moves.current.filter(m=>m.tick<game.current.tick),endTick:game.current.tick},"MOON");
     },1800);
     return ()=>clearTimeout(timer);
   },[phase,run.seed]);
@@ -104,12 +105,12 @@ export default function MoonMission({run,active,onComplete,leave,sound,machine})
     onPointerUp:()=>bit(value,false),onPointerCancel:()=>bit(value,false),onLostPointerCapture:()=>bit(value,false),
   });
   return <section className={s.moonGame} aria-label="Moon Mission platform game">
-    <header className={s.moonHeader}><button onClick={leave}>← ARCADE</button><div>MOON MISSION <span>WORLD 01 / DEGEN DISTRICT</span></div><button disabled={phase==="ready"||phase==="complete"} onClick={()=>phase==="paused"?setPhase("running"):pause()}>{phase==="paused"?"▶ RESUME":"Ⅱ PAUSE"}</button></header>
+    <header className={s.moonHeader}><button onClick={leave}>← ARCADE</button><div>MOON MISSION <span>WORLD {String(world.level+1).padStart(2,"0")} / {world.name.toUpperCase()}</span></div><button disabled={phase==="ready"||phase==="complete"} onClick={()=>phase==="paused"?setPhase("running"):pause()}>{phase==="paused"?"▶ RESUME":"Ⅱ PAUSE"}</button></header>
     <div className={s.moonScene} ref={scene}>
-      <canvas ref={canvas} data-tick={view.tick} data-x={Math.round(view.x)} data-input={view.input} tabIndex={0} aria-label="Side-scrolling platform game. Arrow keys to run. Space to jump, press again in the air to double jump. Reach the rocket." onPointerDown={e=>{if(e.pointerType!=="mouse"){e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);bit(JUMP,true);}}} onPointerUp={()=>bit(JUMP,false)} onPointerCancel={()=>bit(JUMP,false)} onLostPointerCapture={()=>bit(JUMP,false)} />
+      <canvas ref={canvas} data-level={world.level} data-phase={phase} data-tick={view.tick} data-x={Math.round(view.x)} data-input={view.input} tabIndex={0} aria-label="Side-scrolling platform game. Arrow keys to run. Space to jump, press again in the air to double jump. Reach the rocket." onPointerDown={e=>{if(e.pointerType!=="mouse"){e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);bit(JUMP,true);}}} onPointerUp={()=>bit(JUMP,false)} onPointerCancel={()=>bit(JUMP,false)} onLostPointerCapture={()=>bit(JUMP,false)} />
       <div className={s.moonHud}><div><span>YOUR BAG</span><b>✦ {view.score.toLocaleString("en-US")}</b></div><div><span>LIVES</span><b className={s.moonHearts}>{"♥".repeat(view.hp)}<i>{"♡".repeat(3-view.hp)}</i></b></div><div><span>TIME</span><b>{Math.ceil((MOON_END_TICK-view.tick)/60)}</b></div></div>
-      <div className={s.moonProgress}><span style={{width:`${Math.min(100,view.furthest/4950*100)}%`}} /></div>
-      {phase==="ready"&&<div className={s.moonIntro}><div className={s.moonIntroPanel}><span className={s.moonEyebrow}>TERMINL ARCADE PRESENTS</span><h2>MOON<br /><em>MISSION</em></h2><p>One little terminal.<br />A very questionable route to the moon.</p><div className={s.moonHowto}><span>← → <b>RUN</b></span><span>SPACE <b>JUMP</b></span><span>AGAIN <b>DOUBLE JUMP</b></span></div><p className={s.moonInstruction}>Collect coins. Stomp red candles from above.<br />Jump the pools. Reach the rocket.</p><button onClick={()=>setPhase("running")}>LET&apos;S GO TO THE MOON →</button><small>{run.rivalName?`RACING ${run.rivalName.toUpperCase()}'S GHOST` : "90 SECONDS · 3 LIVES · NO ACTUAL MOON MONEY"}</small></div></div>}
+      <div className={s.moonProgress}><span style={{width:`${Math.min(100,view.furthest/world.finish*100)}%`}} /></div>
+      {phase==="ready"&&<div className={s.moonIntro}><div className={s.moonIntroPanel}><span className={s.moonEyebrow}>WORLD {String(world.level+1).padStart(2,"0")} / {world.tag}</span><h2>MOON<br /><em>MISSION</em></h2><p><strong>{world.name}</strong><br />{world.brief}</p><div className={s.moonHowto}><span>← → <b>RUN</b></span><span>SPACE <b>JUMP</b></span><span>AGAIN <b>DOUBLE JUMP</b></span></div><p className={s.moonInstruction}>Collect coins. Stomp red candles from above.<br />Jump the pools. Reach the rocket.</p><button onClick={()=>setPhase("running")}>LAUNCH WORLD {String(world.level+1).padStart(2,"0")} →</button><small>{run.rivalName?`RACING ${run.rivalName.toUpperCase()}'S GHOST` : "90 SECONDS · 3 LIVES · NO ACTUAL MOON MONEY"}</small></div></div>}
       {phase==="paused"&&<div className={s.moonPause}><span>PAUSED</span><h3>Even degens need a breather.</h3><p>Your checkpoint and coins are safe.</p><button onClick={()=>setPhase("running")}>BACK TO THE MISSION →</button></div>}
       {phase==="complete"&&<div className={s.moonComplete}><span>{view.won?"✦ MISSION COMPLETE ✦":view.dead?"SYSTEM CRASH":"TIME'S UP"}</span><h3>{view.won?"WE MADE IT.":"ONE MORE TRY?"}</h3><p>{view.score.toLocaleString("en-US")} POINTS · {view.coins} COINS · {view.stomps} STOMPS</p></div>}
       {phase==="running"&&view.tick<360&&<div className={s.moonHint}>MOVE → &nbsp; SPACE TO JUMP &nbsp; · &nbsp; PRESS AGAIN TO DOUBLE JUMP</div>}

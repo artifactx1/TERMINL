@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { newMoon, stepMoon, moonBotReplay, replayMoon, validateMoonReplay, enemyAt, ENEMIES, RIGHT, LEFT, JUMP, MOON_END_TICK } from "../lib/moon-mission.mjs";
 import { awardRun, freshProfile, readProfile, encodeChallenge, decodeChallenge, resultFor } from "../lib/terminl-game.mjs";
+import { MOON_WORLDS, moonWorld, PLAYER_W } from "../lib/moon-mission.mjs";
+import { drawMoon } from "../lib/moon-draw.js";
 
 test("running accelerates, stops, and stays inside the world", () => {
   let s = {...newMoon("physics"), input: RIGHT};
@@ -89,4 +91,73 @@ test("Moon shares existing saves and rewards without resetting cosmetics or dupl
   assert.ok(earned.profile.credits>500);assert.equal(earned.profile.history[0].game,"moon");
   assert.equal(awardRun(earned.profile,run,date).reward,0);
   assert.equal(resultFor({game:"moon",record:{seed:"timeout",endTick:5400,moves:[]}}).win,false);
+});
+
+test("ten distinct authored worlds have safe checkpoints, reachable gem routes and valid finishes", () => {
+  assert.equal(MOON_WORLDS.length,10);
+  assert.equal(new Set(MOON_WORLDS.map(w=>JSON.stringify(w.ground))).size,10);
+  for(const w of MOON_WORLDS){
+    assert.equal(moonWorld(w.level),w);
+    for(const key of ["platforms","pickups","enemies"])assert.equal(new Set(w[key].map(p=>p.id)).size,w[key].length);
+    for(const x of [65,...w.checkpoints,w.finish])assert.ok(w.ground.some(([a,b])=>x>=a&&x+PLAYER_W<=b));
+    for(let i=1;i<w.ground.length;i++)assert.ok(w.ground[i][0]-w.ground[i-1][1]<=260);
+    for(const p of w.platforms){assert.ok(p.w>0);assert.ok(p.x>=0&&p.x+p.w<=w.width);}
+    assert.ok(w.pickups.filter(p=>p.kind==="gem").length>=5);
+    const finish=stepMoon({...newMoon("finish",w.level),x:w.finish});
+    assert.equal(finish.won,true);assert.equal(finish.ended,true);assert.equal(stepMoon(finish),finish);
+    const fall=stepMoon({...newMoon("fall",w.level),checkpoint:w.checkpoints.at(-1),y:621});
+    assert.equal(fall.x,w.checkpoints.at(-1));assert.equal(fall.hp,2);
+  }
+});
+
+test("all ten worlds are beatable by ordinary inputs for all three bots across four seeds", () => {
+  for(const world of MOON_WORLDS)for(const seed of ["moon-test","daily-2026-09-14","course-a","course-b"])for(const bot of ["chloe","max","brian"]){
+    const record=moonBotReplay(seed,bot,world.level),state=replayMoon(record);
+    assert.equal(state.won,true,`${world.name} / ${seed} / ${bot}`);
+    assert.equal(state.level,world.level);assert.ok(state.tick<MOON_END_TICK);
+    assert.deepEqual(state,replayMoon(record));
+  }
+});
+
+test("world-aware challenges round-trip, reject bad worlds, and preserve legacy world-zero links", () => {
+  for(const world of MOON_WORLDS){
+    const record=moonBotReplay("world-link","chloe",world.level);
+    const decoded=decodeChallenge(encodeChallenge({v:3,name:"PLAYER",coin:"MOON",...record}));
+    assert.equal(decoded.level??0,world.level);assert.deepEqual(replayMoon(decoded),replayMoon(record));
+    assert.equal(resultFor({game:"moon",record,rivalRecord:decoded}).tie,true);
+  }
+  for(const level of [-1,10,1.5,"1",null])assert.equal(validateMoonReplay({seed:"bad",moves:[],endTick:5400,level}),null);
+  assert.throws(()=>newMoon("bad",10));
+  const legacy=moonBotReplay("old-link");assert.equal(Object.hasOwn(legacy,"level"),false);
+  assert.equal(decodeChallenge(encodeChallenge({v:3,name:"PLAYER",coin:"MOON",...legacy})).level,undefined);
+  assert.throws(()=>resultFor({game:"moon",record:legacy,rivalRecord:moonBotReplay("old-link","chloe",1)}),/same world/);
+});
+
+test("cleared worlds survive reload, deduplicate, and don't multiply the daily bonus", () => {
+  let profile=freshProfile();const seed="daily-2026-09-14",date=new Date("2026-09-14T12:00:00Z");
+  for(const level of [0,3,9,3]){
+    const result=awardRun(profile,{id:`clear-${profile.games}`,game:"moon",mode:"daily",seed,record:moonBotReplay(seed,"chloe",level)},date);
+    assert.equal(result.dailyBonus,profile.games===0?100:0);profile=readProfile(JSON.stringify(result.profile));
+  }
+  assert.deepEqual(profile.moonClears,[0,3,9]);
+  assert.deepEqual(readProfile(JSON.stringify({...profile,moonClears:[-1,0,"3",3,3,10,null]})).moonClears,[0,3]);
+  assert.deepEqual(readProfile(JSON.stringify({version:2})).moonClears,[]);
+});
+
+test("every biome renders finite geometry on portrait and landscape canvases, including effects and collapsed bridges", () => {
+  const fingerprints=[];
+  for(const world of MOON_WORLDS){
+    const calls=[];
+    const gradient={addColorStop:(offset,color)=>{assert.ok(Number.isFinite(offset));assert.match(color,/^#[\da-f]{6}([\da-f]{2})?$/i);}};
+    const ctx=new Proxy({}, {get:(_,key)=>(...args)=>{
+      for(const a of args)if(typeof a==="number")assert.ok(Number.isFinite(a),`${world.name}: ${key}`);
+      calls.push([key,...args]);return key.startsWith("create")?gradient:undefined;
+    },set:(_,key,value)=>{if(key==="fillStyle"||key==="strokeStyle")assert.ok(value);return true;}});
+    for(const width of [320,960,1800])for(const x of [65,world.width*.5,world.finish]){
+      const state={...newMoon("render",world.level),x,tick:90,shield:true,input:RIGHT,vx:245,pulse:{kind:"coin",tick:80,text:"+100"},crumbling:{rug0:40,rug1:75}};
+      drawMoon(ctx,state,width,{ghost:{...state,x:x+90}});
+    }
+    fingerprints.push(JSON.stringify(calls));
+  }
+  assert.equal(new Set(fingerprints).size,10);
 });
