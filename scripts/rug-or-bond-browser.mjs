@@ -1,0 +1,85 @@
+import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
+import { chromium, firefox, webkit } from 'playwright';
+import { SAVE_KEY, INITIAL_CASH, DURATION, restoreSession } from '../lib/arcade/rug-or-bond.mjs';
+
+const base = process.env.ARCADE_TEST_URL || 'http://localhost:4000';
+const name = process.env.ARCADE_TEST_BROWSER || 'chromium';
+const browser = await ({ chromium, firefox, webkit }[name]).launch({ headless: true });
+const output = 'artifacts/arcade/rug-or-bond';
+await mkdir(output, { recursive: true });
+const errors = [];
+const readGame = async page => restoreSession(await page.evaluate(key => localStorage.getItem(key), SAVE_KEY)).game;
+const click = (page, name) => page.getByRole('button', { name, exact: true }).click();
+try {
+  for (const mobile of [false, true]) {
+    const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1440, height: 1100 }, hasTouch: mobile });
+    const page = await context.newPage();
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(`${base}/os`);
+    await page.getByRole('link', { name: 'PLAY RUG OR BOND ↗', exact: true }).click();
+    await page.getByRole('button', { name: 'START TRADING →', exact: true }).waitFor();
+    await page.clock.install({ time: new Date('2026-09-15T12:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-09-15T12:00:01Z'));
+    await page.screenshot({ path: `${output}/${name}-${mobile ? 'mobile' : 'desktop'}-launchpad.png`, fullPage: true });
+    await click(page, 'START TRADING →');
+    const initial = await readGame(page);
+    const ticker = initial.markets[0].ticker;
+    await page.getByLabel('AMOUNT IN SIM SOL').fill('0.5');
+    await click(page, `BUY $${ticker}`);
+    let g = await readGame(page);
+    assert.ok(g.markets[0].held > 0);
+    assert.equal(g.cash, INITIAL_CASH - 500000);
+    await click(page, 'SELL'); await click(page, '25%'); await click(page, `SELL 25% $${ticker}`);
+    assert.equal((await readGame(page)).markets[0].held, g.markets[0].held - Math.floor(g.markets[0].held / 4));
+    await page.clock.runFor(6000);
+    assert.equal((await readGame(page)).tick, 6);
+    await click(page, 'Ⅱ PAUSE');
+    const saved = await readGame(page);
+    await page.clock.runFor(5000);
+    assert.deepEqual(await readGame(page), saved);
+    await page.reload();
+    await page.getByRole('button', { name: '▶ RESUME', exact: true }).waitFor();
+    assert.deepEqual(await readGame(page), saved);
+    await click(page, '▶ RESUME'); await page.clock.runFor(6000);
+    assert.equal((await readGame(page)).tick, 12);
+    await page.getByRole('button', { name: `View ${saved.markets[2].name}`, exact: true }).click();
+    await click(page, `BUY $${saved.markets[2].ticker}`);
+    assert.ok((await readGame(page)).markets[2].held > 0);
+    await page.screenshot({ path: `${output}/${name}-${mobile ? 'mobile' : 'desktop'}-trading.png`, fullPage: true });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    if (mobile) {
+      await page.setViewportSize({ width: 320, height: 740 });
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+      await page.setViewportSize({ width: 390, height: 844 });
+    }
+    await click(page, 'CASH OUT & END SESSION ↗');
+    await click(page, 'KEEP TRADING');
+    await click(page, 'CASH OUT & END SESSION ↗');
+    await click(page, 'SELL ALL & FINISH');
+    const finished = await readGame(page);
+    assert.equal(finished.phase, 'finished');
+    assert.ok(finished.markets.every(m => m.held === 0));
+    await page.reload();
+    await page.getByRole('button', { name: 'BACK TO THE TRENCHES →', exact: true }).waitFor();
+    assert.deepEqual(await readGame(page), finished);
+    await page.screenshot({ path: `${output}/${name}-${mobile ? 'mobile' : 'desktop'}-receipt.png`, fullPage: true });
+    await click(page, 'BACK TO THE TRENCHES →');
+    assert.equal((await readGame(page)).cash, INITIAL_CASH);
+    await page.clock.runFor(DURATION * 1000);
+    assert.equal((await readGame(page)).phase, 'finished');
+    assert.equal((await readGame(page)).cash, INITIAL_CASH);
+    await context.close();
+  }
+  const context = await browser.newContext();
+  await context.addInitScript(() => { Object.defineProperty(Storage.prototype, 'getItem', { value() { throw new Error('Storage unavailable'); } }); Object.defineProperty(Storage.prototype, 'setItem', { value() { throw new Error('Storage unavailable'); } }); });
+  const page = await context.newPage();
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(`${base}/os/rug-or-bond`);
+  await click(page, 'START TRADING →');
+  await page.getByText('Storage unavailable. Progress lasts for this visit only.', { exact: true }).waitFor();
+  await page.getByRole('button', { name: /^BUY \$/ }).click();
+  await context.close();
+  assert.deepEqual(errors, []);
+  console.log('PASS: desktop/mobile launch feed, token buys, partial sells, timed markets, pause, reload, early cash-out, automatic expiry, replay, storage failure and no page overflow.');
+} finally { await browser.close(); }

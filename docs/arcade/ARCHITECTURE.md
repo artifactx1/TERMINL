@@ -49,8 +49,10 @@ has been provisioned and no infrastructure cost/concurrency claim is made.
 ## Broader roadmap, intentionally not advertised as playable
 
 WEN LAMBO: two authored vehicles/tracks first, prediction/reconciliation and cup.
-RUG OR BOND: five-round isolated simulation ledger, fixed-liquidity integer-cost
-LMSR, future verified beacon proofs and crash-safe settlement before release.
+RUG OR BOND: [token-launch trading simulator](RUG-OR-BOND.md), corrected to the user’s
+pump.fun-style intent: five simultaneous/staggered launches, constant-product
+bonding curves, token buys/sells, dev dumps and graduation. Local solo play with
+fake SOL; competitive verification and server persistence remain future work.
 EXIT LIQUIDITY: duel/two maps before team expansion; authoritative objectives.
 CANDLE CLASH: seven-column falling pairs, deterministic cascades and attack
 cancellation, best-of-three PvP before six scenario expansion.

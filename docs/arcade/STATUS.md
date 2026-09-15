@@ -1,9 +1,10 @@
 # Arcade status — roster and California racing expansion
 
-Four playable games remain accessible from /os: Rug Runner, Moon Mission, REKT RUMBLE and WEN LAMBO. The new games are previews, not the completed five-game master release.
+Five games are accessible from /os: Rug Runner, Moon Mission, REKT RUMBLE, WEN LAMBO and the new RUG OR BOND solo preview. The new games are previews, not the completed five-game expansion release.
 
 ## Implemented
 
+- RUG OR BOND at /os/rug-or-bond: a memecoin trading simulator with 10 fake SOL, five staggered live token launches, candlesticks, bonding curves, buy/sell execution, dev dumps, graduation, portfolio P&L, pause, local recovery and final cash-out. Browser verification remains pending because the session sandbox blocked Chromium launch. See [RUG-OR-BOND.md](RUG-OR-BOND.md).
 - REKT RUMBLE now has six freely selectable canonical pixel fighters: Max, Diamond Hands Pepe, Buy-High Brian, MEV Mia, Bridge Burn Bernie and Cold Storage Chloe. Each has an articulated rig and eleven authored moves. Original Max/Diamond rules retain eight pre-expansion replay hashes.
 - Two Rumble stages, training, selectable bot opponent, private two-player PvP, spectator/reconnect/rematch and durable results.
 - WEN LAMBO at /os/lambo: California-style behind-car Canvas perspective, two generated environments, two open-cockpit roadsters with Pepe, independently animated wheels, front-only steering, progressive handling, reverse, drift-earned boost, keyboard/touch controls and a guided lesson.
@@ -15,7 +16,7 @@ See [RACING.md](RACING.md), [ROSTER.md](ROSTER.md), [MULTIPLAYER.md](MULTIPLAYER
 
 ## Remaining release work
 
-Human art/audio approval, physical controller/touch testing, public matchmaking, permanent accounts, ownership cosmetics, ranked seasons, multi-region routing, production load/backup/restore drills and operational hardening remain pending. The eventual larger roster/stage/track/player targets are not claimed complete. RUG OR BOND, EXIT LIQUIDITY and CANDLE CLASH remain unimplemented, not launcher buttons.
+Human art/audio approval, physical controller/touch testing, public matchmaking, permanent accounts, ownership cosmetics, ranked seasons, multi-region routing, production load/backup/restore drills and operational hardening remain pending. The eventual larger roster/stage/track/player targets are not claimed complete. EXIT LIQUIDITY and CANDLE CLASH remain unimplemented. RUG OR BOND is a local solo simulator; competitive verification, multiplayer and durable server persistence remain unimplemented.
 
 The user has a Railway authority; this change reuses its process and journal, not a second paid service. A local test does not verify that user's deployment. The exact live endpoint was not supplied for this iteration.
 

@@ -16,6 +16,10 @@ shared credits, trophies, and unlockable phosphor colors. See
 WEN LAMBO adds California-style chase-view racing, two tracks, two roadsters with
 Pepe in the cockpit, reverse, drifting and private two-player cups. Practice,
 training and authoritative online rooms are included; the original games remain.
+RUG OR BOND is a memecoin trading simulator at `/os/rug-or-bond`: 10 fake SOL,
+five live token launches, bonding curves, candlesticks, dev dumps, buy/sell trading
+and local session recovery.
+See the [game guide](docs/arcade/RUG-OR-BOND.md).
 This is not the completed five-game master release. See [racing guide](docs/arcade/RACING.md).
 
 ```bash
