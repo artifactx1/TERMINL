@@ -31,3 +31,16 @@ test('player body anchor/scale is independent of speed, acceleration, camera lag
 test('runtime Pepe body and scenery atlases have real transparent alpha, not baked checkerboards',async()=>{
   for(const name of ['california-pepe-bodies-v1.png','california-scenery-v1.png']){const p=`public/arcade/${name}`,m=await sharp(p).metadata(),stats=await sharp(p).stats();assert.equal(m.hasAlpha,true);assert.equal(stats.channels[3].min,0);assert.ok(stats.channels[3].max>240);assert.equal(m.width,1536);assert.equal(m.height,1024);}
 });
+
+test('every exotic has a distinct articulated body and driver in garage and both racing seats',async()=>{
+  const {VEHICLES}=await import('../lib/arcade/race-sim.mjs');
+  const {drawRearCar}=await import('../lib/arcade/race-perspective.js');
+  const signatures=new Set();
+  for(const id of ['mirage','glacier','inferno']){
+    assert.ok(VEHICLES[id].driverId);
+    const c=context();drawRearCar(c.ctx,id,{x:250,y:235,width:350,steer:.4,tick:60});assert.equal(c.depth(),0);
+    signatures.add(JSON.stringify(c.calls));
+    for(const slot of [0,1]){const state=createRace({vehicles:[id,id]}),before=JSON.stringify(state),r=context();drawRace(r.ctx,state,{width:390,height:452,slot});assert.equal(r.depth(),0);assert.equal(JSON.stringify(state),before);}
+  }
+  assert.equal(signatures.size,3);
+});

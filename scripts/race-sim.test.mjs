@@ -101,3 +101,60 @@ test('historical unversioned v1 racing replays still reproduce exactly',()=>{
   assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(old));
   assert.throws(()=>replayFight({...replay,rulesVersion:99},RACE_RULES));
 });
+
+test('off-road lateral movement does not hand the lead to a trailing car',async()=>{
+  const {raceOrder,roadAt}=await import('../lib/arcade/race-sim.mjs');
+  const s=racing({cup:false}),g=trackGeometry(s.track);
+  const place=(slot,distance,offset=0)=>{const at=roadAt(g,distance);Object.assign(s.players[slot],{passed:1,nextCheckpoint:1,x:at.x-Math.sin(at.angle)*offset,y:at.y+Math.cos(at.angle)*offset});};
+  // On this first sector the leader is 12 units ahead but 100 units sideways.
+  // Euclidean distance to gate 1 incorrectly puts the trailing car first.
+  place(0,360,100);place(1,348);
+  assert.deepEqual(raceOrder(s),[0,1]);
+  assert.ok(rivalTelemetry(s,0).gap<0);
+  place(1,390);assert.deepEqual(raceOrder(s),[1,0],'actual longitudinal overtake changes the lead');
+  place(0,360,-100);place(1,348);assert.deepEqual(raceOrder(s),[0,1]);
+  place(0,100);place(1,90);assert.deepEqual(raceOrder(s),[0,1],'driving backwards may give up progress');
+});
+
+test('race order respects missed gates, finish time, recovery and stable exact ties',async()=>{
+  const {raceOrder,roadAt}=await import('../lib/arcade/race-sim.mjs');
+  const s=racing({cup:false}),g=trackGeometry(s.track);
+  Object.assign(s.players[0],{passed:2,nextCheckpoint:2,...roadAt(g,g.gates[1].s+10)});
+  Object.assign(s.players[1],{passed:1,nextCheckpoint:1,...roadAt(g,g.gates[7].s)});
+  assert.deepEqual(raceOrder(s),[0,1],'cutting the infield does not skip validated sectors');
+  const recovered=stepRace(s,[I.RESET,0]);assert.deepEqual(raceOrder(recovered),[0,1]);
+  s.players[1].finishedTick=100;assert.deepEqual(raceOrder(s),[1,0]);
+  s.players[0].finishedTick=99;assert.deepEqual(raceOrder(s),[0,1]);
+  const tie=racing();Object.assign(tie.players[1],{x:tie.players[0].x,y:tie.players[0].y});
+  tie.players[0].place=2;tie.players[1].place=1;assert.deepEqual(raceOrder(tie),[1,0]);
+});
+
+test('speed-sensitive steering retains low-speed lock and recenters without sticky yaw',()=>{
+  const run=(speed,mask,count,initial)=>{
+    let s=initial||racing({cup:false});const start={...s.players[0]};
+    for(let i=0;i<count;i++){
+      Object.assign(s.players[0],{x:start.x,y:start.y,angle:start.angle,vx:Math.cos(start.angle)*speed,vy:Math.sin(start.angle)*speed,speed});
+      s=stepRace(s,[mask,0]);
+    }return s;
+  };
+  const slow=run(.5,I.RIGHT,30),fast=run(5.6,I.RIGHT,30);
+  assert.ok(slow.players[0].steer>.95);assert.ok(fast.players[0].steer<=.74);
+  const centered=run(5.6,0,14,fast);assert.equal(centered.players[0].steer,0);assert.ok(Math.abs(centered.players[0].yawRate)<.001);
+  const counter=run(5.6,I.LEFT,8,fast);assert.ok(counter.players[0].steer<0,'countersteer crosses center promptly');
+});
+
+test('archived rules-v2 recordings retain exact state and hashes',async()=>{
+  const {createRace:oldCreate,stepRace:oldStep}=await import('../lib/arcade/race-sim-v2.mjs');
+  let old=oldCreate();for(let i=0;i<900;i++)old=oldStep(old,[6,4]);
+  const replay={version:1,game:'wen-lambo',rulesVersion:2,options:{},ticks:900,inputs:[{tick:0,slots:[{input:6},{input:4}]}]};
+  assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(old));
+});
+
+test('all five vehicles finish all six courses in both grid slots using ordinary bot inputs',async()=>{
+  const {VEHICLES}=await import('../lib/arcade/race-sim.mjs');
+  for(const vehicle of Object.keys(VEHICLES))for(const track of CUP_TRACKS){
+    let state=createRace({vehicles:[vehicle,vehicle],track,cup:false});
+    while(state.phase!=='raceOver'&&state.tick<8000)state=stepRace(state,[raceBotInput(state,0),raceBotInput(state,1)]);
+    assert.ok(state.players.every(p=>p.finishedTick!==null),`${vehicle} must finish ${track} in both grid slots`);
+  }
+});

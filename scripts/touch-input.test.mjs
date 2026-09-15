@@ -23,12 +23,13 @@ test('racing has a forgiving center and a progressive, symmetric thumb curve',()
 
 test('held touch corrections stay bounded instead of accumulating full steering lock',()=>{
   const run=(x,speed)=>{
-    let steer=0,max=0;
-    for(let i=0;i<600;i++){
-      const mask=raceTouchSteeringInput(raceSteeringTarget(x),steer,speed);
+    let state=createRace();state.phase='racing';let max=0;
+    const start={...state.players[0]};
+    for(let i=0;i<180;i++){
+      const mask=raceTouchSteeringInput(raceSteeringTarget(x),state.players[0].steer,speed);
       assert.ok([0,1,2].includes(mask));
-      const target=mask===1?-1:mask===2?1:0,step=target===0?.075:.065;
-      steer+=Math.max(-step,Math.min(step,target-steer));max=Math.max(max,Math.abs(steer));
+      Object.assign(state.players[0],{x:start.x,y:start.y,angle:start.angle,vx:Math.cos(start.angle)*speed,vy:Math.sin(start.angle)*speed,speed});
+      state=stepRace(state,[mask,0]);max=Math.max(max,Math.abs(state.players[0].steer));
     }
     return max;
   };

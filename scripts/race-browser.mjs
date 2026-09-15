@@ -6,8 +6,11 @@ import { replayFight } from '../lib/arcade/rollback.mjs';
 import { RACE_RULES, raceHash } from '../lib/arcade/race-sim.mjs';
 const base=process.env.ARCADE_TEST_URL||'http://localhost:4000',authority=process.env.ARCADE_TEST_AUTHORITY||'http://localhost:4010';
 const browserName=process.env.ARCADE_TEST_BROWSER||'chromium',browser=await({chromium,firefox,webkit}[browserName]).launch({headless:true,...(process.env.ARCADE_BROWSER_EXECUTABLE?{executablePath:process.env.ARCADE_BROWSER_EXECUTABLE}:{})});
-const legacyURL=`data:text/javascript;base64,${Buffer.from(await readFile(new URL('../lib/arcade/race-sim-v1.mjs',import.meta.url),'utf8')).toString('base64')}`;
-const moduleURL=`data:text/javascript;base64,${Buffer.from((await readFile(new URL('../lib/arcade/race-sim.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL)).toString('base64')}`;
+const dataModule=source=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+const legacyURL=dataModule(await readFile(new URL('../lib/arcade/race-sim-v1.mjs',import.meta.url),'utf8'));
+const v2URL=dataModule((await readFile(new URL('../lib/arcade/race-sim-v2.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL));
+const progressURL=dataModule(await readFile(new URL('../lib/arcade/race-progress.mjs',import.meta.url),'utf8'));
+const moduleURL=dataModule((await readFile(new URL('../lib/arcade/race-sim.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL));
 const output='artifacts/arcade';await mkdir(output,{recursive:true});const contexts=[],pages=[],errors=[];
 const click=(p,name)=>p.getByRole('button',{name,exact:true}).click();
 async function guest(name){
@@ -19,7 +22,7 @@ try{
   const a=await guest('Driver A'),b=await guest('Driver B'),watch=await guest('Observer');
   await a.screenshot({path:`${output}/${browserName}-garage.png`,fullPage:true});
   await click(a,'CREATE RACE +');await a.getByLabel('Room invitation').waitFor();const invitation=await a.getByLabel('Room invitation').inputValue();
-  await b.getByRole('button',{name:/Spectre RX arcade roadster with Pepe/}).click();await b.getByLabel('RACE INVITATION').fill(invitation);await click(b,'JOIN RACE →');
+  await b.getByRole('button',{name:/Spectre RX arcade roadster with Diamond Hands Pepe/}).click();await b.getByLabel('RACE INVITATION').fill(invitation);await click(b,'JOIN RACE →');
   await watch.getByLabel('RACE INVITATION').fill(invitation);await click(watch,'SPECTATE');await a.waitForFunction(()=>window.__room?.players.every(Boolean)&&window.__room.spectators===1);
   await click(a,"I'M READY →");await click(b,"I'M READY →");await a.waitForFunction(()=>window.__state?.phase==='racing');
   const match=await b.evaluate(()=>window.__room.matchId);await b.evaluate(()=>window.__sockets.find(s=>s.url.includes(':4010'))?.close());await b.waitForFunction(id=>window.__room?.matchId===id&&window.__wire.filter(m=>m.type==='joined').length>=2,match);

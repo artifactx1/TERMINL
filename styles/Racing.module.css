@@ -26,3 +26,6 @@
   .mobileRival b { color:#ffadd3; font-size:10px; white-space:nowrap; }
   .shell .mobileRival[aria-pressed=true] { background:#443044; border-color:#ff80bd; }
 }
+.driverLabel { display:block; min-height:28px; margin-top:12px; color:#dbd8b1!important; line-height:1.6; }
+.position strong { color:#d9ffab; font-variant-numeric:tabular-nums; }.position { min-width:82px!important; }
+@media(max-width:480px) { .cars { grid-template-columns:1fr; }.cars>button { display:grid; grid-template-columns:140px 1fr; align-items:center; column-gap:15px; }.cars canvas { grid-row:1/6; }.cars p { min-height:0; margin:5px 0; }.cars h2 { margin:8px 0; }.cars .selected { margin-top:8px; }.driverLabel { min-height:0; margin:5px 0; }.position { min-width:68px!important; }.position small { font-size:7px!important; } }
