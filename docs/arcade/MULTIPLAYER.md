@@ -133,9 +133,11 @@ Racing create/join/resume packets carry `game:"wen-lambo", rulesVersion:2`; char
 ### Railway build configuration
 
 Railway's **Root Directory must be `/`**, not `/server/arcade`: the entrypoint
-imports shared `lib/arcade` modules. Set the Railway Config File to
-`/server/arcade/railway.json`. It selects `server/arcade/Dockerfile`, the backend
-start command, a `/health` readiness check, and one replica. The image installs
+imports shared `lib/arcade` modules. In the service settings, select
+`server/arcade/Dockerfile`, start `node server/arcade/index.mjs`, set the health
+check to `/health`, and keep one replica with sleeping disabled. Railway now
+rejects the old `railway.json` configuration-file setting; these options are
+managed directly on the existing service. The image installs
 only the pinned `ws` dependency from the backend lockfile, not Next.js or the
 wallet stack. Its Dockerfile-specific context allowlist excludes environment
 files, source artwork, and frontend build output.
@@ -150,6 +152,7 @@ ARCADE_PORT=4010
 ARCADE_ALLOWED_ORIGINS=https://terminl.net
 ARCADE_DATA_DIR=/data
 ARCADE_REGION=us-west2
+RAILWAY_DOCKERFILE_PATH=server/arcade/Dockerfile
 ```
 
 Attach a persistent volume at `/data`; keep a single writer. Match the public
