@@ -1,0 +1,9 @@
+{
+  "name": "terminl-arcade-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22 <25" },
+  "scripts": { "start": "node index.mjs" },
+  "dependencies": { "ws": "8.21.3" }
+}

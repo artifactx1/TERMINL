@@ -1,0 +1,12 @@
+# Dockerfile-specific allowlist: never send secrets, NFT source art, or builds.
+**
+!server/
+!server/arcade/
+!server/arcade/Dockerfile
+!server/arcade/package.json
+!server/arcade/package-lock.json
+!server/arcade/index.mjs
+!server/arcade/journal.mjs
+!lib/
+!lib/arcade/
+!lib/arcade/*.mjs

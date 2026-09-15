@@ -130,4 +130,43 @@ The client waits for welcome before creating/resuming a room and displays an upd
 
 Racing create/join/resume packets carry `game:"wen-lambo", rulesVersion:2`; character means vehicle ID and stage means track ID. Cross-game invitations are rejected. Legacy Rumble packets without game still select Rumble. Race results include `game`, `rulesVersion` and per-race times/points. Replay with `replayFight(replay,RACE_RULES)`.
 
-Grand Tour deploy note (2026-09-13): the Railway root must be the repository root, not `/server/arcade`, because the entrypoint imports shared `lib/arcade` modules. Start `node server/arcade/index.mjs`; retain explicit origins, persistent data volume, single replica and host `0.0.0.0`. This update changes no Railway settings or paid resources. The previously diagnosed Railpack root-directory failure still needs operator approval/correction before live multiplayer can be certified.
+### Railway build configuration
+
+Railway's **Root Directory must be `/`**, not `/server/arcade`: the entrypoint
+imports shared `lib/arcade` modules. Set the Railway Config File to
+`/server/arcade/railway.json`. It selects `server/arcade/Dockerfile`, the backend
+start command, a `/health` readiness check, and one replica. The image installs
+only the pinned `ws` dependency from the backend lockfile, not Next.js or the
+wallet stack. Its Dockerfile-specific context allowlist excludes environment
+files, source artwork, and frontend build output.
+
+Production service variables:
+
+```text
+NODE_ENV=production
+ARCADE_HOST=0.0.0.0
+PORT=4010
+ARCADE_PORT=4010
+ARCADE_ALLOWED_ORIGINS=https://terminl.net
+ARCADE_DATA_DIR=/data
+ARCADE_REGION=us-west2
+```
+
+Attach a persistent volume at `/data`; keep a single writer. Match the public
+domain's target port to 4010. Do not replace the explicit origin with `*` or a
+placeholder. The web client uses this service's public address via
+`NEXT_PUBLIC_ARCADE_WS_URL=wss://<service-domain>` in its own hosting environment.
+
+Watch paths cover `/server/arcade/**` and `/lib/arcade/**`; Moon Mission artwork
+and other frontend-only changes do not need to restart active multiplayer rooms.
+
+Local image check (Docker daemon required):
+
+```sh
+docker build -f server/arcade/Dockerfile -t terminl-arcade-check .
+```
+
+Before marking a deployment healthy, verify `/health` returns the current
+capabilities, a WebSocket with origin `https://terminl.net` receives `welcome`,
+an unrelated origin is rejected, and a private two-client room can start and
+record a result. Health success alone does not establish multiplayer correctness.
