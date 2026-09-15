@@ -13,7 +13,7 @@ shared credits, trophies, and unlockable phosphor colors. See
 [TERMINL_OS.md](TERMINL_OS.md) for rules, rewards, and verification.
 
 **Arcade expansion:** REKT RUMBLE now has six pixel fighters and two stages.
-WEN LAMBO adds California-style chase-view racing, six courses, five free car/driver pairings with
+WEN LAMBO adds California-style chase-view racing, six courses, six free rides including Bike Tyson with
 Pepe, Mia, Chloe and Max in the cockpit, reverse, drifting and private two-player cups. Practice,
 training and authoritative online rooms are included; the original games remain.
 RUG OR BOND is a memecoin trading simulator at `/os/rug-or-bond`: 10 fake SOL,

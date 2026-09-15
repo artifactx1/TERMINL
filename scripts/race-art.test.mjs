@@ -32,15 +32,26 @@ test('runtime Pepe body and scenery atlases have real transparent alpha, not bak
   for(const name of ['california-pepe-bodies-v1.png','california-scenery-v1.png']){const p=`public/arcade/${name}`,m=await sharp(p).metadata(),stats=await sharp(p).stats();assert.equal(m.hasAlpha,true);assert.equal(stats.channels[3].min,0);assert.ok(stats.channels[3].max>240);assert.equal(m.width,1536);assert.equal(m.height,1024);}
 });
 
-test('every exotic has a distinct articulated body and driver in garage and both racing seats',async()=>{
+test('generated vehicles use transparent, distinct showroom and rear sprites in both racing seats',async(t)=>{
   const {VEHICLES}=await import('../lib/arcade/race-sim.mjs');
-  const {drawRearCar}=await import('../lib/arcade/race-perspective.js');
+  const {drawRearCar,drawGarageVehicle}=await import('../lib/arcade/race-perspective.js');
+  const {VEHICLE_ART,preloadVehicleArt}=await import('../lib/arcade/race-exotics.js');
+  const prior=globalThis.Image;
+  globalThis.Image=class{set src(value){this.url=value;queueMicrotask(()=>this.onload());}};
+  t.after(()=>{if(prior===undefined)delete globalThis.Image;else globalThis.Image=prior;});
+  await preloadVehicleArt();
   const signatures=new Set();
-  for(const id of ['mirage','glacier','inferno']){
+  for(const [id,art] of Object.entries(VEHICLE_ART)){
     assert.ok(VEHICLES[id].driverId);
+    const path=`public${art.src}`,metadata=await sharp(path).metadata(),stats=await sharp(path).stats();
+    assert.equal(metadata.hasAlpha,true);assert.equal(stats.channels[3].min,0);assert.ok(stats.channels[3].max>240);
+    for(const frame of [art.rear,art.garage]){assert.ok(frame[0]>=0&&frame[1]>=0);assert.ok(frame[0]+frame[2]<=metadata.width);assert.ok(frame[1]+frame[3]<=metadata.height);}
     const c=context();drawRearCar(c.ctx,id,{x:250,y:235,width:350,steer:.4,tick:60});assert.equal(c.depth(),0);
+    const rear=c.calls.find(([fn])=>fn==='drawImage');assert.equal(rear[1].url,art.src);assert.deepEqual(rear.slice(2,6),art.rear);
+    const garage=context();drawGarageVehicle(garage.ctx,id);assert.equal(garage.depth(),0);
+    assert.deepEqual(garage.calls.find(([fn])=>fn==='drawImage').slice(2,6),art.garage);
     signatures.add(JSON.stringify(c.calls));
     for(const slot of [0,1]){const state=createRace({vehicles:[id,id]}),before=JSON.stringify(state),r=context();drawRace(r.ctx,state,{width:390,height:452,slot});assert.equal(r.depth(),0);assert.equal(JSON.stringify(state),before);}
   }
-  assert.equal(signatures.size,3);
+  assert.equal(signatures.size,4);
 });

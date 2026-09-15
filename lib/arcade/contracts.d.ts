@@ -1,7 +1,7 @@
 /** TERMINL arcade protocol v1. Renderers never own outcomes. */
 export type GameId = 'rekt-rumble' | 'wen-lambo' | 'rug-or-bond' | 'exit-liquidity' | 'candle-clash';
 export type CharacterId = 'max' | 'diamond' | 'brian' | 'mia' | 'bernie' | 'chloe';
-export type VehicleId = 'comet' | 'spectre' | 'mirage' | 'glacier' | 'inferno';
+export type VehicleId = 'comet' | 'spectre' | 'mirage' | 'glacier' | 'inferno' | 'bike-tyson';
 export type TrackId = 'night-market' | 'liquidation-docks' | 'redwood-rally' | 'alpine-pass' | 'neon-boulevard' | 'vineyard-run';
 export interface RaceCar {
   vehicle: VehicleId; x: number; y: number; angle: number; vx: number; vy: number;

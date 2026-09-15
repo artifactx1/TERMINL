@@ -150,7 +150,7 @@ test('archived rules-v2 recordings retain exact state and hashes',async()=>{
   assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(old));
 });
 
-test('all five vehicles finish all six courses in both grid slots using ordinary bot inputs',async()=>{
+test('all six vehicles finish all six courses in both grid slots using ordinary bot inputs',async()=>{
   const {VEHICLES}=await import('../lib/arcade/race-sim.mjs');
   for(const vehicle of Object.keys(VEHICLES))for(const track of CUP_TRACKS){
     let state=createRace({vehicles:[vehicle,vehicle],track,cup:false});

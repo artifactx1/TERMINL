@@ -16,7 +16,7 @@ Mobile: slide the left thumb pad without lifting to change direction; the simula
 
 Touch steering uses a 28% center dead zone and a progressive thumb-distance curve. The client feathers existing direction inputs against actual/predicted wheel travel, so a held small correction cannot gradually become full lock. The precision zone stays gentle. Deliberate outer-rim travel reaches full lock at rest and 70% at full Comet speed. Lower-speed turning, braking and off-road reverse traction are improved; barrier contact removes inward velocity without wiping out movement along the wall. The seven-bit input format is unchanged, but racing physics and placement now use rules version 3. Deliberate DRIFT keeps continuous directional input to preserve drift-charge banking. Physical handling and latency feel still need human evaluation.
 
-Choose LEARN TO DRIVE for a guided single-track practice run. QUICK RACE runs the selected course against a labeled bot without the lesson overlay. SIX-COURSE CUP runs all six tracks. All five car/driver pairings are free; no ownership or paid performance advantage is claimed.
+Choose LEARN TO DRIVE for a guided single-track practice run. QUICK RACE runs the selected course against a labeled bot without the lesson overlay. SIX-COURSE CUP runs all six tracks. All six vehicles, including Bike Tyson, are free; no ownership or paid performance advantage is claimed.
 
 ## Cup rules
 
@@ -32,7 +32,7 @@ Inputs are seven bits (0–127); clients cannot submit coordinates, checkpoints,
 
 ## Art and verification
 
-The playable road is a perspective projection of the actual shared world geometry, not an animated road movie. This is a Canvas 2.5D presentation, not a full 3D licensed car simulator. Generated California plates and sprite layers are used in the game; cars are unbranded designs. The original two use the existing Pepe body atlas; three new exotics have code-native articulated bodies and cockpit drivers. The original pixel fighters remain code-native articulated rigs. See `CALIFORNIA-ART.md` and `GRAND-TOUR-ART.md` for prompts, source paths, provenance and approval limits.
+The playable road is a perspective projection of the actual shared world geometry, not an animated road movie. This is a Canvas 2.5D presentation, not a full 3D licensed car simulator. Generated California plates and sprite layers are used in the game; cars are unbranded designs. The original two use the existing Pepe body atlas; the three new exotics and Bike Tyson use generated transparent sprites with separate showroom and rear racing views. The original pixel fighters remain code-native articulated rigs. See `CALIFORNIA-ART.md` and `GRAND-TOUR-ART.md` for prompts, source paths, provenance and approval limits.
 
 `node --test scripts/race-sim.test.mjs` checks deterministic cups, reverse/steering, input validation, checkpoint order, recovery, physics penalties, scoring, bounded rollback and replay reproduction. `node scripts/race-smoke.mjs` checks actual browser driving, reverse, all six environments, the rival tracker, settings, mobile layout and six-fighter navigation. `npm run test:race:browser` runs two independent browser drivers and a spectator through a real full cup, reconnect, durable replay, rematch and forfeit. Browser pilots use ordinary DOM keys; they never inject positions or results. Browser engine can be selected with `ARCADE_TEST_BROWSER=firefox` or `webkit`.
 
@@ -58,12 +58,14 @@ Racing rules version 3 requires matching frontend/backend versions. Old racing c
 | Mirage V12 | MEV Mia | Angular wedge, responsive turn-in and planted exits |
 | Glacier R | Cold Storage Chloe | Wide electric hypercar, strong acceleration and grip |
 | Inferno X | Margin Call Max | Open track spyder with rear wing and the highest top speed |
+| Bike Tyson | Bike Tyson | Human-bicycle meme racer with the Comet’s forgiving handling |
 
-The three additions are original Canvas geometry with separate animated wheels,
-open cockpits, seated characters and distinct body silhouettes. Mia's ponytail,
-Chloe's blue puffer/hair and Max's dark shirt/short hair follow the inspected public
-portraits in `public/degens`. The driver is paired with the selected car and appears
-in garage, practice and online racing. No private collection art is used.
+The three exotics now have generated illustrated bodywork, seated drivers and
+complete wheels. Mia, Chloe and Max follow the public portraits in `public/degens`.
+Bike Tyson adds a fully clothed human-bicycle meme sprite. Every vehicle appears
+in the garage, practice and online racing. Original Comet/Spectre wheels remain
+articulated; the new sprites have painted wheels and lean with steering. See
+[vehicle art and prompts](VEHICLE-ART.md). No private collection art is used.
 
 Placement sorts finished drivers by finish time, then unfinished drivers by
 validated gates and projected course distance within the current sector. Moving
@@ -78,16 +80,12 @@ uses the revised authoritative wheel dynamics. Settings and pause suppress new
 steering input. The bot looks ahead for bends, brakes earlier, follows the validated
 sector and uses the same penalized recovery input after missing a gate.
 
-Verification covers shoulder ranking on both sides, actual overtaking, missed
-gates, recovery, finish order, stable ties, high/low-speed steering, release and
-countersteering, real-simulation touch corrections, new body rigs, full-cup input
-replays and archived v1/v2 hashes. Browser launch and local socket binding are
-blocked by this session's sandbox, so visual, physical-device and live online
-verification remain pending. Deploy the updated Railway authority alongside the
-frontend to enable the new cars and rules online.
+Verification: all 68 arcade tests pass, including all six vehicles finishing each
+of the six courses in both grid slots (72 finishes), transparent sprite decoding,
+showroom/rear frame selection, live socket admission for Bike Tyson, persisted
+results and replay reproduction. Production build and lint pass. Browser checks
+confirm the six garage choices, generated sprites, Bike Tyson acceleration and
+desktop/mobile race rendering with no page errors or horizontal overflow.
 
-Final local checks: 33 simulation/render/input tests passed, including 60 finishes
-covering five vehicles, six courses and both grid slots. Lint and production build
-passed. The socket suite could not bind `127.0.0.1` (`listen EPERM`), and Chromium
-could not launch (`MachPortRendezvousServer permission denied`); these are unverified
-integration checks, not passes.
+The frontend and Railway authority must deploy together to advertise all six
+vehicles. Rules remain v3; server content build is `arcade-content-5`.
