@@ -1,3 +1,5 @@
+> Historical V0 design. The OS shell, shop, receipts and challenge UI described below are retired. See [Arcade V1](docs/arcade/V1.md) for the current launcher and campaigns.
+
 # TERMINL OS / The Arcade
 
 Play at `/os`, linked from the mint navigation and landing page. The desktop uses

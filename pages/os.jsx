@@ -1,17 +1,11 @@
 import Head from "next/head";
-import TerminlOS from "../components/os/TerminlOS";
+import ArcadeHub from "../components/arcade/ArcadeHub";
 
-export default function OS({ machines }) {
+export default function OS() {
   return <><Head>
-    <title>TERMINL OS — The Arcade</title>
-    <meta name="description" content="Four games. One questionable operating system. Race the California coast in WEN LAMBO, fight with six pixel characters in REKT RUMBLE, or play Rug Runner and Moon Mission." />
+    <title>TERMINL Arcade — Wen Lambo, Rekt Rumble & Moon Mission</title>
+    <meta name="description" content="Race in Wen Lambo, fight in Rekt Rumble, or take on Moon Mission's ten-level campaign. Free to play. Solo and online. No wallet required." />
     <link rel="icon" href="/favicon-32.png" />
     <meta name="theme-color" content="#060907" />
-  </Head><TerminlOS machines={machines} /></>;
-}
-
-export async function getStaticProps() {
-  // Only the already-public showcase enters the OS. Never read the locked collection.
-  const { default: data } = await import("../data/site.json");
-  return { props: { machines: data.showcase.slice(0, 6) } };
+  </Head><ArcadeHub /></>;
 }

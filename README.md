@@ -6,21 +6,18 @@ sell the art without giving it away.
 
 > A celebration of art, memes and degenerate behavior.
 
-**TERMINL OS is playable at `/os`.** Choose Rug Runner for candle dodging and
-simulated meme coin tokenomics, or Moon Mission for a side-scrolling pixel
-platform adventure. Both have ghost duels, asynchronous friend challenges,
-shared credits, trophies, and unlockable phosphor colors. See
-[TERMINL_OS.md](TERMINL_OS.md) for rules, rewards, and verification.
+**TERMINL Arcade is playable at `/os`.** Wen Lambo and Rekt Rumble lead the
+launcher, with Moon Mission as the solo adventure. No shop, credits or receipts.
 
-**Arcade expansion:** REKT RUMBLE now has six pixel fighters and two stages.
-WEN LAMBO adds California-style chase-view racing, six courses, six free rides including Bike Tyson with
-Pepe, Mia, Chloe and Max in the cockpit, reverse, drifting and private two-player cups. Practice,
-training and authoritative online rooms are included; the original games remain.
-RUG OR BOND is a memecoin trading simulator at `/os/rug-or-bond`: 10 fake SOL,
-five live token launches, bonding curves, candlesticks, dev dumps, buy/sell trading
-and local session recovery.
-See the [game guide](docs/arcade/RUG-OR-BOND.md).
-This is not the completed five-game master release. See [racing guide](docs/arcade/RACING.md).
+- **Wen Lambo:** six rides, including Bike Tyson, and a six-course California cup.
+  Quick races, training, varied rivals and private online cups are available.
+- **Rekt Rumble:** six fighters, two arenas and a saved six-fight solo circuit,
+  plus training, practice and private online fights.
+- **Moon Mission:** a connected ten-level platform campaign at `/os/moon`, with
+  longer routes, varied mechanics, saved checkpoints and a final boss.
+
+See the [V1 guide](docs/arcade/V1.md) for progression and verification.
+Rug or Bond remains an unpromoted standalone prototype at `/os/rug-or-bond`.
 
 ```bash
 npm run dev:arcade       # terminal 1: http://localhost:4000/os/rumble
@@ -34,7 +31,7 @@ remapping are included. Remote friends need a shared hosted authority; localhost
 links alone do not make your computer accessible over the internet.
 
 REKT RUMBLE (`/os/rumble`) and WEN LAMBO (`/os/lambo`) are visible by default
-as playable previews in the `/os` launcher. `ARCADE_LABS=1` enables only the asset-review route/link. No
+as the flagship games in the `/os` launcher. `ARCADE_LABS=1` enables only the asset-review route/link. No
 multiplayer infrastructure is provisioned by pushing this repository. See
 [implementation status](docs/arcade/STATUS.md), [network setup](docs/arcade/MULTIPLAYER.md),
 and [art provenance](docs/arcade/ASSET-PROMPTS.md). No cash/NFT prizes or paid advantages.
@@ -207,8 +204,8 @@ styles/                CRT/terminal treatment
 - **Trait tables are trimmed server-side** to the rows actually rendered.
   Shipping every variant and slicing in the component had put all 150 companion
   names and all 93 screen names in the markup.
-- **The arcade is playable today.** TERMINL OS adds two free guest games with local
-  cosmetic rewards. There is no staking, reward token, or financial prize promise.
+- **The arcade is playable today.** Racing, fighting and a ten-level platform
+  campaign are free to play. There is no staking, reward token, or financial prize promise.
 - **The wallet is ArtifactX's; the mint is still hand-encoded.** The
   connector is the same Reown AppKit + wagmi stack the marketplace uses
   (`lib/wallet/`), pinned to the same versions, with the same two wallets

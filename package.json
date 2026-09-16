@@ -8,13 +8,13 @@
     "build": "next build",
     "start": "next start -p 4000",
     "lint": "next lint",
-    "test:os": "node --test scripts/terminl-game.test.mjs scripts/moon-mission.test.mjs",
+    "test:os": "node --test scripts/terminl-game.test.mjs scripts/moon-mission.test.mjs scripts/moon-campaign.test.mjs",
     "test:rug-or-bond": "node --test scripts/rug-or-bond.test.mjs",
     "test:rug-or-bond:browser": "node scripts/rug-or-bond-browser.mjs",
     "test:moon:browser": "node scripts/moon-browser.mjs",
     "dev:arcade": "ARCADE_LABS=1 next dev -p 4000",
     "arcade:server": "node server/arcade/index.mjs",
-    "test:arcade": "node --test scripts/rumble-sim.test.mjs scripts/rumble-roster.test.mjs scripts/race-sim.test.mjs scripts/race-rival.test.mjs scripts/race-art.test.mjs scripts/touch-input.test.mjs scripts/arcade-server.test.mjs",
+    "test:arcade": "node --test scripts/rumble-sim.test.mjs scripts/rumble-roster.test.mjs scripts/race-sim.test.mjs scripts/race-rival.test.mjs scripts/race-art.test.mjs scripts/touch-input.test.mjs scripts/arcade-server.test.mjs scripts/rumble-circuit.test.mjs",
     "test:touch:browser": "node scripts/touch-browser.mjs",
     "test:race:smoke": "node scripts/race-smoke.mjs",
     "test:race:browser": "node scripts/race-browser.mjs",
@@ -25,7 +25,9 @@
     "snapshot": "node scripts/snapshot.mjs",
     "upload-art": "node scripts/upload-art.mjs",
     "og": "node scripts/og.mjs",
-    "verify-calldata": "node scripts/verify-calldata.mjs"
+    "verify-calldata": "node scripts/verify-calldata.mjs",
+    "test:arcade:v1": "node scripts/arcade-v1-browser.mjs",
+    "test:rumble:circuit:browser": "node scripts/rumble-circuit-browser.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.8",
