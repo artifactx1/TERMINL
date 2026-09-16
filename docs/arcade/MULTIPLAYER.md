@@ -48,7 +48,7 @@ Connect using WebSocket with an allowlisted `Origin`. JSON messages must be at m
 | `join {code, token, name, character, spectator?}` | Scoped invite required. Player seat only in lobby; spectators can join a live match. |
 | `resume {code, session}` | Reclaims a disconnected player's existing seat during grace; cannot replace a still-connected player. |
 | `ready {ready}` | Lobby readiness. Both connected players ready starts a journaled match. |
-| `input {seq, tick, input}` | Player-only control mask: Rumble 0–2047, racing 0–127. |
+| `input {seq, tick, input}` | Player-only control mask: Rumble 0–2047, racing 0–32767 (v4: seven action bits plus optional signed steering axis). |
 | `rematch` | Votes to restart. Both connected players must vote; gets a new match ID. |
 | `leave` | Leaves room. Leaving an active fight forfeits immediately. |
 | `ping {time}` | Returns client timestamp plus server clock; use for measured RTT, not trusted simulation time. |
@@ -125,10 +125,10 @@ The process accepts `ARCADE_PORT`, otherwise Railway's `PORT`, otherwise 4010.
 Keep the existing persistent `ARCADE_DATA_DIR`, explicit allowed origins and `ARCADE_HOST=0.0.0.0`.
 Use one replica per journal; this is not a shared-volume horizontally scaled runtime.
 
-Deploy the backend update before the new client content. Health/welcome must advertise `games: ["rekt-rumble","wen-lambo"]`, six character IDs, six vehicles (`comet`, `spectre`, `mirage`, `glacier`, `inferno`, `bike-tyson`) and six track IDs, `rulesVersions: {"rekt-rumble":1,"wen-lambo":3}` and `build: "arcade-content-5"`.
+Deploy the backend update before the new client content. Health/welcome must advertise `games: ["rekt-rumble","wen-lambo"]`, six character IDs, six vehicles (`comet`, `spectre`, `mirage`, `glacier`, `inferno`, `bike-tyson`) and six track IDs, `rulesVersions: {"rekt-rumble":1,"wen-lambo":4}` and `build: "arcade-content-6"`.
 The client waits for welcome before creating/resuming a room and displays an update-required notice for unsupported content. No extra service or database is needed for this slice.
 
-Racing create/join/resume packets carry `game:"wen-lambo", rulesVersion:3`; character means vehicle ID and stage means track ID. Cross-game invitations are rejected. Legacy Rumble packets without game still select Rumble. Race results include `game`, `rulesVersion` and per-race times/points. Replay with `replayFight(replay,RACE_RULES)`; archived v1/v2 racing replays retain their original simulation.
+Racing create/join/resume packets carry `game:"wen-lambo", rulesVersion:4`; character means vehicle ID and stage means track ID. Cross-game invitations are rejected. Legacy Rumble packets without game still select Rumble. Race results include `game`, `rulesVersion` and per-race times/points. Replay with `replayFight(replay,RACE_RULES)`; archived v1/v2/v3 racing replays retain their original simulation.
 
 ### Railway build configuration
 

@@ -11,7 +11,7 @@ export interface RaceCar {
   points: number; cupTime: number; [key: string]: unknown;
 }
 export interface RaceState {
-  version: 1 | 2 | 3; game: 'wen-lambo'; tick: number; phase: 'countdown' | 'racing' | 'raceOver' | 'finished';
+  version: 1 | 2 | 3 | 4; game: 'wen-lambo'; tick: number; phase: 'countdown' | 'racing' | 'raceOver' | 'finished';
   phaseTick: number; track: TrackId; tracks: TrackId[]; trackIndex: number; raceTicks: number;
   players: [RaceCar, RaceCar]; wins: [number, number]; winner: number | null;
   raceResults: Array<{track: TrackId; times: Array<number | null>; points: number[]; order: number[]}>;
@@ -42,7 +42,7 @@ export interface GameModule<State, Input> {
 }
 export type ClientMessage =
   | { type: 'create'; name: string; character: CharacterId; stage: StageId; game?: 'rekt-rumble'; rulesVersion?: 1 }
-  | { type: 'create'; name: string; character: VehicleId; stage: TrackId; game: 'wen-lambo'; rulesVersion: 3 }
+  | { type: 'create'; name: string; character: VehicleId; stage: TrackId; game: 'wen-lambo'; rulesVersion: 4 }
   | { type: 'join'; code: string; token: string; name: string; character: CharacterId | VehicleId; spectator?: boolean; game?: 'rekt-rumble' | 'wen-lambo'; rulesVersion?: 1 | 3 }
   | { type: 'resume'; code: string; session: string; game?: 'rekt-rumble' | 'wen-lambo' }
   | { type: 'ready'; ready: boolean }

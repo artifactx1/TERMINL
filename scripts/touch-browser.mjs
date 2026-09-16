@@ -61,12 +61,14 @@ try{
   await lift(1);await mask(4);await lift(2);await mask(0);
   // A held half-travel correction must stay gentle, not ramp to full lock.
   await press(1,steering,.69);await press(2,button('GAS'));
-  const gentleSamples=await page.evaluate(()=>new Promise(resolve=>{const values=[],until=performance.now()+1000;function sample(){values.push(Number(document.querySelector('canvas').dataset.steer));if(performance.now()<until)requestAnimationFrame(sample);else resolve(values);}sample();}));
+  const gentleSamples=await page.evaluate(()=>new Promise(resolve=>{const values=[],until=performance.now()+1000;function sample(){const d=document.querySelector('canvas').dataset;values.push({steer:Number(d.steer),target:Number(d.steeringTarget),input:Number(d.input)});if(performance.now()<until)requestAnimationFrame(sample);else resolve(values);}sample();}));
   // Ignore the previous hard-direction test's brief return-to-center transient.
-  const gentleMax=Math.max(...gentleSamples.slice(Math.floor(gentleSamples.length/2)).map(Math.abs));
-  assert.ok(gentleMax>0&&gentleMax<.19,`gentle steering stayed at ${gentleMax}`);
+  const steady=gentleSamples.slice(Math.floor(gentleSamples.length/2)),gentleMax=Math.max(...steady.map(v=>Math.abs(v.steer)));
+  assert.ok(gentleMax>.1&&gentleMax<.31,`proportional steering stayed at ${gentleMax}`);
+  assert.equal(new Set(steady.map(v=>v.input)).size,1,'holding the thumb must send a stable analog value');
+  assert.ok(steady.every(v=>v.target>.25&&v.target<.31));
   await lift(1);await lift(2);await mask(0);
-  await press(1,steering,.58);await mask(0);
+  await press(1,steering,.54);await mask(0);
   await page.waitForFunction(()=>Number(document.querySelector('canvas').dataset.steer)===0);await lift(1);
   // Deliberate full-rim steering can now make a tight turn at low speed.
   await press(1,steering,.9);await press(2,button('BRAKE / REV'));

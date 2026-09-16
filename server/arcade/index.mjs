@@ -20,7 +20,7 @@ const stages = new Set(['dead-mall', 'laundromat']);
 const games=['rekt-rumble','wen-lambo'];
 const validCharacter=(game,id)=>game==='wen-lambo'?Object.hasOwn(VEHICLES,id):characters.has(id);
 const rulesVersion=game=>game==='wen-lambo'?RACE_RULES_VERSION:1;
-const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-5'};
+const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-6'};
 const nameOf = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 24 && !/[\u0000-\u001f\u007f]/.test(value) ? value.trim() : null;
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
@@ -214,7 +214,7 @@ export async function startArcadeServer(options = {}) {
     }
     if (message.type === 'input') {
       if (room.phase !== 'playing' || room.settling) return error(peer, 'invalid_phase', 'Match is not accepting inputs');
-      if (!integer(message.seq, 0, 2147483647) || !integer(message.tick, 0, 1000000) || !integer(message.input, 0, room.game==='wen-lambo'?127:2047)) return error(peer, 'invalid_input', 'Invalid input values');
+      if (!integer(message.seq, 0, 2147483647) || !integer(message.tick, 0, 1000000) || !integer(message.input, 0, room.game==='wen-lambo'?RACE_RULES.maxInput:2047)) return error(peer, 'invalid_input', 'Invalid input values');
       if (message.seq <= player.lastSeq) return error(peer, 'duplicate_input', 'Input sequence must increase');
       if (message.tick < room.clock - LATE || message.tick > room.clock + FUTURE) return error(peer, 'input_deadline', 'Input outside rollback window');
       const accepted = room.sim.submit(peer.slot, message.tick, message.input, message.seq);

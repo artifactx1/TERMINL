@@ -1,4 +1,4 @@
-/** Real browser players + spectator. Pilots send only normal DOM keys, never positions or scores. */
+/** Real browser players + spectator. Pilots use only normal controller inputs, never positions or scores. */
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { chromium, firefox, webkit } from 'playwright';
@@ -10,7 +10,9 @@ const dataModule=source=>`data:text/javascript;base64,${Buffer.from(source).toSt
 const legacyURL=dataModule(await readFile(new URL('../lib/arcade/race-sim-v1.mjs',import.meta.url),'utf8'));
 const v2URL=dataModule((await readFile(new URL('../lib/arcade/race-sim-v2.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL));
 const progressURL=dataModule(await readFile(new URL('../lib/arcade/race-progress.mjs',import.meta.url),'utf8'));
-const moduleURL=dataModule((await readFile(new URL('../lib/arcade/race-sim.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL));
+const v3URL=dataModule((await readFile(new URL('../lib/arcade/race-sim-v3.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL));
+const inputURL=dataModule(await readFile(new URL('../lib/arcade/race-input.mjs',import.meta.url),'utf8'));
+const moduleURL=dataModule((await readFile(new URL('../lib/arcade/race-sim.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL).replace('./race-sim-v3.mjs',v3URL).replace('./race-input.mjs',inputURL));
 const output='artifacts/arcade';await mkdir(output,{recursive:true});const contexts=[],pages=[],errors=[];
 const click=(p,name)=>p.getByRole('button',{name,exact:true}).click();
 async function guest(name){
@@ -27,7 +29,15 @@ try{
   await click(a,"I'M READY →");await click(b,"I'M READY →");await a.waitForFunction(()=>window.__state?.phase==='racing');
   const match=await b.evaluate(()=>window.__room.matchId);await b.evaluate(()=>window.__sockets.find(s=>s.url.includes(':4010'))?.close());await b.waitForFunction(id=>window.__room?.matchId===id&&window.__wire.filter(m=>m.type==='joined').length>=2,match);
   for(const [page,slot]of [[a,0],[b,1]])await page.evaluate(async({slot,moduleURL})=>{
-    const {raceBotInput}=await import(moduleURL);let previous=0;window.__pilot=setInterval(()=>{const s=window.__state;if(!s)return;const input=window.__result?0:raceBotInput(s,slot);for(const [bit,key]of [[1,'ArrowLeft'],[2,'ArrowRight'],[4,'ArrowUp'],[8,'ArrowDown'],[16,' '],[32,'Shift'],[64,'r']])if((input&bit)||(previous&bit)!==(input&bit))window.dispatchEvent(new KeyboardEvent(input&bit?'keydown':'keyup',{key,bubbles:true}));previous=input;if(window.__result)clearInterval(window.__pilot);},16);
+    const {raceBotInput}=await import(moduleURL);
+    const pad={connected:true,axes:[0,0],buttons:Array.from({length:16},()=>({pressed:false,value:0}))};
+    Object.defineProperty(navigator,'getGamepads',{value:()=>[pad],configurable:true});
+    window.__pilot=setInterval(()=>{
+      const s=window.__state;if(!s)return;const input=window.__result?0:raceBotInput(s,slot),axis=(input>>7)?((input>>7)-128)/127:0;
+      pad.axes[0]=axis?Math.sign(axis)*(.18+.82*Math.pow(Math.abs(axis),1/1.5)):0;
+      for(const [index,bit]of [[7,4],[6,8],[2,16],[5,32],[3,64]])pad.buttons[index]={pressed:!!(input&bit),value:input&bit?1:0};
+      if(window.__result)clearInterval(window.__pilot);
+    },16);
   },{slot,moduleURL});
   await watch.waitForFunction(()=>window.__state.players.every(p=>p.passed>=2),null,{timeout:60000});await a.screenshot({path:`${output}/${browserName}-race.png`});
   await Promise.all(pages.map(p=>p.waitForFunction(()=>window.__result?.status==='completed',null,{timeout:900000})));

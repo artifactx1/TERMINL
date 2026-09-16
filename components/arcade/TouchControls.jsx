@@ -21,7 +21,7 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
   }
   function clear() {
     sources.current.clear(); padPointer.current = null; engaged.current = false;
-    steeringCallback.current?.(0);
+    steeringCallback.current?.(0,false);
     setStick({ x: 0, y: 0 }); setMask(0); callback.current(0);
   }
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
     return () => {
       query.removeEventListener('change', change); window.removeEventListener('blur', clear);
       window.removeEventListener('resize', clear); document.removeEventListener('visibilitychange', hidden);
-      steeringCallback.current?.(0); callback.current(0);
+      steeringCallback.current?.(0,false); callback.current(0);
     };
     // Event handlers use current refs; changing a callback must not release held fingers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,7 +52,7 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
   function release(e) {
     if (!sources.current.has(e.pointerId)) return;
     sources.current.delete(e.pointerId);
-    if (padPointer.current === e.pointerId) { padPointer.current = null; steeringCallback.current?.(0); setStick({ x: 0, y: 0 }); }
+    if (padPointer.current === e.pointerId) { padPointer.current = null; steeringCallback.current?.(0,false); setStick({ x: 0, y: 0 }); }
     // OS interruption must stop auto-gas too. Normal finger lift keeps cruise enabled.
     if (e.type === 'pointercancel' || e.type === 'lostpointercapture') { clear(); return; }
     emit();
@@ -65,7 +65,7 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
     let y = racing ? 0 : (e.clientY - r.top - r.height / 2) / radius;
     const length = Math.max(1, Math.hypot(x, y)); x /= length; y /= length;
     setStick({ x, y });
-    if (racing) steeringCallback.current?.(raceSteeringTarget(x));
+    if (racing) steeringCallback.current?.(raceSteeringTarget(x),true);
     sources.current.set(e.pointerId, directionMask(x, y, racing)); emit();
   }
   function key(e, bit) {

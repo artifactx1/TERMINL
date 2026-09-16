@@ -4,6 +4,7 @@ import { createRace, stepRace, raceBotInput, raceHash, trackGeometry, nearestRoa
 import {createRace as legacyRace,stepRace as legacyStep} from '../lib/arcade/race-sim-v1.mjs';
 import {raceProgress,rivalTelemetry} from '../lib/arcade/race-telemetry.mjs';
 import { RollbackFight, replayFight, HISTORY_LIMIT } from '../lib/arcade/rollback.mjs';
+import {encodeRaceInput} from '../lib/arcade/race-input.mjs';
 
 function racing(options) { const s=createRace(options); s.phase='racing'; s.phaseTick=0; return s; }
 function cross(s,index=0) {
@@ -14,8 +15,8 @@ function cross(s,index=0) {
 
 test('race validates content IDs and rejects unknown input bits',()=>{
   assert.throws(()=>createRace({vehicles:['__proto__','comet']})); assert.throws(()=>createRace({track:'constructor'}));
-  const s=racing(); assert.equal(raceHash(stepRace(s,[9999,NaN])),raceHash(stepRace(s,[0,0])));
-  const engine=new RollbackFight({},RACE_RULES); assert.equal(engine.submit(0,0,128,0).ok,false);
+  const s=racing(); assert.equal(raceHash(stepRace(s,[32768,NaN])),raceHash(stepRace(s,[0,0])));
+  const engine=new RollbackFight({},RACE_RULES); assert.equal(engine.submit(0,0,32768,0).ok,false);
 });
 test('countdown, pure fixed-step driving, brake and boost consumption',()=>{
   let s=createRace(); const original=JSON.stringify(s);
@@ -67,6 +68,19 @@ test('racer shares bounded rollback, mask validation and exact authenticated-rep
   for(let i=0;i<500;i++){a.advance([i>180?I.THROTTLE:0,0]);b.advance([i>180?I.THROTTLE:0,0]);}
   assert.equal(a.submit(0,494,I.BRAKE,501).ok,true);assert.equal(b.submit(0,494,I.BRAKE,501).ok,true);assert.equal(a.corrections,1);assert.equal(raceHash(a.state),raceHash(b.state));
   assert.ok(a.history.size<=HISTORY_LIMIT+1);const replay=a.exportReplay();assert.equal(replay.game,'wen-lambo');assert.equal(raceHash(replayFight(replay,RACE_RULES)),replay.hash);assert.throws(()=>replayFight(replay));
+});
+
+test('late proportional steering reconciles to the on-time result and replays exactly',()=>{
+  const onTime=new RollbackFight({},RACE_RULES),late=new RollbackFight({},RACE_RULES);
+  const steering=encodeRaceInput(I.THROTTLE,.37);
+  for(let tick=0;tick<500;tick++){
+    onTime.advance([tick>=494?steering:I.THROTTLE,0]);late.advance([I.THROTTLE,0]);
+  }
+  // Remove the test harness's later held-input submissions: a real packet is held
+  // until the next change, so replay the same steering input over those ticks.
+  for(let tick=494;tick<500;tick++)assert.equal(late.submit(0,tick,steering,1000+tick).ok,true);
+  assert.equal(raceHash(late.state),raceHash(onTime.state));
+  const replay=late.exportReplay();assert.equal(raceHash(replayFight(replay,RACE_RULES)),replay.hash);
 });
 test('reverse escapes the outer shoulder and barrier sliding preserves tangential motion',()=>{
   let s=racing({cup:false});const g=trackGeometry(s.track),gate=g.gates[0],nx=-Math.sin(gate.angle),ny=Math.cos(gate.angle);
@@ -141,6 +155,14 @@ test('speed-sensitive steering retains low-speed lock and recenters without stic
   assert.ok(slow.players[0].steer>.95);assert.ok(fast.players[0].steer<=.74);
   const centered=run(5.6,0,14,fast);assert.equal(centered.players[0].steer,0);assert.ok(Math.abs(centered.players[0].yawRate)<.001);
   const counter=run(5.6,I.LEFT,8,fast);assert.ok(counter.players[0].steer<0,'countersteer crosses center promptly');
+});
+
+test('archived rules-v3 recordings retain exact state and hashes with Bike Tyson',async()=>{
+  const {createRace:oldCreate,stepRace:oldStep}=await import('../lib/arcade/race-sim-v3.mjs');
+  const options={vehicles:['bike-tyson','mirage']};let old=oldCreate(options);
+  for(let i=0;i<900;i++)old=oldStep(old,[6,4]);
+  const replay={version:1,game:'wen-lambo',rulesVersion:3,options,ticks:900,inputs:[{tick:0,slots:[{input:6},{input:4}]}]};
+  assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(old));
 });
 
 test('archived rules-v2 recordings retain exact state and hashes',async()=>{
