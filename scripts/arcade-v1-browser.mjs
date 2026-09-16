@@ -36,18 +36,29 @@ try{
   await campaign.evaluate(()=>{let now=performance.now(),id=0;const queue=new Map();performance.now=()=>now;window.requestAnimationFrame=fn=>{queue.set(++id,fn);return id;};window.cancelAnimationFrame=id=>queue.delete(id);const getContext=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(...args){return window.skipCampaignPaint&&this.dataset.level!==undefined?null:getContext.apply(this,args);};window.advanceCampaignFrame=()=>{now+=1000/60+.000001;const callbacks=[...queue.values()];queue.clear();callbacks.forEach(fn=>fn(now));};});
   const click=async name=>campaign.getByRole('button',{name,exact:true}).evaluate(el=>el.click());
   await click('START CAMPAIGN →');
-  const clears=[];let bossShot=false;
+  const clears=[],trapShots=new Set();let bossShot=false;
   for(const world of CAMPAIGN_WORLDS){
     assert.equal(await campaign.locator('canvas[data-level]').getAttribute('data-level'),String(world.level));await click('START LEVEL →');
     await campaign.waitForFunction(()=>document.querySelector('canvas[data-level]')?.dataset.phase==='running',{},{polling:25});
-    let state=newCampaignLevel(world.level),pilot={},prior=0;const moves=[];
-    while(!state.ended){const input=campaignPilot(state,pilot);if(input!==prior){moves.push({tick:state.tick,input});prior=input;}state=stepCampaign({...state,input});}
-    assert.equal(state.won,true);
-    await campaign.evaluate(moves=>{window.campaignPilotMoves=moves;window.campaignPilotIndex=0;window.campaignPilotMask=0;},moves);
-    for(let batch=0;batch<150;batch++){
-      await campaign.evaluate(()=>{const el=document.querySelector('canvas[data-level]');for(let i=0;i<90;i++){const tick=Number(el.dataset.tick),action=window.campaignPilotMoves[window.campaignPilotIndex];if(action?.tick===tick){for(const [bit,code]of [[1,'ArrowLeft'],[2,'ArrowRight'],[4,'Space']])if(!!(window.campaignPilotMask&bit)!==!!(action.input&bit))window.dispatchEvent(new KeyboardEvent(action.input&bit?'keydown':'keyup',{code,key:code==='Space'?' ':code,bubbles:true,cancelable:true}));window.campaignPilotMask=action.input;window.campaignPilotIndex++;}window.skipCampaignPaint=i<89;window.advanceCampaignFrame();window.skipCampaignPaint=false;if(el.dataset.phase==='complete')break;}});
-      if(world.level===9&&!bossShot){const hp=Number(await campaign.locator('canvas[data-level]').getAttribute('data-boss-hp'));if(hp>0&&hp<6){await campaign.screenshot({path:'artifacts/arcade-v1/moon-boss.png'});bossShot=true;}}
-      if(await campaign.getByRole('button',{name:world.level===9?'VIEW CAMPAIGN →':'NEXT LEVEL →',exact:true}).count())break;
+    let state=newCampaignLevel(world.level);
+    for(let attempt=0;attempt<4;attempt++){
+      let pilot={},prior=0;const moves=[];
+      while(!state.ended){const input=campaignPilot(state,pilot);if(input!==prior){moves.push({tick:state.tick,input});prior=input;}state=stepCampaign({...state,input});}
+      if(attempt===3)assert.equal(state.won,true,`Level ${world.level+1} must be clearable within three retries`);
+      await campaign.evaluate(moves=>{window.campaignPilotMoves=moves;window.campaignPilotIndex=0;window.campaignPilotMask=0;},moves);
+      for(let batch=0;batch<150;batch++){
+        await campaign.evaluate(()=>{const el=document.querySelector('canvas[data-level]');for(let i=0;i<90;i++){const tick=Number(el.dataset.tick),action=window.campaignPilotMoves[window.campaignPilotIndex];if(action?.tick===tick){for(const [bit,code]of [[1,'ArrowLeft'],[2,'ArrowRight'],[4,'Space']])if(!!(window.campaignPilotMask&bit)!==!!(action.input&bit))window.dispatchEvent(new KeyboardEvent(action.input&bit?'keydown':'keyup',{code,key:code==='Space'?' ':code,bubbles:true,cancelable:true}));window.campaignPilotMask=action.input;window.campaignPilotIndex++;}window.skipCampaignPaint=i<89;window.advanceCampaignFrame();window.skipCampaignPaint=false;if(el.dataset.phase==='complete')break;}});
+        const position=Number(await campaign.locator('canvas[data-level]').getAttribute('data-x'));
+        for(const trap of world.hazards){if(!trapShots.has(trap.type)&&position>trap.x-260&&position<trap.x-30){await campaign.screenshot({path:`artifacts/arcade-v1/moon-${trap.type}.png`});trapShots.add(trap.type);}}
+        if(world.level===9&&!bossShot){const hp=Number(await campaign.locator('canvas[data-level]').getAttribute('data-boss-hp'));if(hp>0&&hp<6){await campaign.screenshot({path:'artifacts/arcade-v1/moon-boss.png'});bossShot=true;}}
+        if(await campaign.locator('canvas[data-level]').getAttribute('data-phase')==='complete')break;
+      }
+      if(state.won)break;
+      await campaign.getByRole('button',{name:'RETRY CHECKPOINT →',exact:true}).waitFor();
+      const checkpoint=Number(await campaign.locator('canvas[data-level]').getAttribute('data-checkpoint'));assert.equal(checkpoint,state.checkpointIndex);
+      await click('RETRY CHECKPOINT →');await click(checkpoint>=0?'RESUME CHECKPOINT →':'START LEVEL →');
+      await campaign.waitForFunction(()=>document.querySelector('canvas[data-level]')?.dataset.phase==='running',{},{polling:25});
+      state=newCampaignLevel(world.level,checkpoint);
     }
     const saved=await campaign.evaluate(key=>JSON.parse(localStorage.getItem(key)),CAMPAIGN_KEY);
     assert.ok(saved.completed.includes(world.level),`Level ${world.level+1} saved after actual play`);assert.equal(saved.best[world.level],state.score);
@@ -57,6 +68,6 @@ try{
   }
   await click('VIEW CAMPAIGN →');await campaign.reload();await campaign.getByText('10 / 10 LEVELS CLEARED · CHECKPOINTS SAVE AUTOMATICALLY',{exact:true}).waitFor();
   assert.equal(await campaign.getByRole('region',{name:'Campaign levels'}).getByRole('button',{disabled:true}).count(),0);
-  assert.deepEqual(errors,[]);console.log(JSON.stringify({ok:true,flagshipOrder:true,removedClutter:true,touch:true,pause:true,circuitResume:true,campaignClears:clears,finalBoss:true,persistence:true,errors}));await campaign.close();
+  assert.deepEqual(errors,[]);console.log(JSON.stringify({ok:true,flagshipOrder:true,removedClutter:true,touch:true,pause:true,circuitResume:true,campaignClears:clears,finalBoss:true,persistence:true,trapScreenshots:[...trapShots],errors}));await campaign.close();
 }catch(error){for(const [i,p]of context.pages().entries()){await p.screenshot({path:`artifacts/arcade-v1/failure-${i}.png`});console.error((await p.locator('body').innerText()).slice(-4000));}throw error;}
 finally{await context.close();await browser.close();}
