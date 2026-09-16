@@ -1,7 +1,7 @@
 {
   "version": 1,
   "releaseApproved": false,
-  "decodedMemoryBudgetBytes": 83886080,
+  "decodedMemoryBudgetBytes": 134217728,
   "runtimePolicy": "Six public portraits, two Rumble stage plates, six generated racing panoramas, one scenery atlas and one Pepe body atlas. Road, course props and wheels are code-native. Declared assets below 80 MiB decoded; display canvases additional. Overview cache capped at two tracks (8 MiB). No unpublished art exported.",
   "assets": [
     {
@@ -552,7 +552,7 @@
       "source": "lib/arcade/rumble-render.js",
       "reference": "bernie-reference-v1",
       "character": "bernie",
-      "provenance": "Original code-native articulated pixel rig. WAGMI cap, FIXIN THIS BRIDGE work shirt, tool belt, patched knees, work shoes, and a wrist-attached wrench. No static portrait is used as a gameplay sprite.",
+      "provenance": "Original code-native articulated pixel rig. WAGMI cap, work shirt, tool belt, patched knees, and a wrist-attached wrench. Retained as the loading/error fallback for the illustrated atlas.",
       "rights": "Original code adaptation of project-supplied reference; owner review required before release.",
       "review": "development-only",
       "humanApproved": false,
@@ -967,6 +967,684 @@
       ],
       "games": [
         "wen-lambo"
+      ]
+    },
+    {
+      "id": "max-illustrated-atlas-v1",
+      "role": "character-sprite-atlas",
+      "source": "public/arcade/fighters/max-atlas-v1.webp",
+      "reference": "max-reference-v1",
+      "character": "max",
+      "provenance": "Recovered original generated nine-pose companion sprite sheet. Illustration pixels packed without repainting or rescaling; used directly in gameplay.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1160,
+        "height": 1190
+      },
+      "decodedBudgetBytes": 5521600,
+      "frames": [
+        {
+          "name": "idle",
+          "x": 8,
+          "y": 8,
+          "width": 249,
+          "height": 382,
+          "pivotX": 125,
+          "footY": 380
+        },
+        {
+          "name": "punch",
+          "x": 265,
+          "y": 8,
+          "width": 348,
+          "height": 380,
+          "pivotX": 139,
+          "footY": 378
+        },
+        {
+          "name": "kick",
+          "x": 621,
+          "y": 8,
+          "width": 372,
+          "height": 375,
+          "pivotX": 100,
+          "footY": 373
+        },
+        {
+          "name": "special",
+          "x": 8,
+          "y": 398,
+          "width": 375,
+          "height": 357,
+          "pivotX": 161,
+          "footY": 355
+        },
+        {
+          "name": "sweep",
+          "x": 391,
+          "y": 398,
+          "width": 377,
+          "height": 253,
+          "pivotX": 132,
+          "footY": 251
+        },
+        {
+          "name": "air",
+          "x": 776,
+          "y": 398,
+          "width": 376,
+          "height": 271,
+          "pivotX": 135,
+          "footY": 269
+        },
+        {
+          "name": "hit",
+          "x": 8,
+          "y": 763,
+          "width": 270,
+          "height": 379,
+          "pivotX": 149,
+          "footY": 377
+        },
+        {
+          "name": "guard",
+          "x": 286,
+          "y": 763,
+          "width": 282,
+          "height": 377,
+          "pivotX": 141,
+          "footY": 375
+        },
+        {
+          "name": "victory",
+          "x": 576,
+          "y": 763,
+          "width": 285,
+          "height": 419,
+          "pivotX": 143,
+          "footY": 417
+        }
+      ],
+      "variants": [
+        "idle",
+        "punch",
+        "kick",
+        "special",
+        "sweep",
+        "air",
+        "hit",
+        "guard",
+        "victory"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "diamond-illustrated-atlas-v1",
+      "role": "character-sprite-atlas",
+      "source": "public/arcade/fighters/diamond-atlas-v1.webp",
+      "reference": "diamond-reference-v1",
+      "character": "diamond",
+      "provenance": "Recovered original generated nine-pose companion sprite sheet. Illustration pixels packed without repainting or rescaling; used directly in gameplay.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1171,
+        "height": 1162
+      },
+      "decodedBudgetBytes": 5442808,
+      "frames": [
+        {
+          "name": "idle",
+          "x": 8,
+          "y": 8,
+          "width": 298,
+          "height": 346,
+          "pivotX": 149,
+          "footY": 344
+        },
+        {
+          "name": "punch",
+          "x": 314,
+          "y": 8,
+          "width": 387,
+          "height": 343,
+          "pivotX": 155,
+          "footY": 341
+        },
+        {
+          "name": "kick",
+          "x": 709,
+          "y": 8,
+          "width": 384,
+          "height": 351,
+          "pivotX": 104,
+          "footY": 349
+        },
+        {
+          "name": "special",
+          "x": 8,
+          "y": 367,
+          "width": 387,
+          "height": 362,
+          "pivotX": 166,
+          "footY": 360
+        },
+        {
+          "name": "sweep",
+          "x": 403,
+          "y": 367,
+          "width": 382,
+          "height": 250,
+          "pivotX": 134,
+          "footY": 248
+        },
+        {
+          "name": "air",
+          "x": 793,
+          "y": 367,
+          "width": 370,
+          "height": 314,
+          "pivotX": 133,
+          "footY": 312
+        },
+        {
+          "name": "hit",
+          "x": 8,
+          "y": 737,
+          "width": 371,
+          "height": 345,
+          "pivotX": 204,
+          "footY": 343
+        },
+        {
+          "name": "guard",
+          "x": 387,
+          "y": 737,
+          "width": 308,
+          "height": 340,
+          "pivotX": 154,
+          "footY": 338
+        },
+        {
+          "name": "victory",
+          "x": 703,
+          "y": 737,
+          "width": 298,
+          "height": 417,
+          "pivotX": 149,
+          "footY": 415
+        }
+      ],
+      "variants": [
+        "idle",
+        "punch",
+        "kick",
+        "special",
+        "sweep",
+        "air",
+        "hit",
+        "guard",
+        "victory"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "brian-illustrated-atlas-v1",
+      "role": "character-sprite-atlas",
+      "source": "public/arcade/fighters/brian-atlas-v1.webp",
+      "reference": "brian-reference-v1",
+      "character": "brian",
+      "provenance": "Recovered original generated nine-pose companion sprite sheet. Illustration pixels packed without repainting or rescaling; used directly in gameplay.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1187,
+        "height": 1201
+      },
+      "decodedBudgetBytes": 5702348,
+      "frames": [
+        {
+          "name": "idle",
+          "x": 8,
+          "y": 8,
+          "width": 263,
+          "height": 389,
+          "pivotX": 132,
+          "footY": 387
+        },
+        {
+          "name": "punch",
+          "x": 279,
+          "y": 8,
+          "width": 403,
+          "height": 381,
+          "pivotX": 161,
+          "footY": 379
+        },
+        {
+          "name": "kick",
+          "x": 690,
+          "y": 8,
+          "width": 404,
+          "height": 390,
+          "pivotX": 109,
+          "footY": 388
+        },
+        {
+          "name": "special",
+          "x": 8,
+          "y": 406,
+          "width": 373,
+          "height": 316,
+          "pivotX": 160,
+          "footY": 314
+        },
+        {
+          "name": "sweep",
+          "x": 389,
+          "y": 406,
+          "width": 392,
+          "height": 259,
+          "pivotX": 137,
+          "footY": 257
+        },
+        {
+          "name": "air",
+          "x": 789,
+          "y": 406,
+          "width": 390,
+          "height": 257,
+          "pivotX": 140,
+          "footY": 255
+        },
+        {
+          "name": "hit",
+          "x": 8,
+          "y": 730,
+          "width": 304,
+          "height": 420,
+          "pivotX": 167,
+          "footY": 418
+        },
+        {
+          "name": "guard",
+          "x": 320,
+          "y": 730,
+          "width": 318,
+          "height": 396,
+          "pivotX": 159,
+          "footY": 394
+        },
+        {
+          "name": "victory",
+          "x": 646,
+          "y": 730,
+          "width": 304,
+          "height": 463,
+          "pivotX": 152,
+          "footY": 461
+        }
+      ],
+      "variants": [
+        "idle",
+        "punch",
+        "kick",
+        "special",
+        "sweep",
+        "air",
+        "hit",
+        "guard",
+        "victory"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "mia-illustrated-atlas-v1",
+      "role": "character-sprite-atlas",
+      "source": "public/arcade/fighters/mia-atlas-v1.webp",
+      "reference": "mia-reference-v1",
+      "character": "mia",
+      "provenance": "Recovered original generated nine-pose companion sprite sheet. Illustration pixels packed without repainting or rescaling; used directly in gameplay.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1311,
+        "height": 1309
+      },
+      "decodedBudgetBytes": 6864396,
+      "frames": [
+        {
+          "name": "idle",
+          "x": 8,
+          "y": 8,
+          "width": 309,
+          "height": 406,
+          "pivotX": 155,
+          "footY": 404
+        },
+        {
+          "name": "punch",
+          "x": 325,
+          "y": 8,
+          "width": 351,
+          "height": 403,
+          "pivotX": 140,
+          "footY": 401
+        },
+        {
+          "name": "kick",
+          "x": 684,
+          "y": 8,
+          "width": 375,
+          "height": 400,
+          "pivotX": 101,
+          "footY": 398
+        },
+        {
+          "name": "special",
+          "x": 8,
+          "y": 422,
+          "width": 505,
+          "height": 403,
+          "pivotX": 217,
+          "footY": 401
+        },
+        {
+          "name": "sweep",
+          "x": 521,
+          "y": 422,
+          "width": 422,
+          "height": 278,
+          "pivotX": 148,
+          "footY": 276
+        },
+        {
+          "name": "air",
+          "x": 951,
+          "y": 422,
+          "width": 352,
+          "height": 319,
+          "pivotX": 127,
+          "footY": 317
+        },
+        {
+          "name": "hit",
+          "x": 8,
+          "y": 833,
+          "width": 377,
+          "height": 409,
+          "pivotX": 207,
+          "footY": 407
+        },
+        {
+          "name": "guard",
+          "x": 393,
+          "y": 833,
+          "width": 351,
+          "height": 410,
+          "pivotX": 176,
+          "footY": 408
+        },
+        {
+          "name": "victory",
+          "x": 752,
+          "y": 833,
+          "width": 306,
+          "height": 468,
+          "pivotX": 153,
+          "footY": 466
+        }
+      ],
+      "variants": [
+        "idle",
+        "punch",
+        "kick",
+        "special",
+        "sweep",
+        "air",
+        "hit",
+        "guard",
+        "victory"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "bernie-illustrated-atlas-v1",
+      "role": "character-sprite-atlas",
+      "source": "public/arcade/fighters/bernie-atlas-v1.webp",
+      "reference": "bernie-reference-v1",
+      "character": "bernie",
+      "provenance": "Recovered original generated nine-pose companion sprite sheet. Illustration pixels packed without repainting or rescaling; used directly in gameplay.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1064,
+        "height": 1222
+      },
+      "decodedBudgetBytes": 5200832,
+      "frames": [
+        {
+          "name": "idle",
+          "x": 8,
+          "y": 8,
+          "width": 260,
+          "height": 374,
+          "pivotX": 130,
+          "footY": 372
+        },
+        {
+          "name": "punch",
+          "x": 276,
+          "y": 8,
+          "width": 373,
+          "height": 361,
+          "pivotX": 149,
+          "footY": 359
+        },
+        {
+          "name": "kick",
+          "x": 657,
+          "y": 8,
+          "width": 355,
+          "height": 366,
+          "pivotX": 96,
+          "footY": 364
+        },
+        {
+          "name": "special",
+          "x": 8,
+          "y": 390,
+          "width": 312,
+          "height": 414,
+          "pivotX": 134,
+          "footY": 412
+        },
+        {
+          "name": "sweep",
+          "x": 328,
+          "y": 390,
+          "width": 356,
+          "height": 258,
+          "pivotX": 125,
+          "footY": 256
+        },
+        {
+          "name": "air",
+          "x": 692,
+          "y": 390,
+          "width": 364,
+          "height": 298,
+          "pivotX": 131,
+          "footY": 296
+        },
+        {
+          "name": "hit",
+          "x": 8,
+          "y": 812,
+          "width": 374,
+          "height": 365,
+          "pivotX": 206,
+          "footY": 363
+        },
+        {
+          "name": "guard",
+          "x": 390,
+          "y": 812,
+          "width": 281,
+          "height": 348,
+          "pivotX": 141,
+          "footY": 346
+        },
+        {
+          "name": "victory",
+          "x": 679,
+          "y": 812,
+          "width": 278,
+          "height": 402,
+          "pivotX": 139,
+          "footY": 400
+        }
+      ],
+      "variants": [
+        "idle",
+        "punch",
+        "kick",
+        "special",
+        "sweep",
+        "air",
+        "hit",
+        "guard",
+        "victory"
+      ],
+      "games": [
+        "rekt-rumble"
+      ]
+    },
+    {
+      "id": "chloe-illustrated-atlas-v1",
+      "role": "character-sprite-atlas",
+      "source": "public/arcade/fighters/chloe-atlas-v1.webp",
+      "reference": "chloe-reference-v1",
+      "character": "chloe",
+      "provenance": "Generated with the built-in image tool from the public Chloe companion and existing Max pose sheet. Nine illustrated combat poses, packed without rescaling.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1204,
+        "height": 1229
+      },
+      "decodedBudgetBytes": 5918864,
+      "frames": [
+        {
+          "name": "idle",
+          "x": 8,
+          "y": 8,
+          "width": 277,
+          "height": 395,
+          "pivotX": 139,
+          "footY": 393
+        },
+        {
+          "name": "punch",
+          "x": 293,
+          "y": 8,
+          "width": 352,
+          "height": 395,
+          "pivotX": 141,
+          "footY": 393
+        },
+        {
+          "name": "kick",
+          "x": 653,
+          "y": 8,
+          "width": 385,
+          "height": 390,
+          "pivotX": 104,
+          "footY": 388
+        },
+        {
+          "name": "special",
+          "x": 8,
+          "y": 411,
+          "width": 428,
+          "height": 391,
+          "pivotX": 184,
+          "footY": 389
+        },
+        {
+          "name": "sweep",
+          "x": 444,
+          "y": 411,
+          "width": 378,
+          "height": 263,
+          "pivotX": 132,
+          "footY": 261
+        },
+        {
+          "name": "air",
+          "x": 830,
+          "y": 411,
+          "width": 366,
+          "height": 303,
+          "pivotX": 132,
+          "footY": 301
+        },
+        {
+          "name": "hit",
+          "x": 8,
+          "y": 810,
+          "width": 314,
+          "height": 378,
+          "pivotX": 173,
+          "footY": 376
+        },
+        {
+          "name": "guard",
+          "x": 330,
+          "y": 810,
+          "width": 297,
+          "height": 375,
+          "pivotX": 149,
+          "footY": 373
+        },
+        {
+          "name": "victory",
+          "x": 635,
+          "y": 810,
+          "width": 298,
+          "height": 411,
+          "pivotX": 149,
+          "footY": 409
+        }
+      ],
+      "variants": [
+        "idle",
+        "punch",
+        "kick",
+        "special",
+        "sweep",
+        "air",
+        "hit",
+        "guard",
+        "victory"
+      ],
+      "games": [
+        "rekt-rumble"
       ]
     }
   ]

@@ -1,4 +1,10 @@
-# REKT RUMBLE art and audio bible — development slice v1
+# REKT RUMBLE art and audio
+
+## Current fighter pipeline — September 16, 2026
+
+Gameplay uses the recovered detailed nine-pose sprite sheets for Max, Pepe, Brian, Mia and Bernie, plus a matching generated Chloe sheet. The illustrated poses are drawn directly at full source detail. The code rigs described below remain loading/error fallbacks. See [FIGHTER-SPRITES.md](FIGHTER-SPRITES.md) for source assets, generation prompt, pose mapping, preparation and validation.
+
+## Historical v1 foundation
 
 This document covers two playable rigs and two environments, not the final
 eight-character/six-stage roster. All new assets are **development-only pending
@@ -115,7 +121,7 @@ dimensions or geometry budget, runtime variants, games and decoded-memory budget
 
 The two stage textures use 11,520,000 decoded RGBA bytes together; the portraits
 use 1,523,200. Including the conservatively budgeted noise buffer, the complete
-inventory plus the shared 144,000-byte pixel surface totals 13,417,600 bytes under
+original two-fighter inventory plus the shared 144,000-byte pixel surface totals 13,417,600 bytes under
 a 32 MiB limit (display canvas backing buffers are additional). The development slice
 preloads both 5.76 MB stage plates for immediate stage switching and gallery
 comparison; selected-stage-only loading is a later optimization, not a claimed

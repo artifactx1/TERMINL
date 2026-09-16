@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { ANIMATION_CLIPS, RIG_ANCHORS, fighterPose, attachmentAnchors } from '../lib/arcade/rumble-render.js';
+import { RUMBLE_SPRITES } from '../lib/arcade/rumble-sprites.mjs';
 import { SOUND_CUES } from '../lib/arcade/rumble-audio.js';
 import { RACE_SOUND_CUES } from '../lib/arcade/race-audio.js';
 
@@ -33,6 +34,11 @@ for(const a of manifest.assets){
       for(const frame of a.frames||[]){if(![frame.x,frame.y,frame.width,frame.height].every(Number.isInteger)||frame.x<0||frame.y<0||frame.width<=0||frame.height<=0||frame.x+frame.width>w||frame.y+frame.height>h)fail(a.id,'Invalid atlas frame');}
     }catch{fail(a.id,'Image cannot be decoded');}
   }else{decoded+=Math.max(0,a.decodedBudgetBytes||0);if(!a.geometryBudget)fail(a.id,'No geometry/runtime budget');}
+  if(a.role==='character-sprite-atlas'){
+    const sheet=RUMBLE_SPRITES[a.character];
+    if(!sheet||a.source!=='public'+sheet.src||JSON.stringify(a.frames)!==JSON.stringify(sheet.frames))fail(a.id,'Sprite manifest differs from runtime');
+    if(a.frames?.length!==9)fail(a.id,'Expected nine illustrated poses');
+  }
   if(a.role==='articulated-character-rig'){
     if(!manifest.assets.some(ref=>ref.id===a.reference&&ref.role==='character-reference-portrait'))fail(a.id,'Missing canonical reference');
     const bounds=a.geometryBudget?.bounds;

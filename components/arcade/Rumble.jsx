@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createFight, stepFight, botInput, INPUT, MOVES, CHARACTERS, STAGES } from "../../lib/arcade/rumble-sim.mjs";
 import { drawRumble } from "../../lib/arcade/rumble-render";
+import { RUMBLE_SPRITES } from "../../lib/arcade/rumble-sprites.mjs";
 import { RumbleAudio } from "../../lib/arcade/rumble-audio";
 import { RumbleClient } from "../../lib/arcade/rumble-client";
 import { RUMBLE_ROSTER as ROSTER } from "../../lib/arcade/rumble-roster.mjs";
@@ -41,9 +42,10 @@ export default function Rumble({assetLabEnabled=false}){
     if(parseInvitation(window.location.href))setInvite(window.location.href);
     try{setCircuitSave(readCircuit(localStorage.getItem(CIRCUIT_KEY)));}catch{}
     let disposed=false;
-    for(const level of LEVELS){const image=new window.Image();image.onload=()=>{if(!disposed)images.current[level.id]=image;};image.onerror=()=>{if(!disposed)setAssetError(true);};image.src=level.image;}
+    const assets=[...LEVELS,...Object.entries(RUMBLE_SPRITES).map(([id,sheet])=>({id,image:sheet.src}))];
+    for(const asset of assets){const image=new window.Image();image.onload=()=>{if(!disposed)images.current[asset.id]=image;};image.onerror=()=>{if(!disposed)setAssetError(true);};image.src=asset.image;}
     audio.current=new RumbleAudio();
-    return ()=>{disposed=true;client.current?.dispose({leave:false});audio.current?.dispose();};
+    return ()=>{disposed=true;images.current={};client.current?.dispose({leave:false});audio.current?.dispose();};
   },[]);
   useEffect(()=>{audio.current?.setVolumes({music:prefs.music,sfx:prefs.sfx});try{localStorage.setItem("terminl:rumble-prefs",JSON.stringify(prefs));}catch{}},[prefs]);
   useEffect(()=>{audio.current?.setPaused(mode==="menu"||(mode==="practice"&&paused));},[mode,paused]);
@@ -99,6 +101,7 @@ export default function Rumble({assetLabEnabled=false}){
         const renderMs=performance.now()-started;metrics.current.frames++;metrics.current.totalMs+=renderMs;metrics.current.maxMs=Math.max(metrics.current.maxMs,renderMs);
         el.dataset.tick=String(draw.tick);el.dataset.phase=draw.phase;el.dataset.p0=String(Math.round(draw.players[0].x));el.dataset.hp=draw.players.map(p=>p.hp).join(",");
         el.dataset.input=String(input.current);el.dataset.action=draw.players[0].action?.id||'';el.dataset.grounded=String(draw.players[0].grounded);
+        el.dataset.fighterArt=draw.players.every(p=>images.current[p.character]?.naturalWidth)?'illustrated-sprites':'loading-fallback';
         // Audio follows authoritative events only; never predicted hit effects.
         audio.current?.update(current.mode==="online"?client.current.state:draw);
         if(now-lastUI.current>100){setView(draw);lastUI.current=now;}
@@ -166,7 +169,7 @@ export default function Rumble({assetLabEnabled=false}){
         <div className={s.hud}>{view?.players.map((p,i)=><div key={i} className={i===1?s.p2:""}><div><b>{room?.players[i]?.name||ROSTER.find(r=>r.id===p.character)?.name}</b><span>{view.wins[i]} / 2 ROUNDS</span></div><div className={s.health}><i style={{width:`${p.hp/10}%`}} /></div><div className={s.meter}><i style={{width:`${p.meter/10}%`}} /><span>{p.meter>=1000?"SUPER READY · R":`METER ${Math.floor(p.meter/10)}%`}</span></div></div>)}<div className={s.clock}><strong>{Math.ceil((view?.roundTicks||3600)/60)}</strong><span>ROUND {view?.round||1}</span></div></div>
         <div className={s.arena} ref={arena}><canvas ref={canvas} aria-label="REKT RUMBLE fighting arena. Use arrow keys and J for light attacks; Shift guards. Full controls are in Move List." tabIndex={0} />
           <span className={s.rotateTip}>Rotate your phone for a bigger arena.</span>
-          {assetError&&<span className={s.assetWarning}>Backdrop unavailable · authored fallback scene</span>}
+          {assetError&&<span className={s.assetWarning}>Some artwork could not load · fallback artwork active</span>}
           {training&&lesson<3&&!paused&&<div className={s.lesson}><b>LESSON {lesson+1} / 3</b><h3>{["Find your range.","Land your first hit.","Now protect that face."][lesson]}</h3><p>{["Slide the thumb pad left/right (or use ← →). Get within reach.","Tap LIGHT (J), or HEAVY (K). Hold the pad down + HEAVY for a low sweep.","Hold GUARD (Shift) to block. For low attacks, hold the pad down + GUARD."][lesson]}</p></div>}
           {training&&lesson===3&&<div className={s.lesson}><b>BASICS COMPLETE ✓</b><p>Try THROW (E) up close. Down + SPECIAL uppercuts; toward your rival + SPECIAL lunges. SUPER (R) needs 100% meter.</p><button onClick={()=>setTraining(false)}>KEEP FIGHTING →</button></div>}
           {paused&&mode==="practice"&&!settings&&!movesOpen&&<div className={s.gameOverlay}><h2>TAKE A BREATHER.</h2><p>Practice is paused. Online matches never pause for one player.</p><button className={s.primary} onClick={()=>{setPaused(false);audio.current?.unlock();}}>BACK TO IT →</button></div>}

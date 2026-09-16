@@ -28,7 +28,8 @@
     "og": "node scripts/og.mjs",
     "verify-calldata": "node scripts/verify-calldata.mjs",
     "test:arcade:v1": "node scripts/arcade-v1-browser.mjs",
-    "test:rumble:circuit:browser": "node scripts/rumble-circuit-browser.mjs"
+    "test:rumble:circuit:browser": "node scripts/rumble-circuit-browser.mjs",
+    "test:rumble:art:browser": "node scripts/rumble-art-browser.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.8",
