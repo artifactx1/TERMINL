@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRace, stepRace, raceBotInput, raceHash, trackGeometry, nearestRoad, RACE_RULES, CUP_TRACKS, RACE_INPUT as I } from '../lib/arcade/race-sim.mjs';
+import { createRace, stepRace, raceBotInput, raceHash, trackGeometry, nearestRoad, RACE_RULES, CUP_TRACKS, VEHICLES, RACE_INPUT as I } from '../lib/arcade/race-sim.mjs';
 import {createRace as legacyRace,stepRace as legacyStep} from '../lib/arcade/race-sim-v1.mjs';
 import {raceProgress,rivalTelemetry} from '../lib/arcade/race-telemetry.mjs';
 import { RollbackFight, replayFight, HISTORY_LIMIT } from '../lib/arcade/rollback.mjs';
@@ -157,6 +157,49 @@ test('speed-sensitive steering retains low-speed lock and recenters without stic
   const counter=run(5.6,I.LEFT,8,fast);assert.ok(counter.players[0].steer<0,'countersteer crosses center promptly');
 });
 
+test('keyboard steering reduces high-speed yaw and stops turning on release across all vehicles',async()=>{
+  const old=await import('../lib/arcade/race-sim-v4.mjs');
+  const sample=(create,step,vehicle,speed,input)=>{
+    let s=create({vehicles:[vehicle,vehicle],cup:false});s.phase='racing';
+    const origin={...s.players[0]};
+    for(let i=0;i<45;i++){
+      Object.assign(s.players[0],{x:origin.x,y:origin.y,angle:origin.angle,vx:Math.cos(origin.angle)*speed,vy:Math.sin(origin.angle)*speed});
+      s=step(s,[input,0]);
+    }
+    return s;
+  };
+  for(const vehicle of Object.keys(VEHICLES))for(const input of [I.RIGHT,I.LEFT]){
+    const previous=sample(old.createRace,old.stepRace,vehicle,5.6,input),current=sample(createRace,stepRace,vehicle,5.6,input);
+    assert.ok(Math.abs(current.players[0].yawRate)<Math.abs(previous.players[0].yawRate)*.6,`${vehicle}: high-speed turning reduced`);
+    const angle=current.players[0].angle,released=stepRace(current,[0,0]);
+    assert.equal(released.players[0].angle,angle,`${vehicle}: no extra heading rotation on release`);
+    assert.equal(released.players[0].yawRate,0);
+    const slow=sample(createRace,stepRace,vehicle,1,input);assert.ok(Math.abs(slow.players[0].steer)>Math.abs(current.players[0].steer)*2,'tight slow turns remain available');
+  }
+});
+test('mobile analog handling remains identical to v4 and takes over after keyboard use',async()=>{
+  const old=await import('../lib/arcade/race-sim-v4.mjs');
+  let previous=old.createRace(),current=createRace();
+  for(let tick=0;tick<1000;tick++){
+    const input=encodeRaceInput(tick%150<30?16|4:4,tick%180<100?Math.sin(tick/45)*.65:0);
+    previous=old.stepRace(previous,[input,0]);current=stepRace(current,[input,0]);
+    const comparable=structuredClone(current);comparable.version=4;
+    comparable.players.forEach(p=>delete p.digitalSteering);
+    assert.deepEqual(comparable,previous,`analog tick ${tick}`);
+  }
+  current=stepRace(current,[I.RIGHT,0]);assert.equal(current.players[0].digitalSteering,true);
+  current=stepRace(current,[encodeRaceInput(0,0),0]);assert.equal(current.players[0].yawRate,0,'key-up centers via an analog zero packet');
+  current=stepRace(current,[encodeRaceInput(0,.2),0]);assert.equal(current.players[0].digitalSteering,false);
+});
+test('archived v4 proportional inputs retain exact replay hashes',async()=>{
+  const {createRace:oldCreate,stepRace:oldStep}=await import('../lib/arcade/race-sim-v4.mjs');
+  const options={vehicles:['mirage','bike-tyson'],cup:false},inputs=[encodeRaceInput(4,.32),4];
+  let old=oldCreate(options),archived=createRace({...options,rulesVersion:4});
+  for(let tick=0;tick<900;tick++){old=oldStep(old,inputs);archived=stepRace(archived,inputs);}
+  assert.equal(raceHash(old),raceHash(archived));
+  const replay={version:1,game:'wen-lambo',rulesVersion:4,options,ticks:900,inputs:[{tick:0,slots:inputs.map(input=>({input}))}]};
+  assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(old));
+});
 test('archived rules-v3 recordings retain exact state and hashes with Bike Tyson',async()=>{
   const {createRace:oldCreate,stepRace:oldStep}=await import('../lib/arcade/race-sim-v3.mjs');
   const options={vehicles:['bike-tyson','mirage']};let old=oldCreate(options);

@@ -48,6 +48,10 @@ test('generated vehicles use transparent, distinct showroom and rear sprites in 
     for(const frame of [art.rear,art.garage]){assert.ok(frame[0]>=0&&frame[1]>=0);assert.ok(frame[0]+frame[2]<=metadata.width);assert.ok(frame[1]+frame[3]<=metadata.height);}
     const c=context();drawRearCar(c.ctx,id,{x:250,y:235,width:350,steer:.4,tick:60});assert.equal(c.depth(),0);
     const rear=c.calls.find(([fn])=>fn==='drawImage');assert.equal(rear[1].url,art.src);assert.deepEqual(rear.slice(2,6),art.rear);
+    const wheelFrame=rotation=>{const frame=context();drawRearCar(frame.ctx,id,{x:250,y:235,width:350,rotation});assert.equal(frame.depth(),0);return JSON.stringify(frame.calls);};
+    assert.equal(wheelFrame(0),wheelFrame(0),'stopped tires remain still');
+    assert.notEqual(wheelFrame(0),wheelFrame(.35),`${id}: visible tread rolls`);
+    assert.notEqual(wheelFrame(.35),wheelFrame(-.35),`${id}: reverse rolls backward`);
     const garage=context();drawGarageVehicle(garage.ctx,id);assert.equal(garage.depth(),0);
     assert.deepEqual(garage.calls.find(([fn])=>fn==='drawImage').slice(2,6),art.garage);
     signatures.add(JSON.stringify(c.calls));

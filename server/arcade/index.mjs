@@ -20,7 +20,7 @@ const stages = new Set(['dead-mall', 'laundromat']);
 const games=['rekt-rumble','wen-lambo'];
 const validCharacter=(game,id)=>game==='wen-lambo'?Object.hasOwn(VEHICLES,id):characters.has(id);
 const rulesVersion=game=>game==='wen-lambo'?RACE_RULES_VERSION:1;
-const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-6'};
+const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-7'};
 const nameOf = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 24 && !/[\u0000-\u001f\u007f]/.test(value) ? value.trim() : null;
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 

@@ -2,7 +2,7 @@
 
 Created with the built-in image generation tool, September 15, 2026. Final runtime assets are transparent WebP atlases in `public/arcade/`: `mirage-atlas-v1.webp`, `glacier-atlas-v1.webp`, `inferno-atlas-v1.webp`, and `bike-tyson-atlas-v1.webp`. Each atlas has a rear racing view and a three-quarter showroom view. Source rectangles live in `lib/arcade/race-exotics.js`.
 
-The generated sprites include their wheels. Original Comet/Spectre wheels remain articulated; new vehicle sprites lean with steering but have painted wheel detail. Bike Tyson shares Comet physics and the existing collision rules; its narrow artwork is cosmetic. Racing rules remain v3; server content build is `arcade-content-5` with six vehicles.
+The generated sprites include their wheels. Original Comet/Spectre wheels remain articulated. The new vehicles now replace exposed painted tire surfaces with distance-driven rolling tread, clipped to atlas coordinates in `race-sprite-wheels.js`. Tread stops with the vehicle and reverses with reverse gear; bodywork, shoes and axles stay fixed. Showroom views remain stationary. Bike Tyson shares Comet physics and the existing collision rules; its narrow artwork is cosmetic. Current racing rules are v5; server content build is `arcade-content-7` with six vehicles.
 
 ## Prompts
 

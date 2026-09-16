@@ -46,7 +46,7 @@ test('new seeds produce different laps, while a recorded rival run replays exact
       held=inputs;state=stepRace(state,inputs);
     }
     assert.notEqual(state.players[1].finishedTick,null);times.push(state.players[1].finishedTick/60);
-    if(seed===11){const replay={version:1,game:'wen-lambo',rulesVersion:4,options,ticks:state.tick,inputs:frames};assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(state));}
+    if(seed===11){const replay={version:1,game:'wen-lambo',rulesVersion:5,options,ticks:state.tick,inputs:frames};assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(state));}
   }
   assert.equal(new Set(times).size,times.length);assert.ok(Math.max(...times)-Math.min(...times)>1,'variability must be noticeable in race time');
   console.log('Same car/style, different seeds (seconds):',times.map(n=>n.toFixed(2)).join(', '));

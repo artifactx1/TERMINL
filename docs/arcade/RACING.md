@@ -5,7 +5,7 @@ Play `/os/lambo`, or choose WEN LAMBO from `/os`. REKT RUMBLE, Rug Runner and Mo
 ## Drive
 
 - Up/W or GAS accelerates. Down/S or BRAKE / REV brakes, then reverses at a stop. Reverse is speed-limited and steering reverses with travel direction.
-- Left/right or A/D progressively turn the steering wheel. Rules v3 preserves full low-speed lock, limits normal steering to 73% at maximum speed, accelerates countersteering, and recenters the wheel/yaw faster on release. Deliberate drift retains full lock. The chase camera interpolates on the render clock between simulation/network updates.
+- Left/right or A/D progressively turn the steering wheel. Rules v5 retain tight low-speed keyboard turns, limit keyboard lock to 40% at maximum speed, improve road grip, and stop heading rotation on key release. Deliberate drift retains full lock. The chase camera interpolates on the render clock between simulation/network updates.
 - Space while turning at speed drifts. Release to bank earned charge; Shift spends boost on forward acceleration. Checkpoints also grant a small boost refill.
 - R returns behind the last valid checkpoint, costs 15 boost, and has a three-second cooldown. It never advances progress. Ghosting briefly prevents spawn/recovery collisions.
 - Escape pauses practice only. Blur/hidden tabs clear held input. Online clocks continue through settings and disconnects.
@@ -14,7 +14,7 @@ Controller mapping: left stick/D-pad steer, RT/A gas, LT/B brake/reverse, X drif
 
 Mobile: slide the left thumb pad without lifting to change direction; the simulation still applies progressive steering. Auto-gas is on by default, starts only after touching a driving control, and can be switched off. BOOST includes GAS even in manual mode, so steering + boost takes two thumbs, not three fingers. BRAKE / REV overrides auto-gas, held gas and boost. Hold it at a stop to reverse. DRIFT banks charge on release as before. Touch interruption, pause, settings, resizing and leaving clear pointer ownership and cruise activation; resume requires fresh input. Controls adapt to portrait/landscape and respect safe-area padding.
 
-Touch steering now uses a 12% center dead zone and a progressive curve, sending a direct signed steering value to the simulation. A held thumb position stays steady. Keyboard taps turn in progressively; holding commits to the corner, and the latest pressed direction wins during overlapping key presses. Release and countersteer center faster. Full lock remains available at parking speeds, reducing smoothly to 66% at the car's top speed; braking restores tighter steering as the car slows. Drift retains continuous proportional steering and boost banking. Physical-device handling feedback is still valuable.
+Touch steering now uses a 12% center dead zone and a progressive curve, sending a direct signed steering value to the simulation. A held thumb position stays steady. Keyboard taps turn in progressively; holding commits to the corner, and the latest pressed direction wins during overlapping key presses. Release and countersteer center faster. Full lock remains available at parking speeds, reducing smoothly to 66% for touch/stick input and 40% for keys at the car's top speed; braking restores tighter steering as the car slows. Drift retains continuous proportional steering and boost banking. Physical-device handling feedback is still valuable.
 
 Choose LEARN TO DRIVE for a guided single-track practice run. QUICK RACE runs the selected course against a labeled bot without the lesson overlay. SIX-COURSE CUP runs all six tracks. All six vehicles, including Bike Tyson, are free; no ownership or paid performance advantage is claimed.
 
@@ -44,7 +44,7 @@ On phones, touch devices and windows up to 900px wide, the map is hidden by defa
 
 The live map uses lime for YOU, pink for RIVAL and a pale square for the next gate. Heading markers stay readable on high-DPI phones. The nearby rival panel reports approximate course distance ahead/behind and physical bearing relative to the car, including rivals outside the chase camera. The gap is a distance estimate using the same validated-sector course projection as race placement; it is not a time gap. Online HUD placement and gap come from authoritative snapshots, while the chase view can still use prediction. Distance uses the same arcade scale as the speed display.
 
-Racing rules version 4 requires matching frontend/backend versions. Old racing clients are rejected; old authorities show an update notice. Rumble stays version 1. Archived v1, v2 and v3 race replays retain their original modules and reproduce through the version dispatcher; new replays carry `rulesVersion:4`. The bounded race replay limit is 48,000 ticks for a maximum-duration six-course cup. Results remain reward-free.
+Racing rules version 5 requires matching frontend/backend versions. Old racing clients are rejected; old authorities show an update notice. Rumble stays version 1. Archived v1, v2, v3 and v4 race replays retain their original modules and reproduce through the version dispatcher; new replays carry `rulesVersion:5`. The bounded race replay limit is 48,000 ticks for a maximum-duration six-course cup. Results remain reward-free.
 
 `node scripts/grand-tour-browser.mjs` verifies six online course starts with two real browser clients, reconnect, forfeit and authenticated saved replays against an isolated local authority. This is not a full online-cup soak test. See `STAKED-RACING-DESIGN.md` for the separate, unimplemented player-funded Duel proposal.
 
@@ -64,7 +64,7 @@ The three exotics now have generated illustrated bodywork, seated drivers and
 complete wheels. Mia, Chloe and Max follow the public portraits in `public/degens`.
 Bike Tyson adds a fully clothed human-bicycle meme sprite. Every vehicle appears
 in the garage, practice and online racing. Original Comet/Spectre wheels remain
-articulated; the new sprites have painted wheels and lean with steering. See
+articulated; the new sprites have distance-driven rolling tire surfaces and lean with steering. See
 [vehicle art and prompts](VEHICLE-ART.md). No private collection art is used.
 
 Placement sorts finished drivers by finish time, then unfinished drivers by
@@ -86,8 +86,14 @@ Practice chooses a fresh seed, a different opponent car, and a different style e
 
 The bot does not solve an optimal lap. It sends the same legal controls as a player and obeys the same grip, boost, collision, checkpoint and recovery rules. It does not teleport, change its stats, grant itself progress, or adjust its speed based on the player's lead. The seed makes a run reproducible for debugging; a new race gets a new seed.
 
-Verification includes all six vehicles completing six courses in both seats, all four rival styles completing each course in both seats, different-seed timing variation, exact analog replay/rollback, and unchanged archived v1–v3 replay hashes. Controlled steering tests measure full-speed release at about 117 ms versus 200 ms previously. Six seeds using the same Comet/Wild Card pairing produced 71.12–72.96 second finishes on Pacific Coast Run. These are test measurements, not promised lap times.
+Verification includes all six vehicles completing six courses in both seats, all four rival styles completing each course in both seats, different-seed timing variation, exact analog replay/rollback, and unchanged archived v1–v4 replay hashes. The previous v4 steering tests measured full-speed release at about 117 ms versus 200 ms previously. Under v4, six seeds using the same Comet/Wild Card pairing produced 71.12–72.96 second finishes on Pacific Coast Run. These are test measurements, not promised lap times.
 
 `node scripts/race-handling-browser.mjs` checks overlapping keyboard directions, release, controller magnitude, pause, mobile layout and fresh rivals. `npm run test:touch:browser` checks real multi-touch steering, braking, boost and interruption cleanup. `npm run test:race:online-smoke` sends mobile analog inputs through the authority on all six courses and reproduces the authenticated replays.
 
-The frontend and Railway authority must deploy together. Rules are v4; server content build is `arcade-content-6`.
+The frontend and Railway authority must deploy together. Rules are v5; server content build is `arcade-content-7`.
+
+## Keyboard steering and rolling tires (v5)
+
+Keyboard and D-pad steering now have stronger lateral grip and less turning strength: full-speed lock is 40%, with full lock near a stop. Their normal yaw strength is 80% of the base vehicle value; drift retains its dedicated loose grip and steering range. Releasing a direction immediately stops further heading rotation while the rack centers. The chase camera catches up faster after digital steering. Touch and analog controller handling remain identical to v4, including grip, lock, release and camera smoothing. These input rules run in both practice and the online authority. Archived v4 recordings use the original v4 simulation.
+
+Mirage, Glacier, Inferno and Bike Tyson now animate their exposed rear tire surfaces from wheel rotation. The rear camera sees rolling tread rather than side-on spokes. Masks keep the tread behind bodywork and shoes; stopped and reversing tires follow actual motion. `node scripts/race-wheels-browser.mjs` verifies changing forward/reverse pixels and identical stationary frames in Chromium.
