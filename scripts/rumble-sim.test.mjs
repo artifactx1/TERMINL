@@ -96,7 +96,7 @@ test('late inputs reproduce the exact on-time state and exported replay',()=>{
 });
 test('rollback rejects stale, duplicate, impossible and distant-future input',()=>{
   const game=new RollbackFight();for(let n=0;n<140;n++)game.advance();
-  assert.equal(game.submit(0,127,1,1).reason,'late');assert.equal(game.submit(0,147,1,1).reason,'future');assert.equal(game.submit(0,140,4096,1).reason,'schema');
+  assert.equal(game.submit(0,140-ROLLBACK_WINDOW-1,1,1).reason,'late');assert.ok(game.submit(0,140-ROLLBACK_WINDOW,1,0).ok);assert.equal(game.submit(0,147,1,1).reason,'future');assert.equal(game.submit(0,140,4096,1).reason,'schema');
   assert.equal(game.submit(2,140,1,1).reason,'slot');assert.ok(game.submit(0,140,1,1).ok);assert.equal(game.submit(0,141,1,1).reason,'sequence');assert.equal(game.submit(0,140,2,2).ok,true);
   assert.ok(game.history.size<=121);
 });

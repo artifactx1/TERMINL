@@ -7,7 +7,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {chromium} from 'playwright';
 import {startArcadeServer} from '../server/arcade/index.mjs';
-import {CUP_TRACKS,TRACKS,RACE_RULES,raceHash} from '../lib/arcade/race-sim.mjs';
+import {CUP_TRACKS,TRACKS,RACE_RULES,raceHash,RACE_RULES_VERSION} from '../lib/arcade/race-sim.mjs';
 import {replayFight} from '../lib/arcade/rollback.mjs';
 
 const base=process.env.ARCADE_TEST_URL||'http://localhost:4000';
@@ -35,7 +35,7 @@ try{
     await b.getByLabel('RACE INVITATION').fill(link);await button(b,'JOIN RACE →').click();
     await button(a,"I'M READY →").click();await button(b,"I'M READY →").click();
     await a.waitForFunction(track=>window.__state?.track===track&&window.__state.phase==='racing',track);
-    const state=await a.evaluate(()=>window.__state);assert.equal(state.version,5);assert.equal(state.tracks.length,6);
+    const state=await a.evaluate(()=>window.__state);assert.equal(state.version,RACE_RULES_VERSION);assert.equal(state.tracks.length,6);
     if(track===CUP_TRACKS[0]){await b.evaluate(()=>window.__socket.close());await b.waitForFunction(()=>window.__joins>=2);}
     await a.keyboard.down('ArrowUp');await a.waitForFunction(()=>window.__state.players[0].speed>.2);await a.keyboard.up('ArrowUp');
     await a.getByTestId('rival-tracker').waitFor();await b.getByTestId('mobile-rival').waitFor();
@@ -48,7 +48,7 @@ try{
     const old=await a.evaluate(()=>window.__result?.id);await button(b,'← LEAVE').click();
     await a.waitForFunction(old=>window.__result&&window.__result.id!==old,old);
     const {result,session}=await a.evaluate(()=>({result:window.__result,session:window.__joined.session}));
-    assert.equal(result.winner,0);assert.equal(result.rulesVersion,5);assert.equal(result.rewards,false);
+    assert.equal(result.winner,0);assert.equal(result.rulesVersion,RACE_RULES_VERSION);assert.equal(result.rewards,false);
     const response=await fetch(`${authority}/replays/${result.id}`,{headers:{authorization:`Bearer ${session}`}});assert.equal(response.status,200);
     const {replay}=await response.json();assert.equal(raceHash(replayFight(replay,RACE_RULES)),replay.hash);
     await button(a,'← LEAVE').click();

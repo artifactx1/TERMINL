@@ -84,7 +84,8 @@ test('late proportional steering reconciles to the on-time result and replays ex
 });
 test('reverse escapes the outer shoulder and barrier sliding preserves tangential motion',()=>{
   let s=racing({cup:false});const g=trackGeometry(s.track),gate=g.gates[0],nx=-Math.sin(gate.angle),ny=Math.cos(gate.angle);
-  Object.assign(s.players[0],{x:gate.x+nx*(g.width/2+55),y:gate.y+ny*(g.width/2+55),angle:gate.angle+Math.PI/2});
+  // Parked beside the barrier, a little behind the timing plane, facing across the road.
+  Object.assign(s.players[0],{x:gate.x+nx*(g.width/2+55)-Math.cos(gate.angle)*30,y:gate.y+ny*(g.width/2+55)-Math.sin(gate.angle)*30,angle:gate.angle+Math.PI/2});
   for(let i=0;i<85;i++)s=stepRace(s,[I.BRAKE,0]);
   assert.equal(s.players[0].gear,-1);assert.equal(s.players[0].offRoad,false);assert.equal(s.players[0].passed,0);
   s=racing({cup:false});Object.assign(s.players[0],{x:gate.x+nx*(g.width/2+57),y:gate.y+ny*(g.width/2+57),angle:gate.angle,vx:-Math.cos(gate.angle),vy:-Math.sin(gate.angle),speed:1});

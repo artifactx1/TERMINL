@@ -14,7 +14,7 @@
     "test:moon:browser": "node scripts/moon-browser.mjs",
     "dev:arcade": "ARCADE_LABS=1 next dev -p 4000",
     "arcade:server": "node server/arcade/index.mjs",
-    "test:arcade": "node --test scripts/rumble-sim.test.mjs scripts/rumble-roster.test.mjs scripts/race-sim.test.mjs scripts/race-rival.test.mjs scripts/race-art.test.mjs scripts/race-visibility.test.mjs scripts/touch-input.test.mjs scripts/rumble-controls.test.mjs scripts/arcade-server.test.mjs scripts/rumble-circuit.test.mjs",
+    "test:arcade": "node --test scripts/arcade-transport.test.mjs scripts/rumble-sim.test.mjs scripts/rumble-roster.test.mjs scripts/race-sim.test.mjs scripts/race-rival.test.mjs scripts/race-art.test.mjs scripts/race-visibility.test.mjs scripts/touch-input.test.mjs scripts/rumble-controls.test.mjs scripts/arcade-server.test.mjs scripts/rumble-circuit.test.mjs",
     "test:touch:browser": "node scripts/touch-browser.mjs",
     "test:race:visibility": "node scripts/race-visibility-browser.mjs",
     "test:race:smoke": "node scripts/race-smoke.mjs",

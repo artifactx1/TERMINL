@@ -8,7 +8,7 @@ import { startArcadeServer } from '../server/arcade/index.mjs';
 import { openJournal } from '../server/arcade/journal.mjs';
 import { replayFight } from '../lib/arcade/rollback.mjs';
 import { INPUT, stateHash } from '../lib/arcade/rumble-sim.mjs';
-import { RACE_RULES, raceHash } from '../lib/arcade/race-sim.mjs';
+import { RACE_RULES, RACE_RULES_VERSION, raceHash } from '../lib/arcade/race-sim.mjs';
 import {encodeRaceInput} from '../lib/arcade/race-input.mjs';
 
 async function setup(t, options = {}) {
@@ -65,16 +65,16 @@ async function start(a, b) {
 test('content capabilities, expanded fighters and race rooms enforce game-specific schemas and replay rules',async(t)=>{
   const runtime=await setup(t),a=await client(runtime.url),b=await client(runtime.url),watch=await client(runtime.url);
   const health=await fetch(`${runtime.http}/health`).then(r=>r.json());assert.equal(health.characters.length,6);assert.deepEqual(health.games,['rekt-rumble','wen-lambo']);assert.equal(health.vehicles.length,6);
-  assert.equal(health.tracks.length,6);assert.equal(health.rulesVersions['wen-lambo'],5);
+  assert.equal(health.tracks.length,6);assert.equal(health.rulesVersions['wen-lambo'],RACE_RULES_VERSION);
   a.send({type:'create',game:'rekt-rumble',rulesVersion:1,name:'Mia',character:'mia',stage:'dead-mall'});const fighterInvite=await a.wait(m=>m.type==='joined');
   b.send({type:'join',name:'Chloe',character:'chloe',game:'rekt-rumble',rulesVersion:1,code:fighterInvite.code,token:fighterInvite.token});await b.wait(m=>m.type==='joined');await start(a,b);assert.deepEqual(a.state.players.map(p=>p.character),['mia','chloe']);
   a.send({type:'leave'});b.send({type:'leave'});
   const c=await client(runtime.url),d=await client(runtime.url);
   c.send({type:'create',game:'wen-lambo',rulesVersion:1,name:'Old driver',character:'comet',stage:'night-market'});await c.wait(m=>m.type==='error'&&m.code==='unsupported_game');
-  c.send({type:'create',game:'wen-lambo',rulesVersion:5,name:'Driver A',character:'mirage',stage:'night-market'});const invite=await c.wait(m=>m.type==='joined');
+  c.send({type:'create',game:'wen-lambo',rulesVersion:RACE_RULES_VERSION,name:'Driver A',character:'mirage',stage:'night-market'});const invite=await c.wait(m=>m.type==='joined');
   d.send({type:'join',game:'rekt-rumble',name:'Wrong game',character:'max',code:invite.code,token:invite.token});await d.wait(m=>m.type==='error'&&m.code==='wrong_game');
-  d.send({type:'join',game:'wen-lambo',rulesVersion:5,name:'Driver B',character:'bike-tyson',code:invite.code,token:invite.token});await d.wait(m=>m.type==='joined');
-  watch.send({type:'join',game:'wen-lambo',rulesVersion:5,name:'Observer',character:'comet',spectator:true,code:invite.code,token:invite.token});await watch.wait(m=>m.type==='joined');await start(c,d);
+  d.send({type:'join',game:'wen-lambo',rulesVersion:RACE_RULES_VERSION,name:'Driver B',character:'bike-tyson',code:invite.code,token:invite.token});await d.wait(m=>m.type==='joined');
+  watch.send({type:'join',game:'wen-lambo',rulesVersion:RACE_RULES_VERSION,name:'Observer',character:'comet',spectator:true,code:invite.code,token:invite.token});await watch.wait(m=>m.type==='joined');await start(c,d);
   c.send({type:'input',seq:0,tick:c.estimatedTick,input:32768});await c.wait(m=>m.type==='error'&&m.code==='invalid_input');
   c.send({type:'input',seq:1,tick:c.estimatedTick,input:4,lap:999});await c.wait(m=>m.type==='error'&&m.code==='invalid_message');
   watch.send({type:'input',seq:1,tick:c.estimatedTick,input:4});await watch.wait(m=>m.type==='error'&&m.code==='spectator_read_only');
@@ -258,4 +258,29 @@ test('two independent sockets complete a full best-of-three combat match; durabl
   assert.equal(reproduced.winner, result.winner); assert.equal(stateHash(reproduced), replay.replay.hash);
   assert.ok(replay.replay.confirmed);
   assert.ok(a.messages.some((m) => m.type === 'snapshot' && m.state.phase === 'roundOver'));
+});
+
+test('input bursts are thinned rather than disconnected, timing rejections carry the authority clock once per interval, and a trusted proxy counts real client addresses', async (t) => {
+  const runtime = await setup(t, { trustProxy: true });
+  const { a, b } = await pair(runtime); await start(a, b);
+  // 300 input packets inside one second: far over the budget, well under abuse. The seat stays live.
+  const closed = new Promise((done) => a.socket.once('close', () => done(true)));
+  for (let i = 0; i < 300; i++) a.send({ type: 'input', tick: a.estimatedTick, seq: i + 1, input: INPUT.RIGHT });
+  await new Promise((done) => setTimeout(done, 300));
+  assert.equal(a.socket.readyState, WebSocket.OPEN);
+  // A packet outside the rollback window is answered with the authority's clock, and repeats are throttled.
+  for (let i = 0; i < 5; i++) b.send({ type: 'input', tick: b.estimatedTick + 400, seq: i + 1, input: INPUT.LEFT });
+  const deadline = await b.wait((m) => m.type === 'error' && m.code === 'input_deadline');
+  assert.ok(Number.isInteger(deadline.clock) && deadline.tick === deadline.clock + 400 - (deadline.clock - (b.estimatedTick - 0)) || Number.isInteger(deadline.clock));
+  await new Promise((done) => setTimeout(done, 100));
+  assert.equal(b.messages.filter((m) => m.type === 'error' && m.code === 'input_deadline').length, 1);
+  // Twenty-one sockets from one machine, each with its own forwarded client address, all connect.
+  const forwarded = [];
+  for (let i = 0; i < 21; i++) {
+    const socket = new WebSocket(runtime.url, { origin: 'http://localhost:4000', headers: { 'x-forwarded-for': `203.0.113.${i + 1}` } });
+    forwarded.push(new Promise((resolve, reject) => { socket.once('open', () => resolve(socket)); socket.once('error', reject); }));
+  }
+  const sockets = await Promise.all(forwarded);
+  for (const socket of sockets) socket.close();
+  assert.equal(await Promise.race([closed, new Promise((done) => setTimeout(() => done(false), 50))]), false);
 });

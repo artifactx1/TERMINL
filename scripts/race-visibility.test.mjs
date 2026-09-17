@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRace,stepRace,trackGeometry,CUP_TRACKS} from '../lib/arcade/race-sim.mjs';
+import {createRace,stepRace,trackGeometry,CUP_TRACKS,RACE_RULES_VERSION,GATE_MARGIN} from '../lib/arcade/race-sim.mjs';
 import {raceProjection,finishLineTiles} from '../lib/arcade/race-camera.mjs';
 import {RumbleClient} from '../lib/arcade/rumble-client.js';
 
@@ -30,7 +30,7 @@ test('checkerboard lies on the authoritative finish plane and finishers stop on 
     const g=trackGeometry(track),gate=g.gates[0],tiles=finishLineTiles(g);
     const forward=p=>(p.x-gate.x)*Math.cos(gate.angle)+(p.y-gate.y)*Math.sin(gate.angle);
     const lateral=p=>-(p.x-gate.x)*Math.sin(gate.angle)+(p.y-gate.y)*Math.cos(gate.angle);
-    for(const {points} of tiles)for(const p of points){assert.ok(Math.abs(forward(p))<=8.00001);assert.ok(Math.abs(lateral(p))<=g.width/2+18.00001);}
+    for(const {points} of tiles)for(const p of points){assert.ok(Math.abs(forward(p))<=8.00001);assert.ok(Math.abs(lateral(p))<=g.width/2+GATE_MARGIN+.00001);}
     assert.ok(tiles.some(t=>t.points.some(p=>Math.abs(forward(p))<1e-6)));
     for(const side of [-g.width/2+4,0,g.width/2-4]){
       let s=createRace({track,cup:false});s.phase='racing';s.raceTicks=3000;
@@ -47,7 +47,7 @@ test('checkerboard lies on the authoritative finish plane and finishers stop on 
 
 test('online racers share a predicted tick and finished rivals never rewind behind the line',()=>{
   for(const slot of [0,1]){
-    const g=trackGeometry('night-market'),client=new RumbleClient('',()=>{},{game:'wen-lambo',step:stepRace,phase:'racing',rulesVersion:5});
+    const g=trackGeometry('night-market'),client=new RumbleClient('',()=>{},{game:'wen-lambo',step:stepRace,phase:'racing',rulesVersion:RACE_RULES_VERSION});
     let state=createRace();state.phase='racing';state.raceTicks=3000;
     for(const [i,p] of state.players.entries())Object.assign(p,at(g,-2,i?25:-25),{passed:g.gates.length*g.laps,nextCheckpoint:0,lap:2,vx:Math.cos(p.angle)*5,vy:Math.sin(p.angle)*5,speed:5});
     client.slot=slot;client.input=4;client.inputs=[4,4];client.previousState=structuredClone(state);client.state=state;client.targetTick=()=>state.tick+3;

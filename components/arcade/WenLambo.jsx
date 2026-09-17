@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {useEffect,useRef,useState} from 'react';
-import {createRace,stepRace,raceBotInput,TRACKS,VEHICLES,CUP_TRACKS,RACE_RULES_VERSION} from '../../lib/arcade/race-sim.mjs';
+import {createRace,stepRace,raceBotInput,raceLost,TRACKS,VEHICLES,CUP_TRACKS,RACE_RULES_VERSION} from '../../lib/arcade/race-sim.mjs';
 import {drawRace} from '../../lib/arcade/race-render';
 import {drawGarageVehicle,preloadRaceArt} from '../../lib/arcade/race-perspective';
 import {RaceAudio} from '../../lib/arcade/race-audio';
@@ -116,6 +116,8 @@ export default function WenLambo(){
   const standings=mode==='online'?(client.current?.state||view):view;
   const standing=standings?.players[Math.max(0,seat?.slot??0)];
   const rival=standings?rivalTelemetry(standings,Math.max(0,seat?.slot??0)):null;
+  const lost=standings?.phase==='racing'&&seat?.slot!==-1&&!standing?.wrongWay&&raceLost(standings,Math.max(0,seat?.slot??0));
+  const canReconnect=mode==='online'&&['disconnected','unavailable'].includes(connection)&&!!client.current?.canReconnect();
   return <div ref={shell} className={`${s.shell} ${playing?s.inRace:''}`}>
     <header className={s.header}><Link href='/os'>▣ TERMINL <span>ARCADE</span></Link><span className={s.preview}>WEN LAMBO / EXOTICS UPDATE</span><div>{mode!=='menu'&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{neutral();setSettings(true);if(mode==='practice')setPaused(true);}}>SETTINGS</button><button aria-label='Toggle fullscreen' onClick={()=>{if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});else shell.current?.requestFullscreen?.().catch(()=>setNotice('Fullscreen is unavailable.'));}}>⛶</button></div></header>
     {notice&&<div className={s.notice} role='status'>{notice}<button aria-label='Dismiss notice' onClick={()=>setNotice('')}>×</button></div>}
@@ -133,8 +135,9 @@ export default function WenLambo(){
         {view?.phase==='countdown'&&<div className={s.countdown}><span>{TRACKS[view.track].name}</span><strong>{Math.max(1,3-Math.floor(view.phaseTick/60))}</strong><p>TOUCH STEERING PAD OR HOLD ↑ TO LAUNCH</p>{mode==='practice'&&botProfile&&<p>{botProfile.name} · {VEHICLES[botProfile.vehicle].name}<br/>{botProfile.description}</p>}</div>}
         {tutorial&&!paused&&view?.phase==='racing'&&<div className={s.lesson}><b>{lesson<3?`DRIVING SCHOOL ${lesson+1}/3`:'LICENSE QUESTIONABLY ACQUIRED ✓'}</b><p>{['Small thumb movements steer gently; push to the rim for a sharp turn. Auto-gas launches on touch. Keyboard: ↑ or W for gas, ← → steer.','Follow the road through the next checkpoint. Hold BRAKE / REV (↓) for tight turns; keep holding it at a stop to reverse.','Hold DRIFT (SPACE) while steering through a turn. Release it to bank drift boost.','Now hold BOOST (SHIFT) on a straight to spend boost. Keep racing or try the six-course cup.'][lesson]}</p>{lesson===3&&<button onClick={()=>setTutorial(false)}>KEEP RACING →</button>}</div>}
         {me?.wrongWay&&view?.phase==='racing'&&<div className={s.warning}>WRONG WAY · Turn around or press R to recover</div>}
-        {me?.offRoad&&!me?.wrongWay&&view?.phase==='racing'&&<div className={s.warning}>OFF ROAD · Hold BRAKE to reverse, or tap RECOVER</div>}
-        {connection!=='connected'&&mode==='online'&&<div className={s.connection}>CONNECTION LOST · Reconnecting · Cup clock continues</div>}
+        {lost&&<div className={s.warning}>MISSED CHECKPOINT · Turn back, or press R to recover behind your last gate</div>}
+        {me?.offRoad&&!me?.wrongWay&&!lost&&view?.phase==='racing'&&<div className={s.warning}>OFF ROAD · Hold BRAKE to reverse, or tap RECOVER</div>}
+        {connection!=='connected'&&mode==='online'&&<div className={s.connection}>{canReconnect?<>CONNECTION LOST · <button onClick={()=>client.current?.reconnect()}>RECONNECT NOW</button> · Cup clock continues</>:'CONNECTION LOST · Reconnecting · Cup clock continues'}</div>}
         {paused&&mode==='practice'&&!settings&&<div className={s.overlay}><h2>PIT STOP.</h2><p>Practice is paused.</p><button className={s.primary} onClick={()=>{setPaused(false);audio.current?.unlock();}}>BACK ON TRACK →</button></div>}
         {(view?.phase==='raceOver'||done)&&<div className={s.overlay}><span className={s.eyebrow}>{done?mode==='online'?'SERVER-CONFIRMED CUP RESULT':'PRACTICE CUP COMPLETE':'CHEQUERED FLAG'}</span><h2>{done?outcome?.winner===null?'DEAD HEAT.':seat?.slot===-1?'CUP COMPLETE.':outcome?.winner===(seat?.slot??0)?'BAG SECURED.':'NEXT CUP IS YOURS.':'ONE RACE DOWN.'}</h2><div className={s.scoreboard}>{view?.players.map((p,i)=><div key={i}><b>{room?.players[i]?.name||(i?botProfile?.name||'PRACTICE BOT':name)}</b><span>{p.points} PTS</span><small>{seconds(view.raceResults.at(-1)?.times[i]??null)}</small></div>)}</div>{done?<><p>{mode==='online'?'Recorded by the server. No financial prizes.':'Practice results stay local.'}</p>{seat?.slot!==-1&&<button className={s.primary} onClick={()=>mode==='practice'?practice(false):client.current?.send({type:'rematch'})}>{mode==='practice'?'RACE ANOTHER CUP →':room?.players[seat?.slot]?.rematch?'WAITING FOR RIVAL…':'VOTE REMATCH →'}</button>}<button onClick={leave}>BACK TO GARAGE</button></>:<p>{view.trackIndex+1<view.tracks.length?`NEXT: ${TRACKS[view.tracks[view.trackIndex+1]].name}`:'FINAL STANDINGS INCOMING'} · {Math.max(0,8-Math.floor(view.phaseTick/60))}s<br/>1st: 10 pts · 2nd: 6 pts · DNF: 0 · Equal finish: 8 each<br/>Cup ties: lower combined race time wins.</p>}</div>}
       </div>

@@ -32,7 +32,7 @@ Only the test/runtime owner may inspect the returned `rooms`/`journal` maps. Nei
 
 Simulation runs at a fixed **60 Hz** using a monotonic accumulator; snapshots are sent at **20 Hz**. A scheduler turn processes at most eight fixed steps. Accumulated delay is bounded to eight additional steps and increments `droppedCatchups` if truncated. An overloaded machine therefore does not silently speed up fights; it must be treated as unhealthy capacity and measured before release. Browser paint rate never advances server gameplay.
 
-`lib/arcade/rollback.mjs` is shared between authority and replay verification. A packet for tick *t* controls the transition from state *t* to *t+1*. Accepted input masks persist until superseded. The server accepts at most **12 ticks late (200 ms)** or **six ticks ahead (100 ms)**; the client normally targets estimated authority tick +2. Higher sequence numbers may replace a same-tick input. Duplicate/decreasing sequence numbers are rejected. Reconnect continues the existing sequence number; the client starts above the snapshot's acknowledged sequence for its slot.
+`lib/arcade/rollback.mjs` is shared between authority and replay verification. A packet for tick *t* controls the transition from state *t* to *t+1*. Accepted input masks persist until superseded. The server accepts at most **18 ticks late (300 ms)** or **six ticks ahead (100 ms)**. The client estimates the authority's clock at arrival (snapshot tick, plus the half trip already spent, plus time since, plus the half trip ahead, using a smoothed measured RTT) and targets two ticks past it, never beyond the future window. A rejected `input_deadline` carries the authority's `clock` and the packet's `tick`, and the client folds the difference into a bias so the next packet lands inside the window; those rejections are timing signals, not player-facing notices. Packet ticks never move backwards within a match. A late packet that repeats the mask already simulated for its tick is recorded without a rewind; only a changed timeline replays. Higher sequence numbers may replace a same-tick input. Duplicate/decreasing sequence numbers are rejected. Reconnect continues the existing sequence number; the client starts above the snapshot's acknowledged sequence for its slot.
 
 Complete simulation snapshots are retained for bounded rollback. Late input restores a snapshot and replays the original input timeline, including timers, meter, hit state, movement, round state, and authored stage boundaries. A changed timeline increments `corrections`. Event IDs are deterministic so presentation can deduplicate replayed effects. The server never accepts client positions, damage, winners, scores, or time elapsed. The simulation, not renderer animation events, owns all attack windows and collision outcomes.
 
@@ -71,7 +71,7 @@ A disconnection immediately neutralizes the player's held and queued future inpu
 
 Invite and resume credentials are independently generated 192-bit cryptographic random values. Invite tokens only authorize room entry; private sessions authorize resuming one seat and reading that participant's persisted results. A stolen guest session is a stolen guest identity: this is not account authentication. Never put private sessions in shared URLs or logs. TLS is required outside localhost. The server persists only SHA-256 session digests, never raw session secrets.
 
-Limits are 100 rooms by default, two player seats and eight spectators per room, 20 simultaneous connections per immediate source address, 150 messages/second per connection, and 15 control messages/second. Input schema rejects unknown fields and invalid numeric ranges. Excess total message rate closes the socket. Payloads over 2 KiB are closed by the WebSocket library; outgoing backpressure over 256 KiB closes a slow client. Compression is disabled. Heartbeats terminate unresponsive sockets. A reverse proxy must add its own connection/request limits; source-address accounting intentionally does not trust arbitrary forwarded headers.
+Limits are 100 rooms by default, two player seats and eight spectators per room, 20 simultaneous connections per source address, 130 input packets/second per connection (extra packets are thinned, never fatal, because every packet carries the whole held mask) and 15 control messages/second. Abuse-level rates (60 controls or 500 messages per second) close the socket. Error replies are sent at most once per code per 250 ms per connection. Input schema rejects unknown fields and invalid numeric ranges. Payloads over 2 KiB are closed by the WebSocket library; outgoing backpressure over 256 KiB closes a slow client. Compression is disabled. Heartbeats terminate unresponsive sockets. A reverse proxy must add its own connection/request limits. Source-address accounting uses the socket address unless `ARCADE_TRUST_PROXY=1`, in which case the last `X-Forwarded-For` entry (the one the proxy appended) is the address; behind Railway's edge this is required, since every socket otherwise shares the proxy's address and the 20-connection cap would apply to the whole service.
 
 The service does not authenticate wallets or trust claimed NFT metadata. There are no currency balances, mint entitlements, prizes, paid entry, or reward writes. Results explicitly contain `rewards:false`.
 
@@ -125,10 +125,10 @@ The process accepts `ARCADE_PORT`, otherwise Railway's `PORT`, otherwise 4010.
 Keep the existing persistent `ARCADE_DATA_DIR`, explicit allowed origins and `ARCADE_HOST=0.0.0.0`.
 Use one replica per journal; this is not a shared-volume horizontally scaled runtime.
 
-Deploy the backend update before the new client content. Health/welcome must advertise `games: ["rekt-rumble","wen-lambo"]`, six character IDs, six vehicles (`comet`, `spectre`, `mirage`, `glacier`, `inferno`, `bike-tyson`) and six track IDs, `rulesVersions: {"rekt-rumble":1,"wen-lambo":5}` and `build: "arcade-content-7"`.
-The client waits for welcome before creating/resuming a room and displays an update-required notice for unsupported content. No extra service or database is needed for this slice.
+Deploy the backend update before the new client content. Health/welcome must advertise `games: ["rekt-rumble","wen-lambo"]`, six character IDs, six vehicles (`comet`, `spectre`, `mirage`, `glacier`, `inferno`, `bike-tyson`) and six track IDs, `rulesVersions: {"rekt-rumble":1,"wen-lambo":6}` and `build: "arcade-content-8"`.
+The client waits for welcome before creating/resuming a room and displays an update-required notice for unsupported content. It pings every two seconds, treats eight silent seconds as a dead socket, retries automatically for the length of the seat's grace period, and then offers a RECONNECT NOW button while the seat can still be reclaimed. No extra service or database is needed for this slice.
 
-Racing create/join/resume packets carry `game:"wen-lambo", rulesVersion:5`; character means vehicle ID and stage means track ID. Cross-game invitations are rejected. Legacy Rumble packets without game still select Rumble. Race results include `game`, `rulesVersion` and per-race times/points. Replay with `replayFight(replay,RACE_RULES)`; archived v1/v2/v3/v4 racing replays retain their original simulation.
+Racing create/join/resume packets carry `game:"wen-lambo", rulesVersion:6`; character means vehicle ID and stage means track ID. Cross-game invitations are rejected. Legacy Rumble packets without game still select Rumble. Race results include `game`, `rulesVersion` and per-race times/points. Replay with `replayFight(replay,RACE_RULES)`; archived v1/v2/v3/v4/v5 racing replays retain their original simulation.
 
 ### Railway build configuration
 
@@ -149,9 +149,10 @@ NODE_ENV=production
 ARCADE_HOST=0.0.0.0
 PORT=4010
 ARCADE_PORT=4010
-ARCADE_ALLOWED_ORIGINS=https://terminl.net
+ARCADE_ALLOWED_ORIGINS=https://terminl.net,https://www.terminl.net
 ARCADE_DATA_DIR=/data
 ARCADE_REGION=us-west2
+ARCADE_TRUST_PROXY=1
 RAILWAY_DOCKERFILE_PATH=server/arcade/Dockerfile
 ```
 

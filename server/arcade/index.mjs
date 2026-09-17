@@ -4,14 +4,24 @@ import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { WebSocketServer, WebSocket } from 'ws';
-import { RollbackFight } from '../../lib/arcade/rollback.mjs';
+import { RollbackFight, ROLLBACK_WINDOW, FUTURE_WINDOW } from '../../lib/arcade/rollback.mjs';
 import { CHARACTERS } from '../../lib/arcade/rumble-sim.mjs';
 import { VEHICLES, TRACKS, RACE_RULES, RACE_RULES_VERSION } from '../../lib/arcade/race-sim.mjs';
 import { openJournal } from './journal.mjs';
 
 const STEP = 1000 / 60;
-const LATE = 12;
-const FUTURE = 6;
+const LATE = ROLLBACK_WINDOW;
+const FUTURE = FUTURE_WINDOW;
+/* Per-connection message budgets, per second. Inputs are redundant by design (every
+ * packet carries the whole held mask), so a fast analog client that sends too many is
+ * thinned rather than disconnected; only abuse-level rates close the socket. */
+const INPUT_BUDGET = 130;
+const CONTROL_BUDGET = 15;
+const ABUSE_CONTROLS = 60;
+const ABUSE_TOTAL = 500;
+const ERROR_INTERVAL_MS = 250;
+/* Only rejections that arrive at input rate are throttled; lobby errors always answer. */
+const THROTTLED_ERRORS = new Set(['input_deadline', 'duplicate_input', 'input_rejected', 'invalid_input', 'invalid_phase']);
 const secret = () => randomBytes(24).toString('base64url');
 const digest = (value) => createHash('sha256').update(value).digest('hex');
 const equal = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
@@ -20,7 +30,7 @@ const stages = new Set(['dead-mall', 'laundromat']);
 const games=['rekt-rumble','wen-lambo'];
 const validCharacter=(game,id)=>game==='wen-lambo'?Object.hasOwn(VEHICLES,id):characters.has(id);
 const rulesVersion=game=>game==='wen-lambo'?RACE_RULES_VERSION:1;
-const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-7'};
+const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-8'};
 const nameOf = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 24 && !/[\u0000-\u001f\u007f]/.test(value) ? value.trim() : null;
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 
@@ -39,6 +49,19 @@ export async function startArcadeServer(options = {}) {
   const inviteMs = options.inviteMs ?? 30 * 60000;
   const maxRooms = options.maxRooms ?? 100;
   const region = options.region || process.env.ARCADE_REGION || 'local';
+  /* Behind Railway's edge every socket shares the proxy's address, so the per-address
+   * connection cap would admit twenty players in total. With the proxy trusted, the
+   * address is the entry the proxy appended (the last one); earlier entries are
+   * client-supplied and ignored. */
+  const trustProxy = options.trustProxy ?? /^(1|true|yes)$/i.test(process.env.ARCADE_TRUST_PROXY || '');
+  const addressOf = (request) => {
+    if (trustProxy) {
+      const forwarded = request.headers['x-forwarded-for'];
+      const last = typeof forwarded === 'string' ? forwarded.split(',').map((s) => s.trim()).filter(Boolean).at(-1) : null;
+      if (last) return last;
+    }
+    return request.socket.remoteAddress || 'unknown';
+  };
   let draining = false;
   let storageFailed = false;
   let droppedCatchups = 0;
@@ -47,7 +70,15 @@ export async function startArcadeServer(options = {}) {
     if (peer.socket.bufferedAmount > 256 * 1024) { peer.socket.close(1013, 'Slow client'); return; }
     peer.socket.send(JSON.stringify(value));
   };
-  const error = (peer, code, message) => send(peer, { type: 'error', code, message });
+  const error = (peer, code, message, extra) => {
+    // Rejected inputs arrive at input rate; one notice per code per interval is enough.
+    if (THROTTLED_ERRORS.has(code)) {
+      const now = Date.now(), last = peer.errorAt.get(code) || 0;
+      if (now - last < ERROR_INTERVAL_MS) return;
+      peer.errorAt.set(code, now);
+    }
+    send(peer, { type: 'error', code, message, ...(extra || {}) });
+  };
   const members = (room) => [...room.players.filter(Boolean).map((p) => p.peer), ...room.spectators.values()].filter(Boolean);
   const publicRoom = (room) => ({ code: room.code, game:room.game, rulesVersion:rulesVersion(room.game), phase: room.phase, stage: room.stage, matchId: room.matchId || null, players: room.players.map((p) => p ? { name: p.name, character: p.character, ready: p.ready, connected: !!p.peer, rematch: !!p.rematch } : null), spectators: room.spectators.size, expiresAt: room.expiresAt, region, result: room.result || null });
   const broadcastRoom = (room) => members(room).forEach((peer) => send(peer, { type: 'room', room: publicRoom(room), ...(room.state ? { state: room.state } : {}) }));
@@ -73,7 +104,7 @@ export async function startArcadeServer(options = {}) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 2048, perMessageDeflate: false });
   server.on('upgrade', (request, socket, head) => {
     const origin = request.headers.origin;
-    const ip = request.socket.remoteAddress || 'unknown';
+    const ip = addressOf(request);
     if (draining || storageFailed || !allowedOrigins.has(origin) || (connections.get(ip) || 0) >= 20 || peers.size >= maxRooms * 10) {
       socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'); socket.destroy(); return;
     }
@@ -146,12 +177,18 @@ export async function startArcadeServer(options = {}) {
 
   function onMessage(peer, data, binary) {
     const now = Date.now();
-    if (now - peer.rateAt >= 1000) { peer.rateAt = now; peer.messages = 0; peer.controls = 0; }
-    if (++peer.messages > 150) { error(peer, 'rate_limit', 'Too many messages'); peer.socket.close(1008, 'Rate limit'); return; }
+    if (now - peer.rateAt >= 1000) { peer.rateAt = now; peer.messages = 0; peer.controls = 0; peer.inputs = 0; }
+    if (++peer.messages > ABUSE_TOTAL) { error(peer, 'rate_limit', 'Too many messages'); peer.socket.close(1008, 'Rate limit'); return; }
     let message;
     try { if (binary) throw new Error(); message = JSON.parse(data.toString()); } catch { error(peer, 'invalid_message', 'Expected a JSON object'); return; }
     if (!message || typeof message !== 'object' || Array.isArray(message) || typeof message.type !== 'string') return error(peer, 'invalid_message', 'Expected a typed object');
-    if (message.type !== 'input' && ++peer.controls > 15) return error(peer, 'rate_limit', 'Too many control messages');
+    if (message.type === 'input') {
+      if (++peer.inputs > ABUSE_TOTAL - CONTROL_BUDGET) { peer.socket.close(1008, 'Rate limit'); return; }
+      if (peer.inputs > INPUT_BUDGET) return; // thinned; the next packet carries the same held mask
+    } else if (++peer.controls > CONTROL_BUDGET) {
+      if (peer.controls > ABUSE_CONTROLS) { error(peer, 'rate_limit', 'Too many messages'); peer.socket.close(1008, 'Rate limit'); return; }
+      return error(peer, 'rate_limit', 'Too many control messages');
+    }
     const schemas = { create: ['type', 'name', 'character', 'stage','game','rulesVersion'], join: ['type', 'code', 'token', 'name', 'character', 'spectator','game','rulesVersion'], resume: ['type', 'code', 'session','game','rulesVersion'], ready: ['type', 'ready'], input: ['type', 'seq', 'tick', 'input'], rematch: ['type'], leave: ['type'], ping: ['type', 'time'] };
     if (!schemas[message.type] || Object.keys(message).some((key) => !schemas[message.type].includes(key))) return error(peer, 'invalid_message', 'Unknown message fields');
     if (message.type === 'ping') {
@@ -216,7 +253,8 @@ export async function startArcadeServer(options = {}) {
       if (room.phase !== 'playing' || room.settling) return error(peer, 'invalid_phase', 'Match is not accepting inputs');
       if (!integer(message.seq, 0, 2147483647) || !integer(message.tick, 0, 1000000) || !integer(message.input, 0, room.game==='wen-lambo'?RACE_RULES.maxInput:2047)) return error(peer, 'invalid_input', 'Invalid input values');
       if (message.seq <= player.lastSeq) return error(peer, 'duplicate_input', 'Input sequence must increase');
-      if (message.tick < room.clock - LATE || message.tick > room.clock + FUTURE) return error(peer, 'input_deadline', 'Input outside rollback window');
+      // The authority's clock rides along so the client can re-aim its input timing.
+      if (message.tick < room.clock - LATE || message.tick > room.clock + FUTURE) return error(peer, 'input_deadline', 'Input outside rollback window', { tick: message.tick, clock: room.clock });
       const accepted = room.sim.submit(peer.slot, message.tick, message.input, message.seq);
       if (!accepted.ok) return error(peer, 'input_rejected', `Input rejected: ${accepted.reason}`);
       player.lastSeq = message.seq; syncRoom(room);
@@ -224,9 +262,9 @@ export async function startArcadeServer(options = {}) {
   }
 
   wss.on('connection', (socket, request) => {
-    const ip = request.socket.remoteAddress || 'unknown';
+    const ip = addressOf(request);
     connections.set(ip, (connections.get(ip) || 0) + 1);
-    const peer = { socket, room: null, slot: -1, rateAt: Date.now(), messages: 0, controls: 0, alive: true };
+    const peer = { socket, room: null, slot: -1, rateAt: Date.now(), messages: 0, controls: 0, inputs: 0, alive: true, errorAt: new Map() };
     peers.add(peer); send(peer, { type: 'welcome', version: 1, ...capabilities });
     socket.on('pong', () => { peer.alive = true; });
     socket.on('message', (data, binary) => {
@@ -244,17 +282,36 @@ export async function startArcadeServer(options = {}) {
     const current = performance.now(); const elapsed = current - lastTime; lastTime = current;
     const now = Date.now();
     for (const room of rooms.values()) {
+      try { tickRoom(room, now, elapsed); }
+      catch (failure) {
+        // One room's fault must not take every other match down with the process.
+        process.stderr.write(`room ${room.code} failed: ${failure?.stack || failure}\n`);
+        if (room.phase === 'playing' || room.phase === 'starting') void abortRoom(room, 'internal_error');
+        else { rooms.delete(room.code); for (const peer of members(room)) { error(peer, 'room_expired', 'Room closed'); peer.room = null; } }
+      }
+    }
+  }, 8);
+  async function abortRoom(room, reason) {
+    if (room.settling) return;
+    room.settling = true;
+    try {
+      const result = await journal.finish({ id: room.matchId, room: room.code, game: room.game, rulesVersion: rulesVersion(room.game), endedAt: Date.now(), status: 'aborted', reason, winner: null, rewards: false, participants: room.players.filter(Boolean).map((p) => digest(p.session)) });
+      room.result = publicResult(result);
+    } catch { failStorage(); }
+    finally { room.settling = false; room.phase = 'aborted'; room.expiresAt = Date.now() + inviteMs; broadcastRoom(room); }
+  }
+  function tickRoom(room, now, elapsed) {
       if (room.phase === 'lobby') {
         let changed = false;
         room.players.forEach((player, slot) => { if (player && !player.peer && now - player.disconnectedAt >= graceMs) { room.players[slot] = null; changed = true; } });
         if (changed) {
-          if (room.players.every((player) => !player) && !room.spectators.size) { rooms.delete(room.code); continue; }
+          if (room.players.every((player) => !player) && !room.spectators.size) { rooms.delete(room.code); return; }
           broadcastRoom(room);
         }
       }
       if (room.phase === 'playing' && !room.settling) {
-        const disconnected = room.players.map((p, slot) => !p?.peer && now - p.disconnectedAt >= graceMs ? slot : -1).filter((slot) => slot >= 0);
-        if (disconnected.length) { void finish(room, disconnected.length === 2 ? null : 1 - disconnected[0], 'disconnect_forfeit'); continue; }
+        const disconnected = room.players.map((p, slot) => !p?.peer && now - (p?.disconnectedAt ?? now) >= graceMs ? slot : -1).filter((slot) => slot >= 0);
+        if (disconnected.length) { void finish(room, disconnected.length === 2 ? null : 1 - disconnected[0], 'disconnect_forfeit'); return; }
         room.accumulator += elapsed;
         let count = 0;
         while (room.accumulator >= STEP && count++ < 8 && !room.settling) { room.accumulator -= STEP; stepRoom(room); }
@@ -264,8 +321,7 @@ export async function startArcadeServer(options = {}) {
         for (const peer of members(room)) { error(peer, 'room_expired', 'Room expired'); peer.room = null; }
         rooms.delete(room.code);
       }
-    }
-  }, 8);
+  }
   const heartbeat = setInterval(() => { for (const peer of peers) { if (!peer.alive) peer.socket.terminate(); else { peer.alive = false; peer.socket.ping(); } } }, 10000);
   try {
     await new Promise((resolveReady, reject) => { server.once('error', reject); server.listen(options.port ?? Number(process.env.ARCADE_PORT || process.env.PORT || 4010), options.host || process.env.ARCADE_HOST || '127.0.0.1', resolveReady); });

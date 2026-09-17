@@ -3,6 +3,28 @@ module.exports = {
   distDir: process.env.TERMINL_NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
+  poweredByHeader: false,
+  /* One canonical host. The arcade authority allowlists the site origin and the
+   * WalletConnect metadata names it, so a visitor on www must land on the apex
+   * before either of those checks runs. */
+  async redirects() {
+    return [
+      { source: "/:path*", has: [{ type: "host", value: "www.terminl.net" }], destination: "https://terminl.net/:path*", permanent: true },
+    ];
+  },
+  /* Baseline browser hardening. No CSP yet: the wallet SDKs inject styles,
+   * frames and workers that need a measured allowlist before one can be enforced. */
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "X-Frame-Options", value: "DENY" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+      ],
+    }];
+  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       /* Reown AppKit touches window/navigator/IndexedDB at module load. It

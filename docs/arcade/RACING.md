@@ -20,7 +20,7 @@ Choose LEARN TO DRIVE for a guided single-track practice run. QUICK RACE runs th
 
 ## Cup rules
 
-Pacific Coast Run, Sunset Canyon, Redwood Rush, Diamondback Pass, Neon Afterhours and Golden Hour GP each require three laps through every ordered checkpoint. The internal IDs `night-market` and `liquidation-docks` are retained from development fixtures; displayed names/art now follow the California direction.
+Pacific Coast Run, Sunset Canyon, Redwood Rush, Diamondback Pass, Neon Afterhours and Golden Hour GP each require three laps through every ordered checkpoint. Rules v6: a checkpoint credits any forward crossing between the barriers (55 units beyond the road edge, the same margin that clamps the car), so a wide or off-road line costs speed but never silently voids the lap; the finish stripe and gate posts span exactly that width. Earlier rules credited only crossings within 18 units of the shoulder, which let a car drift over the checkerboard, lose the lap without any warning, and then lose a race it visibly crossed first. A car whose nearest road sector is ahead of its last credited gate now sees a MISSED CHECKPOINT warning until it turns back or recovers. Finish events name the placement (`FINISH · 1ST PLACE`) from the same fractional-tick ordering the standings record. Archived v5 replays use the frozen v5 simulation. The internal IDs `night-market` and `liquidation-docks` are retained from development fixtures; displayed names/art now follow the California direction.
 
 First finisher gets 10 points, second 6, exact simultaneous finishes 8 each, DNF 0. Each race ends at 120 seconds, or 30 seconds after the first finish. The eight-second results interval leads to the next course. Highest combined points wins; lower combined race time breaks a tie. A DNF counts as 120 seconds for that comparison. Exact equal totals draw. No cash, token, NFT or mint rewards are written.
 
@@ -44,7 +44,7 @@ On phones, touch devices and windows up to 900px wide, the map is hidden by defa
 
 The live map uses lime for YOU, pink for RIVAL and a pale square for the next gate. Heading markers stay readable on high-DPI phones. The nearby rival panel reports approximate course distance ahead/behind and physical bearing relative to the car, including rivals outside the chase camera. The gap is a distance estimate using the same validated-sector course projection as race placement; it is not a time gap. Online HUD placement and gap come from authoritative snapshots, while the chase view can still use prediction. Distance uses the same arcade scale as the speed display.
 
-Racing rules version 5 requires matching frontend/backend versions. Old racing clients are rejected; old authorities show an update notice. Rumble stays version 1. Archived v1, v2, v3 and v4 race replays retain their original modules and reproduce through the version dispatcher; new replays carry `rulesVersion:5`. The bounded race replay limit is 48,000 ticks for a maximum-duration six-course cup. Results remain reward-free.
+Racing rules version 6 requires matching frontend/backend versions. Old racing clients are rejected; old authorities show an update notice. Rumble stays version 1. Archived v1, v2, v3 and v4 race replays retain their original modules and reproduce through the version dispatcher; new replays carry `rulesVersion:5`. The bounded race replay limit is 48,000 ticks for a maximum-duration six-course cup. Results remain reward-free.
 
 `node scripts/grand-tour-browser.mjs` verifies six online course starts with two real browser clients, reconnect, forfeit and authenticated saved replays against an isolated local authority. This is not a full online-cup soak test. See `STAKED-RACING-DESIGN.md` for the separate, unimplemented player-funded Duel proposal.
 
@@ -90,7 +90,7 @@ Verification includes all six vehicles completing six courses in both seats, all
 
 `node scripts/race-handling-browser.mjs` checks overlapping keyboard directions, release, controller magnitude, pause, mobile layout and fresh rivals. `npm run test:touch:browser` checks real multi-touch steering, braking, boost and interruption cleanup. `npm run test:race:online-smoke` sends mobile analog inputs through the authority on all six courses and reproduces the authenticated replays.
 
-The frontend and Railway authority must deploy together. Rules are v5; server content build is `arcade-content-7`.
+The frontend and Railway authority must deploy together. Rules are v6; server content build is `arcade-content-8`.
 
 ## Keyboard steering and rolling tires (v5)
 

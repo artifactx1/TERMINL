@@ -42,8 +42,8 @@ export interface GameModule<State, Input> {
 }
 export type ClientMessage =
   | { type: 'create'; name: string; character: CharacterId; stage: StageId; game?: 'rekt-rumble'; rulesVersion?: 1 }
-  | { type: 'create'; name: string; character: VehicleId; stage: TrackId; game: 'wen-lambo'; rulesVersion: 5 }
-  | { type: 'join'; code: string; token: string; name: string; character: CharacterId | VehicleId; spectator?: boolean; game?: 'rekt-rumble' | 'wen-lambo'; rulesVersion?: 1 | 3 }
+  | { type: 'create'; name: string; character: VehicleId; stage: TrackId; game: 'wen-lambo'; rulesVersion: 6 }
+  | { type: 'join'; code: string; token: string; name: string; character: CharacterId | VehicleId; spectator?: boolean; game?: 'rekt-rumble' | 'wen-lambo'; rulesVersion?: 1 | 6 }
   | { type: 'resume'; code: string; session: string; game?: 'rekt-rumble' | 'wen-lambo' }
   | { type: 'ready'; ready: boolean }
   | { type: 'input'; seq: number; tick: number; input: InputMask }

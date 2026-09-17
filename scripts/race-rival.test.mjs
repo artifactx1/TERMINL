@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createPracticeRival,RIVAL_STYLES} from '../lib/arcade/race-bot.mjs';
-import {createRace,stepRace,raceBotInput,raceHash,CUP_TRACKS,VEHICLES,RACE_RULES} from '../lib/arcade/race-sim.mjs';
+import {createRace,stepRace,raceBotInput,raceHash,CUP_TRACKS,VEHICLES,RACE_RULES,RACE_RULES_VERSION} from '../lib/arcade/race-sim.mjs';
 import {replayFight} from '../lib/arcade/rollback.mjs';
 
 test('practice draws reproducible rivals and avoids repeating the previous car and style',()=>{
@@ -46,7 +46,7 @@ test('new seeds produce different laps, while a recorded rival run replays exact
       held=inputs;state=stepRace(state,inputs);
     }
     assert.notEqual(state.players[1].finishedTick,null);times.push(state.players[1].finishedTick/60);
-    if(seed===11){const replay={version:1,game:'wen-lambo',rulesVersion:5,options,ticks:state.tick,inputs:frames};assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(state));}
+    if(seed===11){const replay={version:1,game:'wen-lambo',rulesVersion:RACE_RULES_VERSION,options,ticks:state.tick,inputs:frames};assert.equal(raceHash(replayFight(replay,RACE_RULES)),raceHash(state));}
   }
   assert.equal(new Set(times).size,times.length);assert.ok(Math.max(...times)-Math.min(...times)>1,'variability must be noticeable in race time');
   console.log('Same car/style, different seeds (seconds):',times.map(n=>n.toFixed(2)).join(', '));
