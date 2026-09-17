@@ -93,3 +93,16 @@ test('rules v6 credits any in-bounds crossing; archived v5 keeps the narrow gate
   const [first,second]=s.raceResults[0].order;
   assert.equal(finishes.find(e=>e.player===first).text,'FINISH · 1ST PLACE');assert.equal(finishes.find(e=>e.player===second).text,'FINISH · 2ND PLACE');
 });
+
+test('cup standing separates race place from cup place and names the stakes of the next race',async()=>{
+  const {cupStanding}=await import('../lib/arcade/race-telemetry.mjs');
+  const state=createRace({cup:true});state.phase='racing';state.trackIndex=3;state.players[0].points=16;state.players[1].points=20;state.players[0].place=1;
+  const mine=cupStanding(state,0);
+  assert.equal(mine.place,2);assert.equal(mine.label,'2nd');assert.equal(mine.remaining,3);assert.equal(mine.status,'WIN THE NEXT RACE TO TAKE THE CUP LEAD');
+  assert.equal(cupStanding(state,1).status,'CUP LEAD +4');
+  state.players[1].points=38;assert.equal(cupStanding(state,0).status,'CUP TRAILING BY 22 · NEED 6 MORE WINS');
+  state.phase='raceOver';state.trackIndex=4;state.players[0].points=48;state.players[1].points=30;
+  assert.equal(cupStanding(state,0).status,'CUP CLINCHED');assert.equal(cupStanding(state,1).status,'CUP OUT OF REACH · RACE FOR PRIDE');
+  state.phase='finished';state.winner=1;state.players[0].points=28;state.players[1].points=32;
+  assert.deepEqual([cupStanding(state,0).status,cupStanding(state,1).status],['CUP LOST ON POINTS','CUP WON']);
+});
