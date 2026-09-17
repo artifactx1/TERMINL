@@ -1,3 +1,5 @@
+const { cspHeaders } = require('./lib/security/csp.cjs');
+
 /** @type {import('next').NextConfig} */
 module.exports = {
   distDir: process.env.TERMINL_NEXT_DIST_DIR || '.next',
@@ -12,8 +14,7 @@ module.exports = {
       { source: "/:path*", has: [{ type: "host", value: "www.terminl.net" }], destination: "https://terminl.net/:path*", permanent: true },
     ];
   },
-  /* Baseline browser hardening. No CSP yet: the wallet SDKs inject styles,
-   * frames and workers that need a measured allowlist before one can be enforced. */
+  /* CSP only reports. Wallet and arcade observations must precede enforcement. */
   async headers() {
     return [{
       source: "/:path*",
@@ -22,6 +23,7 @@ module.exports = {
         { key: "X-Frame-Options", value: "DENY" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+        ...cspHeaders(),
       ],
     }];
   },

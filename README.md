@@ -169,6 +169,11 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 `TERMINL_COLLECTION_DIR` is *not* needed to build or deploy. It is only read by
 `npm run snapshot`, on whichever machine holds the collection.
 
+The site also sends a **report-only** Content Security Policy. Browser violations
+go to `/api/csp-report` and appear as `csp_violation` in server logs; nothing is
+blocked by this policy. See [the report review guide](docs/CSP.md) before changing
+the source list or enabling enforcement.
+
 ## Structure
 
 ```

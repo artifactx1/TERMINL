@@ -30,7 +30,9 @@
     "test:arcade:v1": "node scripts/arcade-v1-browser.mjs",
     "test:rumble:circuit:browser": "node scripts/rumble-circuit-browser.mjs",
     "test:rumble:art:browser": "node scripts/rumble-art-browser.mjs",
-    "test:controls:browser": "node scripts/control-release-browser.mjs"
+    "test:controls:browser": "node scripts/control-release-browser.mjs",
+    "test:csp": "node --test scripts/csp.test.mjs",
+    "test:csp:browser": "node scripts/csp-browser.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.8",
