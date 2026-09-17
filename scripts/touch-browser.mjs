@@ -97,17 +97,17 @@ try{
     await page.waitForFunction(id=>document.querySelector('canvas').dataset.action===id,expected);
     observed.push(expected);await lift(2);if(direction)await lift(1);
   }
-  await attack('LIGHT','light');await attack('HEAVY','heavy');await attack('SPECIAL','special');
-  await attack('LIGHT','crouchLight',[.5,.9]);await attack('HEAVY','crouchHeavy',[.5,.9]);await attack('SPECIAL','downSpecial',[.5,.9]);
-  await attack('THROW','throw');
+  await attack('PUNCH','light');await attack('KICK','heavy');await attack('SPECIAL','special');
+  await attack('PUNCH','crouchLight',[.5,.9]);await attack('KICK','crouchHeavy',[.5,.9]);await attack('SPECIAL','downSpecial',[.5,.9]);
+  await attack('GRAB','throw');
   // Jump first, then attack: airborne variants are selected by actual simulation state.
-  for(const [label,move] of [['LIGHT','airLight'],['HEAVY','airHeavy']]){
+  for(const [label,move] of [['PUNCH','airLight'],['KICK','airHeavy']]){
     await page.waitForFunction(()=>!document.querySelector('canvas').dataset.action&&document.querySelector('canvas').dataset.grounded==='true');
     await press(1,movement,.5,.1);await lift(1);
     await page.waitForFunction(()=>document.querySelector('canvas').dataset.grounded==='false');await attack(label,move);
   }
   await page.waitForFunction(()=>!document.querySelector('canvas').dataset.action&&document.querySelector('canvas').dataset.grounded==='true');
-  await press(1,movement,.25,.75);await press(2,button('GUARD'));await mask(137);await lift(2);await lift(1);
+  await press(1,movement,.25,.75);await press(2,button('BLOCK'));await mask(137);await lift(2);await lift(1);
   await attack('SPECIAL','forwardSpecial',[.9,.5]);
   await page.waitForFunction(()=>!document.querySelector('canvas').dataset.action);
   const beforeDash=Number(await canvas.getAttribute('data-p0'));await press(2,button('DASH'));

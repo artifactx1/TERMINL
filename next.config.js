@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
+  distDir: process.env.TERMINL_NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
   webpack: (config, { isServer }) => {

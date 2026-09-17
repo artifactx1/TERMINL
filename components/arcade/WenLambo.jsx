@@ -27,7 +27,7 @@ export default function WenLambo(){
   const [mapOpen,setMapOpen]=useState(false),compact=useRef(true);
   const canvas=useRef(null),arena=useRef(null),shell=useRef(null),game=useRef(null),client=useRef(null),audio=useRef(null),input=useRef(0),keyboard=useRef(0),touch=useRef(0),pad=useRef(0),match=useRef(null);
   const current=useRef(null);current.current={mode,paused,prefs,tutorial,lesson,mapOpen,settings};
-  const held=useRef(new Set());
+  const held=useRef(new Map());
   const touchAxis=useRef(0),touchActive=useRef(false),padAxis=useRef(0);
   const applyInput=()=>{const next=composeRaceInput({keyboard:keyboard.current,touch:touch.current,pad:pad.current,touchAxis:touchAxis.current,padAxis:padAxis.current,touchActive:touchActive.current});if(next!==input.current){input.current=next;client.current?.setInput(next);}};
   const neutral=()=>{keyboard.current=0;touch.current=0;touchAxis.current=0;touchActive.current=false;padAxis.current=0;pad.current=0;input.current=0;held.current.clear();client.current?.setInput(0);setTouchReset(n=>n+1);};
@@ -35,13 +35,14 @@ export default function WenLambo(){
     try{const stored=JSON.parse(localStorage.getItem('terminl:race-prefs'));if(stored)setPrefs(p=>({...p,...stored}));else setPrefs(p=>({...p,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches}));setName(JSON.parse(localStorage.getItem('terminl-os:v2'))?.name||'ANON');setResume(JSON.parse(sessionStorage.getItem('terminl:race-session')));}catch{}
     if(invitation(location.href))setInvite(location.href);audio.current=new RaceAudio();
     const key=e=>{
+      if(e.type==='keyup'){held.current.delete(e.code||e.key.toLowerCase());keyboard.current=raceKeyboardInput(held.current.values());applyInput();return;}
       if(current.current.mode==='menu'||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName)||e.ctrlKey||e.metaKey)return;
       if(e.target?.closest?.('[data-testid="mobile-rival"]')&&[' ','Enter'].includes(e.key))return;
       if(e.key==='Escape'&&e.type==='keydown'){neutral();if(current.current.mode==='practice')setPaused(p=>!p);return;}
       if(current.current.settings||current.current.mode==='practice'&&current.current.paused)return;
       const bit=KEYS[e.key]||KEYS[e.key.toLowerCase()];if(!bit)return;e.preventDefault();
-      if(e.type==='keydown')held.current.add(e.key);else held.current.delete(e.key);
-      keyboard.current=raceKeyboardInput(held.current);applyInput();
+      held.current.set(e.code||e.key.toLowerCase(),e.key);
+      keyboard.current=raceKeyboardInput(held.current.values());applyInput();
     };
     const blur=()=>{neutral();if(current.current.mode==='practice')setPaused(true);};
     const hidden=()=>{if(document.hidden)blur();};
@@ -72,6 +73,7 @@ export default function WenLambo(){
       const elapsed=Math.min(100,now-last);last=now;const o=current.current;
       const controller=navigator.getGamepads?.()?.find?.(p=>p?.connected);
       if(controller&&!o.settings&&!(o.mode==='practice'&&o.paused)){const down=i=>controller.buttons[i]?.pressed,x=controller.axes[0]||0;padAxis.current=Math.abs(x)>.18?Math.sign(x)*Math.pow((Math.min(1,Math.abs(x))-.18)/.82,1.5):0;pad.current=(down(14)?1:0)|(down(15)?2:0)|(down(7)||down(0)?4:0)|(down(6)||down(1)?8:0)|(down(2)?16:0)|(down(5)?32:0)|(down(3)?64:0);applyInput();}
+      else if(pad.current||padAxis.current){pad.current=0;padAxis.current=0;applyInput();}
       let state;
       if(o.mode==='practice'&&game.current){if(!o.paused){accumulator+=elapsed;while(accumulator>=FRAME){applyInput();game.current=stepRace(game.current,[input.current,raceBotInput(game.current,1,bot.current)]);accumulator-=FRAME;}}state=game.current;}
       else {applyInput();state=client.current?.predictedState();}

@@ -95,7 +95,7 @@
 @media (max-width:600px) and (orientation:portrait) { .rotateTip { display:block; position:absolute; top:16px; left:0; right:0; text-align:center; color:#9daf8c; font-size:11px; pointer-events:none; } }
 .fightFooter { background:#0d160e; padding:9px 20px; border-top:1px solid #4a5c39; text-align:center; flex-shrink:0; }
 .fightFooter p { font-size:8px; color:#bdcdae; margin:0; line-height:1.7; }
-.fightFooter span { display:block; font-size:8px; color:#dabb8b; margin-top:5px; min-height:10px; }
+.fightFooter > span { display:block; font-size:8px; color:#dabb8b; margin-top:5px; min-height:10px; }
 .touchControls { display:flex; justify-content:space-between; gap:14px; background:#0a100c; padding:10px 20px max(10px,env(safe-area-inset-bottom)); flex-shrink:0; touch-action:none; }
 .touchControls > div { display:flex; gap:6px; }
 .touchControls button { min-width:43px; min-height:39px; padding:8px 12px; background:#1c2a1a; color:#cee3ba; border:1px solid #49613b; font-size:8px; touch-action:none; user-select:none; }
@@ -140,3 +140,5 @@
 @media(any-pointer:coarse),(max-width:900px) { .fightFooter { display:none; }.inGame { overscroll-behavior:none; }.inGame .header { min-height:44px; }.inGame .header button { min-height:44px; }.rotateTip { display:none; } }
 @media(orientation:landscape) and (max-height:600px) { .connectionBar { padding:4px 12px; }.hud { padding:5px 12px; }.hud>div:not(.clock)>div:first-child { margin-bottom:3px; }.health { height:9px; }.meter { height:7px; margin-top:3px; }.clock strong { font-size:24px; }.clock span { font-size:6px; }.clock { top:6px; }.lesson { top:4px; max-width:220px; padding:5px 8px; }.lesson h3 { font-size:12px; margin:2px 0; }.lesson p { font-size:7px; margin:3px 0; } }
 @media(orientation:landscape) and (max-height:600px) { .hud>div:not(.clock)>div:first-child { min-height:0; display:flex; align-items:center; font-size:8px; }.hud>div>div>span { display:inline; margin-top:0; }.lesson { max-width:175px; }.lesson b { font-size:6px; } }
+
+.combatKeys{display:inline-block;margin-left:14px}.keyboardGuide{display:flex;gap:30px;padding:18px 0;flex-wrap:wrap}.keyboardGuide b{font-size:10px;color:#b8d6a0}.keyCluster{display:grid;grid-template-columns:repeat(3,minmax(45px,1fr));gap:7px;margin-top:10px}.keyCluster>span{display:flex;flex-direction:column;align-items:center;gap:5px}.keyCluster kbd{min-width:42px;padding:10px 7px;border:1px solid #748b60;border-bottom-width:3px;border-radius:5px;background:#1a2a1e;color:#e4f3cd;text-align:center;font:700 13px monospace}.keyCluster small{font-size:8px;color:#b7c5ad}.keyCluster .spaceKey{grid-column:1/-1}.spaceKey kbd{width:100%}.keyboardGuide i{visibility:hidden}

@@ -4,6 +4,26 @@ This is the **first two-character, two-stage development slice**, not the full e
 
 ## Simulation contract
 
+### Browser controls
+
+The default keyboard layout keeps movement under the left hand and fighting under the right:
+
+| Keys | Actions |
+| --- | --- |
+| A / D | Move left / right |
+| W / S | Jump / crouch |
+| J / K / L | Punch / kick / special |
+| U / I / O | Dash / grab / super |
+| Space | Block |
+
+Arrow keys also work for movement. Settings and Move List show the current bindings; Settings supports remapping and resetting the layout. Existing untouched legacy defaults migrate automatically, while custom mappings are preserved. Touch buttons use the same action names. Internal simulation identifiers remain light/heavy/guard/throw for punch/kick/block/grab.
+
+Touch input releases are observed at the window as well as the control. A normal lift releases only that finger; cancellation, lost capture, page exit, focus loss and viewport changes clear held controls. Moon buttons support sliding between directions and release when dragged outside. A missing controller clears its last polled input. Keyboard releases track physical keys even if modifiers or focus change before keyup.
+
+Run `npm run test:controls:browser` against `ARCADE_TEST_URL` to check release recovery, Moon sliding, controller disappearance, the keyboard layout and saved mappings. `npm run test:touch:browser` checks real multi-touch gameplay, auto-gas and mobile layouts.
+
+### Deterministic simulation
+
 `lib/arcade/rumble-sim.mjs` is a pure, renderer-independent 60 Hz simulation. `createFight({characters: ['max', 'diamond'], stage: 'dead-mall'})` creates the match; `stepFight(state, [mask0, mask1])` returns a new serializable state. All positions, movement, attack clocks, armor consumption, held inputs, buffer state, throw windows, meter, stun, round clocks and environmental phases are serialized. Coordinates use a 1,000-unit-wide arena and **height above the floor** for `y`. Position/velocity integration is quantized to 0.001 units. No random source, wall clock, DOM or animation callback participates in outcomes.
 
 The authoritative match has a 90-frame introduction, 3,600-frame rounds, 120-frame round aftermath, 1,000 health and 0–1,000 meter. First to two round wins takes the match. A timeout awards the round to higher remaining health. Equal health or simultaneous knockout draws the round. Draws do not award a win; five rounds is the absolute cap, at which point higher round wins decides, or the match is explicitly a draw. Meter carries across rounds; health resets. Impact freeze does not stop the 60-second clock. Finished-state ticks continue advancing to close the rollback deadline.

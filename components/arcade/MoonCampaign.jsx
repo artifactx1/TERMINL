@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {useEffect,useRef,useState} from 'react';
 import {CAMPAIGN_KEY,CAMPAIGN_WORLDS,campaignWorld,newCampaignLevel,stepCampaign,readCampaign,clearCampaignLevel,LEFT,RIGHT,JUMP} from '../../lib/moon-campaign.mjs';
 import {drawCampaign} from '../../lib/moon-campaign-draw.js';
+import {watchPointerRelease} from '../../lib/arcade/pointer-release.mjs';
 import s from '../../styles/MoonCampaign.module.css';
 
 export default function MoonCampaign(){
@@ -39,8 +40,9 @@ function Mission({run,onLeave,onRetry,onNext,onCheckpoint,onFinish,storageError}
   const [phase,setPhase]=useState('ready'),[view,setView]=useState(game.current),[sound,setSound]=useState(true);
   const phaseRef=useRef(phase),callbacks=useRef({onCheckpoint,onFinish}),soundRef=useRef(sound),audio=useRef(null),finished=useRef(false),lastCheckpoint=useRef(game.current.checkpointIndex);
   phaseRef.current=phase;callbacks.current={onCheckpoint,onFinish};soundRef.current=sound;
-  const keys=useRef(new Set()),pointers=useRef(new Map());
-  const clear=()=>{keys.current.clear();pointers.current.clear();game.current={...game.current,input:0};};
+  const keys=useRef(new Set()),pointers=useRef(new Map()),captures=useRef(new Map());
+  const clear=()=>{keys.current.clear();pointers.current.clear();game.current={...game.current,input:0};for(const[id,el]of captures.current){if(el.hasPointerCapture?.(id))el.releasePointerCapture(id);}captures.current.clear();};
+  const release=e=>{pointers.current.delete(e.pointerId);captures.current.delete(e.pointerId);};
   const pause=()=>{clear();setPhase('paused');};
   const paint=()=>{const c=canvas.current?.getContext('2d');if(c){c.setTransform(dimensions.current.scale,0,0,dimensions.current.scale,0,0);drawCampaign(c,game.current,dimensions.current.width);}};
   const paintRef=useRef(paint);paintRef.current=paint;
@@ -50,10 +52,12 @@ function Mission({run,onLeave,onRetry,onNext,onCheckpoint,onFinish,storageError}
     const resize=()=>{if(disposed||!element.isConnected)return;const r=element.getBoundingClientRect();if(!r.width||!r.height)return;el.width=Math.round(r.width*Math.min(2,devicePixelRatio||1));el.height=Math.round(r.height*Math.min(2,devicePixelRatio||1));dimensions.current={width:r.width/r.height*540,scale:el.height/540};paintRef.current();};
     const observer=new ResizeObserver(resize);observer.observe(element);resize();
     const map={ArrowLeft:LEFT,KeyA:LEFT,ArrowRight:RIGHT,KeyD:RIGHT,Space:JUMP,ArrowUp:JUMP,KeyW:JUMP};
-    const key=e=>{if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(e.code==='Escape'&&e.type==='keydown'&&phaseRef.current==='running'){clear();setPhase('paused');return;}if(!map[e.code]||phaseRef.current!=='running')return;e.preventDefault();if(e.type==='keydown')keys.current.add(e.code);else keys.current.delete(e.code);};
+    const key=e=>{if(e.type==='keyup'){keys.current.delete(e.code);return;}if(e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(e.code==='Escape'&&phaseRef.current==='running'){clear();setPhase('paused');return;}if(!map[e.code]||phaseRef.current!=='running')return;e.preventDefault();keys.current.add(e.code);};
     const blur=()=>{clear();if(phaseRef.current==='running')setPhase('paused');};const hidden=()=>{if(document.hidden)blur();};
     window.addEventListener('keydown',key);window.addEventListener('keyup',key);window.addEventListener('blur',blur);document.addEventListener('visibilitychange',hidden);
-    return()=>{disposed=true;observer.disconnect();document.body.style.overflow=old;window.removeEventListener('keydown',key);window.removeEventListener('keyup',key);window.removeEventListener('blur',blur);document.removeEventListener('visibilitychange',hidden);audio.current?.close().catch(()=>{});};
+    const unwatch=watchPointerRelease({release,clear,hasPointers:()=>pointers.current.size>0});
+    window.addEventListener('resize',clear);window.addEventListener('gamepaddisconnected',blur);
+    return()=>{disposed=true;unwatch();clear();observer.disconnect();document.body.style.overflow=old;window.removeEventListener('keydown',key);window.removeEventListener('keyup',key);window.removeEventListener('blur',blur);window.removeEventListener('resize',clear);window.removeEventListener('gamepaddisconnected',blur);document.removeEventListener('visibilitychange',hidden);audio.current?.close().catch(()=>{});};
   },[]);
   useEffect(()=>{
     if(phase!=='running'){paintRef.current();return;}
@@ -77,7 +81,7 @@ function Mission({run,onLeave,onRetry,onNext,onCheckpoint,onFinish,storageError}
       raf=requestAnimationFrame(tick);
     };raf=requestAnimationFrame(tick);return()=>cancelAnimationFrame(raf);
   },[phase]);
-  const control=mask=>({onPointerDown:e=>{e.preventDefault();if(phase!=='running')return;e.currentTarget.setPointerCapture(e.pointerId);pointers.current.set(e.pointerId,mask);},onPointerUp:e=>pointers.current.delete(e.pointerId),onPointerCancel:e=>pointers.current.delete(e.pointerId),onLostPointerCapture:e=>pointers.current.delete(e.pointerId)});
+  const control=mask=>({'data-moon-control':mask,onContextMenu:e=>e.preventDefault(),onPointerDown:e=>{e.preventDefault();if(phase!=='running'||e.pointerType==='mouse'&&e.button!==0)return;try{e.currentTarget.setPointerCapture(e.pointerId);captures.current.set(e.pointerId,e.currentTarget);}catch{}pointers.current.set(e.pointerId,mask);},onPointerMove:e=>{if(!pointers.current.has(e.pointerId))return;const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-moon-control]');pointers.current.set(e.pointerId,target&&!target.disabled?Number(target.dataset.moonControl):0);},onPointerUp:release,onPointerCancel:release,onLostPointerCapture:release});
   const final=world.level===9&&view.won;
   return <section className={s.game} aria-label='Moon Mission campaign'>
     <header className={s.gameHeader}><button onClick={onLeave}>← LEVELS</button><div>MOON MISSION <span>{String(world.level+1).padStart(2,'0')} / 10 · {world.name}</span></div><div><button aria-label={sound?'Mute sound':'Enable sound'} onClick={()=>setSound(!sound)}>{sound?'SOUND ON':'SOUND OFF'}</button><button disabled={phase==='ready'||phase==='complete'} onClick={()=>phase==='paused'?setPhase('running'):pause()}>{phase==='paused'?'RESUME':'PAUSE'}</button></div></header>

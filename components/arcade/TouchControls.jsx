@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { directionMask, touchMask, raceSteeringTarget } from '../../lib/arcade/touch-input.mjs';
+import { watchPointerRelease } from '../../lib/arcade/pointer-release.mjs';
+import { FIGHT_ACTIONS } from '../../lib/arcade/rumble-controls.mjs';
 import s from '../../styles/TouchControls.module.css';
 
 const RACE_ACTIONS = [[8, 'BRAKE / REV', 'brake'], [4, 'GAS', 'gas'], [16, 'DRIFT', 'drift'], [32, 'BOOST', 'boost']];
-const FIGHT_ACTIONS = [[16, 'LIGHT', 'light'], [32, 'HEAVY', 'heavy'], [64, 'SPECIAL', 'special'], [128, 'GUARD', 'guard'], [256, 'DASH', 'dash'], [512, 'THROW', 'throw'], [1024, 'SUPER', 'super']];
 
 export default function TouchControls({ racing = false, onChange, onSteer, disabled = false, resetKey = 0, meter = 0, feedback = '' }) {
   const sources = useRef(new Map()), padPointer = useRef(null), engaged = useRef(false);
+  const captures = useRef(new Map());
   const callback = useRef(onChange); callback.current = onChange;
   const steeringCallback = useRef(onSteer); steeringCallback.current = onSteer;
   const options = useRef({});
@@ -21,6 +23,8 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
   }
   function clear() {
     sources.current.clear(); padPointer.current = null; engaged.current = false;
+    for(const [id,element] of captures.current){if(element.hasPointerCapture?.(id))element.releasePointerCapture(id);}
+    captures.current.clear();
     steeringCallback.current?.(0,false);
     setStick({ x: 0, y: 0 }); setMask(0); callback.current(0);
   }
@@ -31,9 +35,11 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
     const hidden = () => { if (document.hidden) clear(); };
     window.addEventListener('blur', clear); window.addEventListener('resize', clear);
     document.addEventListener('visibilitychange', hidden);
+    const unwatch=watchPointerRelease({release,clear,hasPointers:()=>[...sources.current.keys()].some(id=>typeof id==='number')});
     try { const saved = localStorage.getItem('terminl:race-auto-gas'); if (saved !== null) setAutoGas(saved === 'true'); } catch {}
     return () => {
       query.removeEventListener('change', change); window.removeEventListener('blur', clear);
+      unwatch();
       window.removeEventListener('resize', clear); document.removeEventListener('visibilitychange', hidden);
       steeringCallback.current?.(0,false); callback.current(0);
     };
@@ -46,12 +52,15 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
 
   function press(e, bit) {
     if (options.current.disabled || !options.current.available || (e.pointerType === 'mouse' && e.button !== 0)) return;
-    e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    // Window-level release handling remains available if capture is rejected.
+    try{e.currentTarget.setPointerCapture(e.pointerId);captures.current.set(e.pointerId,e.currentTarget);}catch{}
     sources.current.set(e.pointerId, bit); engaged.current = true; emit();
   }
   function release(e) {
     if (!sources.current.has(e.pointerId)) return;
     sources.current.delete(e.pointerId);
+    captures.current.delete(e.pointerId);
     if (padPointer.current === e.pointerId) { padPointer.current = null; steeringCallback.current?.(0,false); setStick({ x: 0, y: 0 }); }
     // OS interruption must stop auto-gas too. Normal finger lift keeps cruise enabled.
     if (e.type === 'pointercancel' || e.type === 'lostpointercapture') { clear(); return; }
@@ -79,7 +88,7 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
   const action = ([bit, label, tone]) => <button type="button" key={bit} className={`${s.action} ${s[tone] || ''}`}
     aria-label={label} aria-pressed={!!(mask & bit)} disabled={disabled}
     onPointerDown={e => press(e, bit)} {...releases} onKeyDown={e => key(e, bit)} onKeyUp={e => key(e, bit)}
-    onBlur={() => { if (sources.current.delete(`key:${bit}`)) emit(); }}>{label}<small>{!racing && bit===1024 ? meter>=1000?'READY':`${Math.floor(meter/10)}% / 100%` : !racing && bit===64 ? mask&8?'UPPERCUT':mask&3?'DIRECTIONAL':'↓ UPPERCUT' : !racing && bit===32 && mask&8?'LOW SWEEP' : racing && bit===32?'BOOST + GAS':''}</small></button>;
+    onBlur={() => { if (sources.current.delete(`key:${bit}`)) emit(); }}>{label}<small>{!racing && bit===1024 ? meter>=1000?'READY':`${Math.floor(meter/10)}% / 100%` : !racing && bit===64 ? mask&8?'RISING ATTACK':mask&3?'MOVING SPECIAL':'↓ RISING ATTACK' : !racing && bit===32 && mask&8?'LOW SWEEP' : racing && bit===32?'BOOST + GAS':''}</small></button>;
 
   return <section className={`${s.dock} ${racing ? s.racing : s.fighting}`} aria-label={racing ? 'Touch driving controls' : 'Touch fighting controls'}
     data-input={mask} onContextMenu={e => e.preventDefault()}>
@@ -100,6 +109,6 @@ export default function TouchControls({ racing = false, onChange, onSteer, disab
       </div>
       <div className={s.actions}>{(racing ? RACE_ACTIONS : FIGHT_ACTIONS).map(action)}</div>
     </div>
-    <p className={s.hint}>{feedback || (racing ? autoGas ? 'Touch the pad to launch. Brake overrides auto-gas; hold to reverse.' : 'Hold GAS + steer. BOOST includes gas. Hold BRAKE to reverse.' : '↓ + SPECIAL uppercuts. Toward rival + SPECIAL lunges. SUPER needs 100%.')}</p>
+    <p className={s.hint}>{feedback || (racing ? autoGas ? 'Touch the pad to launch. Brake overrides auto-gas; hold to reverse.' : 'Hold GAS + steer. BOOST includes gas. Hold BRAKE to reverse.' : '↓ + SPECIAL rises. Toward rival + SPECIAL lunges. SUPER needs 100%.')}</p>
   </section>;
 }

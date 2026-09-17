@@ -53,7 +53,7 @@ try{
         else if(me.meter>=1000)input=s.tick%20<10?1024:0;
         else {const phase=s.tick%110;input=phase<12?32:phase>=42&&phase<52?512:phase>=75&&phase<85?72:0;}
       }
-      for(const [bit,key]of [[1,'ArrowLeft'],[2,'ArrowRight'],[4,'ArrowUp'],[8,'ArrowDown'],[16,'j'],[32,'k'],[64,'l'],[128,'Shift'],[256,'q'],[512,'e'],[1024,'r']])if((previous&bit)!==(input&bit))window.dispatchEvent(new KeyboardEvent(input&bit?'keydown':'keyup',{key,bubbles:true}));
+      for(const [bit,key]of [[1,'ArrowLeft'],[2,'ArrowRight'],[4,'ArrowUp'],[8,'ArrowDown'],[16,'j'],[32,'k'],[64,'l'],[128,' '],[256,'u'],[512,'i'],[1024,'o']])if((previous&bit)!==(input&bit))window.dispatchEvent(new KeyboardEvent(input&bit?'keydown':'keyup',{key,bubbles:true}));
       previous=input;if(window.__result){clearInterval(window.__pilot);}
     },16);
   },{slot});
