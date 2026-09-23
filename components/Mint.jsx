@@ -785,10 +785,9 @@ export default function Mint() {
   const cap = active.capPerWallet;
   const total = active.price * BigInt(quantity);
 
-  /* A stage's counters are the stage's. Its "minted" is the drop's, though —
-   * the watermark it is bounded by is measured over everything ever minted, so
-   * the public phase's tally would understate what is gone. */
-  const shownMinted = onStage ? (facts?.minted ?? 0n) : drop.minted;
+  /* Both collection displays use the same total across every mint phase.
+   * The public condition's tally excludes allowlist and reserve mints. */
+  const shownMinted = progress?.minted ?? facts.minted;
 
   const cta = {
     checking: "CHECKING…",

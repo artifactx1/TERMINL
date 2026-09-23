@@ -14,6 +14,8 @@ try {
     { name: 'GTD partly minted', cap: 50, claimed: 20, expected: 30 },
     { name: 'FCFS mobile', cap: 250, claimed: 0, expected: 250, mobile: true },
     { name: 'Public', cap: 250, claimed: 0, expected: 250, public: true },
+    { name: 'Public after allowlist mints', cap: 10000, claimed: 1250,
+      minted: 1850, publicClaimed: 1250, expected: 8150, public: true, refreshTotals: true },
   ]) {
     const context = await browser.newContext({ viewport: scenario.mobile
       ? { width: 390, height: 844 } : { width: 1280, height: 900 } });
@@ -45,15 +47,17 @@ try {
     }, { wallet });
 
     const now = Math.floor(Date.now() / 1000);
+    let totalMinted = scenario.minted ?? scenario.claimed;
+    let publicClaimed = scenario.publicClaimed ?? (scenario.public ? scenario.claimed : 0);
     const params = { pricePerToken: '0', currency,
       maxMintableByWallet: String(scenario.cap), maxSupplyForStage: '550',
       startTime: String(now - 60), endTime: String(now + 3600), stageIndex: 1 };
     const stage = { stageIndex: 1, name: scenario.name, kind: 'gtd', params, proof: [] };
     await page.route('**/api/drop', route => route.fulfill({ json: {
       condition: { startsAt: String(scenario.public ? now - 60 : now + 7200),
-        maxClaimable: '10000', claimed: String(scenario.public ? scenario.claimed : 0),
+        maxClaimable: '10000', claimed: String(publicClaimed),
         perWallet: String(scenario.cap), price: '0', currency },
-      endsAt: '0', minted: String(scenario.claimed), lazySupply: '10000', chainNow: String(now),
+      endsAt: '0', minted: String(totalMinted), lazySupply: '10000', chainNow: String(now),
     } }));
     await page.route('**/api/phases', route => route.fulfill({ json: {
       published: !scenario.public, stages: scenario.public ? [] : [{ ...params, name: scenario.name }],
@@ -86,6 +90,11 @@ try {
     // Reown presents the injected test wallet; the no-project-ID fallback connects directly.
     if (!await max.isVisible()) await page.getByText('TERMINL Test Wallet', { exact: true }).last().click();
     await max.waitFor({ state: 'visible' });
+
+    const mintedCount = page.getByText('MINTED', { exact: true }).locator('..').locator('b');
+    const progress = page.getByRole('progressbar');
+    assert.equal(await mintedCount.innerText(), String(totalMinted));
+    assert.ok((await progress.innerText()).includes(`${totalMinted} / 10000`), 'Mint counter and progress must use the same collection total');
 
     const input = page.getByRole('textbox', { name: 'Mint quantity', exact: true }).first();
     await input.fill('17');
@@ -127,6 +136,18 @@ try {
     await page.getByRole('button', { name: 'MINT 23 — FREE', exact: true }).last().waitFor();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Quantity controls must not overflow the viewport');
     if (scenario.mobile) await page.screenshot({ path: '/private/tmp/terminl-quantity-mobile.png' });
+
+    if (scenario.refreshTotals) {
+      // A mint on another site updates both displays when this tab is revisited.
+      totalMinted += 50;
+      publicClaimed += 50;
+      await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await mintedCount.filter({ hasText: /^1900$/ }).waitFor({ state: 'attached' });
+      assert.ok((await progress.innerText()).includes('1900 / 10000'));
+      const leftCount = page.getByText('LEFT', { exact: true }).locator('..').locator('b');
+      assert.equal(await leftCount.innerText(), '8100');
+      console.log('PASS external mint refresh: 1900 minted in both displays, 8100 left');
+    }
     assert.deepEqual(errors, []);
     console.log(`PASS ${scenario.name}: typed quantity, validation, sticky sync, and MAX ${scenario.expected}`);
     await context.close();
