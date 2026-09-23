@@ -10,8 +10,9 @@ import {
 import { openWallet, walletDeepLink } from "../lib/wallet/open";
 import { fetchPhases, windowStatus } from "../lib/phases";
 import {
-  describeStage, fetchAllowlist, ineligibleNote, liveStage, maxForStage, nextStage,
+  describeStage, fetchAllowlist, ineligibleNote, liveStage, nextStage,
 } from "../lib/allowlist";
+import { maxMintQuantity } from "../lib/mint-quantity.mjs";
 import Phases, { Progress } from "./Phases";
 
 /*
@@ -44,10 +45,6 @@ import Phases, { Progress } from "./Phases";
  * picker ArtifactX uses (lib/wallet). The reads stay on plain eth_call and the
  * claim stays hand-encoded — wagmi only carries the connection and the send.
  */
-
-/* How many the picker will offer at once when the phase sets no per-wallet cap.
- * Not a rule — just a sane ceiling for one signature. */
-const BATCH_CAP = 20;
 
 /* Live counts move underneath the page: someone else takes the last one, the
  * phase opens, the clock runs out. Re-read on a slow loop so the panel is never
@@ -250,14 +247,7 @@ export default function Mint() {
   /* How many this wallet may still take in one go — against whichever terms
    * are live, since a stage's cap and the public phase's are separate counters
    * and only one of them is being spent. */
-  const max = useMemo(() => {
-    if (stage?.open) return maxForStage(stage, BATCH_CAP);
-    if (!drop) return 1;
-    const left = drop.capPerWallet === null
-      ? BATCH_CAP
-      : Number(drop.capPerWallet > claimed ? drop.capPerWallet - claimed : 0n);
-    return Math.max(1, Math.min(left, Number(drop.remaining), BATCH_CAP));
-  }, [stage, drop, claimed]);
+  const max = useMemo(() => maxMintQuantity(active), [active]);
 
   /* Supply drains and caps fill while the page is open. Without this the picker
    * keeps a number the contract will now reject. */

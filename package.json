@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start -p 4000",
     "lint": "next lint",
+    "test:mint": "node --test scripts/mint-quantity.test.mjs",
+    "test:mint:browser": "node scripts/mint-quantity-browser.mjs",
     "test:os": "node --test scripts/terminl-game.test.mjs scripts/moon-mission.test.mjs scripts/moon-campaign.test.mjs",
     "test:rug-or-bond": "node --test scripts/rug-or-bond.test.mjs",
     "test:rug-or-bond:browser": "node scripts/rug-or-bond-browser.mjs",
