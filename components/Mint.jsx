@@ -66,7 +66,12 @@ export default function Mint() {
 
   const [facts, setFacts] = useState(null);
   const [claimed, setClaimed] = useState(0n);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantityValue] = useState(1);
+  const [quantityDraft, setQuantityDraft] = useState(null);
+  const setQuantity = useCallback((value) => {
+    setQuantityValue(value);
+    setQuantityDraft(null);
+  }, []);
   const [phase, setPhase] = useState("idle");
   const [error, setError] = useState(null);
   const [txHash, setTxHash] = useState(null);
@@ -253,7 +258,33 @@ export default function Mint() {
    * keeps a number the contract will now reject. */
   useEffect(() => {
     setQuantity((q) => Math.min(Math.max(1, q), max));
-  }, [max]);
+  }, [max, setQuantity]);
+
+  const quantityInputProps = {
+    type: "text",
+    inputMode: "numeric",
+    pattern: "[0-9]*",
+    "aria-label": "Mint quantity",
+    title: `Quantity: 1 to ${max}`,
+    value: quantityDraft ?? String(quantity),
+    disabled: busy,
+    onFocus: (event) => event.currentTarget.select(),
+    onChange: (event) => {
+      const value = event.target.value;
+      if (!/^\d*$/.test(value)) return;
+      // Allow clearing the field while replacing its contents. The transaction
+      // quantity stays valid, and blur restores the minimum if left empty.
+      setQuantityValue(Math.min(max, Math.max(1, Number(value))));
+      setQuantityDraft(value === "" ? "" : null);
+    },
+    onBlur: () => setQuantityDraft(null),
+    onKeyDown: (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        event.currentTarget.blur();
+      }
+    },
+  };
 
   /* Opens the AppKit picker. The connected account then arrives through
    * useAccount — nothing here waits on it. */
@@ -799,7 +830,7 @@ export default function Mint() {
           <>
             <div className={styles.qty}>
               <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
-              <b>{quantity}</b>
+              <input {...quantityInputProps} />
               <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
               {/* Stepping to a per-wallet cap of fifty one press at a time is
                   not a thing anyone should be asked to do. Hidden when the cap
@@ -926,7 +957,7 @@ export default function Mint() {
             {account && !wrongChain && !(cap && active.claimed >= cap) && max > 1 && (
               <div className={styles.barQty}>
                 <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
-                <b>{quantity}</b>
+                <input {...quantityInputProps} />
                 <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
                 <button type="button" className={styles.barMax} onClick={() => setQuantity(max)} disabled={busy || quantity >= max} aria-label={`Mint the maximum, ${max}`}>
                   MAX

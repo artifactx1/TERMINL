@@ -86,12 +86,49 @@ try {
     // Reown presents the injected test wallet; the no-project-ID fallback connects directly.
     if (!await max.isVisible()) await page.getByText('TERMINL Test Wallet', { exact: true }).last().click();
     await max.waitFor({ state: 'visible' });
+
+    const input = page.getByRole('textbox', { name: 'Mint quantity', exact: true }).first();
+    await input.fill('17');
+    await page.getByRole('button', { name: 'MINT 17 — FREE', exact: true }).first().waitFor();
+    for (let i = 0; i < 50 && !simulated.includes(17); i++) await page.waitForTimeout(100);
+    assert.ok(simulated.includes(17), 'Typed quantity must reach the preflight calldata');
+    for (const invalid of ['1.5', '-2', 'abc']) {
+      await input.fill(invalid);
+      assert.equal(await input.inputValue(), '17', 'Only whole positive quantities are accepted');
+    }
+    await input.fill('999999999999999999999');
+    assert.equal(await input.inputValue(), String(scenario.expected), 'Typed quantities respect the remaining limit');
+    await input.fill('0');
+    assert.equal(await input.inputValue(), '1');
+    await input.fill('');
+    assert.equal(await input.inputValue(), '', 'The field can be cleared to replace its contents');
+    await input.pressSequentially('27');
+    assert.equal(await input.inputValue(), '27');
+    await input.press('Enter');
+    await page.getByRole('button', { name: 'One more', exact: true }).first().click();
+    assert.equal(await input.inputValue(), '28');
+    await page.getByRole('button', { name: 'One fewer', exact: true }).first().click();
+    assert.equal(await input.inputValue(), '27');
+    await input.fill('');
+    await input.press('Tab');
+    assert.equal(await input.inputValue(), '1', 'An unfinished empty edit resets to one');
+
     await max.click();
     await page.getByRole('button', { name: `MINT ${scenario.expected} — FREE`, exact: true }).first().waitFor();
     for (let i = 0; i < 50 && !simulated.includes(scenario.expected); i++) await page.waitForTimeout(100);
     assert.ok(simulated.includes(scenario.expected), `Preflight must encode quantity ${scenario.expected}`);
+
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const stickyInput = page.getByRole('textbox', { name: 'Mint quantity', exact: true }).nth(1);
+    await stickyInput.waitFor({ state: 'visible' });
+    await stickyInput.fill('23');
+    assert.equal(await input.inputValue(), '23', 'The sticky bar and main input share the same quantity');
+    assert.equal(await stickyInput.inputValue(), '23');
+    await page.getByRole('button', { name: 'MINT 23 — FREE', exact: true }).last().waitFor();
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Quantity controls must not overflow the viewport');
+    if (scenario.mobile) await page.screenshot({ path: '/private/tmp/terminl-quantity-mobile.png' });
     assert.deepEqual(errors, []);
-    console.log(`PASS ${scenario.name}: MAX selects and simulates ${scenario.expected}`);
+    console.log(`PASS ${scenario.name}: typed quantity, validation, sticky sync, and MAX ${scenario.expected}`);
     await context.close();
   }
 } finally {

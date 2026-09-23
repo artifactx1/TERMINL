@@ -510,12 +510,16 @@
 .barInner { max-width: 1400px; margin: 0 auto; display: flex; align-items: center;
   justify-content: space-between; gap: 18px; }
 .barRow { display: grid; grid-auto-flow: column; align-items: center; gap: 8px; }
-.barQty { display: grid; grid-template-columns: 34px 30px 34px auto; align-items: center;
+.barQty { display: grid; grid-template-columns: 34px 56px 34px auto; align-items: center;
   border: 1px solid var(--line); background: var(--panel); }
 .barQty button { padding: 11px 0; border: 0; background: none; color: var(--ink, #edf7ee);
   font: 700 13px/1 ui-monospace, monospace; cursor: pointer; }
 .barQty button:disabled { opacity: .35; cursor: default; }
-.barQty b { text-align: center; font: 700 12px/1 ui-monospace, monospace; color: #fff; }
+.barQty input, .qty input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 4px;
+  border: 1px solid transparent; border-radius: 0; background: rgba(255,255,255,.035);
+  text-align: center; font: 700 16px/1 ui-monospace, monospace; color: #fff; }
+.barQty input:focus-visible, .qty input:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.barQty input:disabled, .qty input:disabled { opacity: .35; cursor: default; }
 .barMax { border-left: 1px solid var(--line) !important; padding: 11px 10px !important;
   color: var(--accent) !important; font: 800 8.5px/1 ui-monospace, monospace !important;
   letter-spacing: .12em; }
@@ -567,7 +571,6 @@
   color: var(--ink); font: 700 15px/1 ui-monospace, monospace; transition: color .15s; }
 .qty button:hover:not(:disabled) { color: var(--accent); }
 .qty button:disabled { color: #39443d; cursor: default; }
-.qty b { text-align: center; font-size: 14px; color: #fff; }
 
 .mintOk { display: block; padding: 11px; text-align: center; text-decoration: none;
   border: 1px solid #2f5c28; background: rgba(125,255,92,.07); color: var(--accent);
