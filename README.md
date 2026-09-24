@@ -152,10 +152,11 @@ pasting the link into a Discord DM to yourself.
 
 ## Deploying
 
-The committed `.env.production` configures the mainnet test contract
-`0x0ccb402fD57b9302A3C4Cd6DE4f34771A47d03ab` on Robinhood Chain (`4663`).
+The committed `.env.production` configures the official mainnet contract
+`0xc9A4088fD8D2A3327BE33b28646d789549f0188A` on Robinhood Chain (`4663`)
+and the mainnet ArtifactX allowlist backend.
 Hosting environment variables override these defaults; update any existing
-contract or chain overrides to match when deploying this test.
+contract, chain, RPC, or allowlist overrides to match when deploying.
 
 Import the repo on Vercel. Nothing else is required. Two optional variables:
 

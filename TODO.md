@@ -1,37 +1,38 @@
 # Before the mint
 
-Open items from the 2026-09-02 session, in the order they block launch.
+Launch configuration updated 2026-09-23. Older verification items below remain
+open unless explicitly checked.
+
+## Official contract readiness
+
+- [x] Official Robinhood mainnet contract selected:
+      `0xc9A4088fD8D2A3327BE33b28646d789549f0188A` (chain `4663`).
+- [ ] Prepare the collection's tokens/metadata on the contract (`lazyMint`).
+      The launch check returned zero lazy-minted supply and zero minted tokens.
+- [ ] Configure and sign the intended public mint condition and/or allowlist
+      stages. The launch check returned an unset public condition and no
+      published allowlist stages. Updating the website address does not open
+      minting by itself.
 
 ## Vercel environment
 
-- [x] `NEXT_PUBLIC_TERMINL_CONTRACT` — set on Production and Preview
-      (2026-09-02) to the TESTNET contract
-      `0x417EeE67E4A9B34D9b310273C82F075492a1F32E`, with
-      `NEXT_PUBLIC_CHAIN_ID=46630` on both. It is an ArtifactXERC721Drop with
-      no phase configured and no allowlist root published yet, so the panel
-      reads "MINT NOT OPEN YET" until `setDropConditions` is called.
-- [ ] Swap both to the MAINNET contract and `NEXT_PUBLIC_CHAIN_ID=4663` once
-      it is deployed. Production currently mints testnet.
-- [ ] `ALLOWLIST_API_URL` — `https://artifactxserver-production.up.railway.app`,
-      the MAINNET ArtifactX backend, server-side only, so the schedule can list
-      allowlist stages. Set it in the same change as the mainnet contract, not
-      before: the testnet host is built into `lib/phases.js` under chain 46630,
-      and this one holds a different database, so pointing at it while the
-      testnet contract is live returns an empty schedule. Confirmed serving
-      2026-09-03 (it 502s while the mainnet server is mid-migration).
+- [x] `NEXT_PUBLIC_TERMINL_CONTRACT` and `NEXT_PUBLIC_CHAIN_ID` — official
+      mainnet address above and `4663` on Production and Preview, with matching
+      committed production defaults and local configuration.
+- [x] `ALLOWLIST_API_URL` — `https://artifactxserver-production.up.railway.app`
+      on Production and Preview. The backend responds for the official contract;
+      stage definitions and proofs are selected by contract address.
 - [x] `NEXT_PUBLIC_REOWN_PROJECT_ID` — set on Production and Preview
       (2026-09-03) to the ArtifactX project id from ELEMENT/.env.testnet.
 - [ ] Add `https://terminl.net` (and the Vercel preview domain while testing)
       to that Reown project's allowed domains at cloud.reown.com — a dashboard
       step, no CLI. Without it WalletConnect shows a verification warning in
       the wallet; connections still work.
-- [x] `RPC_URL` — set on Production and Preview (2026-09-03) to the Alchemy
-      **testnet** host with the key from artifactx-testnet-railway.env (the
-      one in ElementServer/.env does not answer on Alchemy). Server-side only.
-- [ ] At the mainnet swap, change Production's `RPC_URL` to
-      `https://robinhood-mainnet.g.alchemy.com/v2/<key>` in the same step as
-      the contract and chain id — a testnet RPC with a mainnet chain id reads
-      as "READING THE CHAIN…" forever.
+- [x] `RPC_URL` — `https://rpc.mainnet.chain.robinhood.com` on Production and
+      Preview. Production was already serving successful reads through this
+      public fallback; the mainnet endpoint is now explicit.
+- [ ] Optional: provision and verify a keyed mainnet RPC before replacing the
+      public endpoint. Never pair a testnet RPC with the mainnet contract.
 - [x] `NEXT_PUBLIC_SITE_URL` — `https://terminl.net` on Production
       (2026-09-03), for `og:url`, `canonical` and the WalletConnect metadata.
 
