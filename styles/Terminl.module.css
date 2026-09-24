@@ -1,16 +1,16 @@
 .shell {
-  --ink: #edf7ee; --muted: #78857d; --dim: #9aa89f; --line: #1c231e;
-  --accent: #7dff5c; --amber: #ffc65c; --red: #ff6a5e;
-  --panel: #0a0e0c;
-  min-height: 100vh; background: #060907; color: var(--ink);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --ink: var(--terminl-ink); --muted: var(--terminl-muted); --dim: var(--terminl-dim); --line: var(--terminl-line);
+  --accent: var(--terminl-accent); --amber: var(--terminl-amber); --red: var(--terminl-red);
+  --panel: var(--terminl-panel);
+  min-height: 100vh; background: var(--terminl-bg); color: var(--ink);
+  font-family:var(--terminl-font);
   overflow-x: hidden;
 }
 .down { padding: 60px; color: var(--red); }
 
 /* Faint enough to read as CRT glass rather than as a filter over the art. */
 .scanlines { position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: .35;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,.3) 0 1px, transparent 1px 3px); }
+  background: var(--terminl-scanlines); }
 
 .nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between;
   padding: 13px 28px; border-bottom: 1px solid var(--line); background: rgba(6,9,7,.97); }
@@ -92,7 +92,7 @@
 .upNext img { width: 100%; height: 100%; object-fit: cover; }
 
 .readout { border-left: 1px solid var(--line); padding: 34px 30px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-.headline { margin: 0; font-size: clamp(34px, 3.6vw, 52px); line-height: .94; letter-spacing: -.04em; color: #fff; }
+.headline { margin: 0; font-size: var(--terminl-heading); line-height: .94; letter-spacing: -.04em; color: #fff; }
 .blurb { margin: 0; color: var(--dim); font-size: 12.5px; line-height: 1.8; }
 
 .score { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }

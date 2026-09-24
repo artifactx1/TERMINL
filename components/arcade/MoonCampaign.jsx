@@ -15,7 +15,7 @@ export default function MoonCampaign(){
     onCheckpoint={checkpoint=>persist({...saved.current,current:run.level,checkpoint})} onFinish={state=>{if(state.won)persist(clearCampaignLevel(saved.current,state));}} storageError={storageError}/>;
   const allClear=save.completed.length===10;
   return <main className={s.menu}>
-    <header className={s.header}><Link href='/os'>← TERMINL ARCADE</Link><span>SOLO CAMPAIGN / 10 LEVELS</span></header>
+    <header className={s.header}><Link href='/os'><b>TERMINL</b><span>ARCADE</span></Link><span>SOLO CAMPAIGN / 10 LEVELS</span></header>
     <section className={s.hero}><div><span className={s.eyebrow}>ONE SMALL STEP. TEN VERY BIG PROBLEMS.</span><h1>MOON<br/><em>MISSION</em></h1><p>Take your terminal from the city to the moon. Clear spike beds, dodge saws and cannon fire, and beat the Warden waiting at the end.</p>
       <button className={s.primary} disabled={!ready} onClick={()=>start(save.current,save.checkpoint)}>{allClear?'PLAY AGAIN':save.completed.length||save.checkpoint>=0?'CONTINUE CAMPAIGN':'START CAMPAIGN'} →</button><small>{save.completed.length} / 10 LEVELS CLEARED · CHECKPOINTS SAVE AUTOMATICALLY</small></div><MoonPreview level={save.current}/></section>
     {storageError&&<p className={s.notice} role='status'>Browser storage is unavailable. Your progress will last for this visit.</p>}

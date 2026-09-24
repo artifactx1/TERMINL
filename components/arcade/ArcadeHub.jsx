@@ -13,7 +13,7 @@ function GameArt({game}){
   return <canvas ref={canvas} width={800} height={450} aria-label={game==='race'?'Inferno X supercar':'Moon Mission sky-island level'}/>;
 }
 export default function ArcadeHub(){return <div className={s.shell}>
-  <header className={s.header}><Link className={s.brand} href='/os'>▣ TERMINL <span>ARCADE</span></Link><nav aria-label='Arcade navigation'><a href='#games'>THE GAMES</a><Link href='/'>THE COLLECTION ↗</Link></nav></header>
+  <header className={s.header}><Link className={s.brand} href='/os'><b>TERMINL</b><span>ARCADE</span></Link><nav aria-label='Arcade navigation'><a href='#games'>THE GAMES</a><Link href='/'>THE COLLECTION ↗</Link></nav></header>
   <main>
     <section className={s.intro}><div><span className={s.eyebrow}><i/> FREE TO PLAY. READY WHEN YOU ARE.</span><h1>Good games.<br/><em>Bad decisions.</em></h1></div><p>Take the coast.<br/>{' '}Settle the score.<br/><span>One more round is always a good idea.</span></p></section>
     <section id='games' className={s.featured} aria-label='Flagship games'>

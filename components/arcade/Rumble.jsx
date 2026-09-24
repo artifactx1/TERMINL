@@ -157,7 +157,7 @@ export default function Rumble({assetLabEnabled=false}){
   const canReconnect=mode==='online'&&['disconnected','unavailable'].includes(connection)&&!!client.current?.canReconnect();
   const selectedMoves=Array.isArray(MOVES[character])?MOVES[character]:Object.values(MOVES[character]||{});
   return <div className={`${s.shell} ${mode!=="menu"?s.inGame:""}`}>
-    <header className={s.header}><Link href="/os">▣ TERMINL <span>ARCADE</span></Link><span className={s.buildTag}>REKT RUMBLE / SOLO + ONLINE</span><div>{mode!=="menu"&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{resetInput();setSettings(true);if(mode==="practice")setPaused(true);}}>SETTINGS</button><button onClick={fullscreen} aria-label="Toggle fullscreen">⛶</button></div></header>
+    <header className={s.header}><Link href="/os"><b>TERMINL</b><span>ARCADE</span></Link><span className={s.buildTag}>REKT RUMBLE / SOLO + ONLINE</span><div>{mode!=="menu"&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{resetInput();setSettings(true);if(mode==="practice")setPaused(true);}}>SETTINGS</button><button onClick={fullscreen} aria-label="Toggle fullscreen">⛶</button></div></header>
     {notice&&<div className={s.notice} role="status">{notice}<button aria-label="Dismiss notice" onClick={()=>setNotice("")}>×</button></div>}
     {mode==="menu"?<main className={s.menu}>
       <div className={s.titleRow}><div><span className={s.eyebrow}>ONE ON ONE. ALL YOUR BAD DECISIONS.</span><h1>REKT <em>RUMBLE</em><sup>01</sup></h1><p>The market took your money.<br />Take it out on someone your own size.</p></div><div className={s.rulesStamp}>{ROSTER.length} FIGHTERS<br />2 STAGES<br /><b>NO PAY TO WIN.</b></div></div>

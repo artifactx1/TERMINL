@@ -2,7 +2,7 @@ import Head from 'next/head';
 import dynamic from 'next/dynamic';
 
 const RugOrBond = dynamic(() => import('../../components/arcade/RugOrBond'), {
-  ssr: false, loading: () => <p style={{ padding: 40, color: '#d7ff72' }}>Opening the trading desk…</p>,
+  ssr: false, loading: () => <p style={{ padding: 40, color: 'var(--terminl-accent)', fontFamily: 'var(--terminl-font)' }}>Opening the trading desk…</p>,
 });
 
 export default function RugOrBondPage() {
