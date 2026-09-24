@@ -4,7 +4,7 @@ import { useAccount, useSendTransaction, useSwitchChain } from "wagmi";
 import styles from "../styles/Terminl.module.css";
 import {
   CHAIN, CONTRACT, buildAllowlistClaimTx, buildClaimTx, countdown, describeDrop, explorerTx,
-  fetchDropFacts, formatEth, isTerminal, readClaimedBy, readStageClaimedBy, readableError,
+  fetchDropFacts, formatEth, readClaimedBy, readStageClaimedBy, readableError,
   revertReason, simulateClaim, waitForReceipt,
 } from "../lib/mint";
 import { openWallet, walletDeepLink } from "../lib/wallet/open";
@@ -13,6 +13,7 @@ import {
   describeStage, fetchAllowlist, ineligibleNote, liveStage, nextStage,
 } from "../lib/allowlist";
 import { maxMintQuantity } from "../lib/mint-quantity.mjs";
+import { savePendingMint, loadPendingMint, forgetPendingMint } from "../lib/mint-pending.mjs";
 import Phases, { Progress } from "./Phases";
 
 /*
@@ -74,52 +75,80 @@ export default function Mint() {
   }, []);
   const [phase, setPhase] = useState("idle");
   const [error, setError] = useState(null);
+  const [readError, setReadError] = useState(null);
   const [txHash, setTxHash] = useState(null);
   const [mintedAt, setMintedAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
 
-  const busy = phase === "checking" || phase === "wallet" || phase === "pending";
+  const busy = phase === "checking" || phase === "wallet" || phase === "pending" || phase === "slow";
 
   /* The facts about the drop, with or without a wallet — a visitor who has not
    * connected still gets the real price and the real count. Read through
    * /api/drop, which the CDN caches for a few seconds, so a crowd costs the RPC
    * almost nothing. */
+  const refreshing = useRef(false);
   const refresh = useCallback(() => {
+    if (refreshing.current) return;
+    refreshing.current = true;
     fetchDropFacts()
-      .then((f) => { setFacts(f); setNow(Date.now()); setError(null); })
-      .catch((e) => setError(readableError(e)));
+      .then((f) => { setFacts(f); setNow(Date.now()); setReadError(null); })
+      .catch((e) => setReadError(readableError(e)))
+      .finally(() => { refreshing.current = false; });
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  /* Allowlist stage definitions, for the schedule. They change when the artist
-   * edits them — rarely, never mid-stage — so once per visit, and again when a
-   * backgrounded tab is looked at. */
+  /* Refresh schedules even before publication, and recover automatically when
+   * a tab returns or the connection comes back. Keep the last successful data. */
   const [phases, setPhases] = useState(null);
   useEffect(() => {
     let on = true;
-    const load = () => fetchPhases().then((p) => { if (on) setPhases(p); });
+    let loading = false;
+    const load = async () => {
+      if (loading || document.visibilityState === "hidden") return;
+      loading = true;
+      const p = await fetchPhases();
+      if (on && !p.failed) setPhases(p);
+      loading = false;
+    };
     load();
     const onVisible = () => { if (document.visibilityState === "visible") load(); };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { on = false; document.removeEventListener("visibilitychange", onVisible); };
+    const timer = setInterval(load, 30_000);
+    window.addEventListener("online", load);
+    return () => { on = false; clearInterval(timer); window.removeEventListener("online", load); document.removeEventListener("visibilitychange", onVisible); };
   }, []);
 
   /* Per-wallet count, re-read after a mint *confirms* — not when it is sent. */
   useEffect(() => {
-    if (!account) { setClaimed(0n); return; }
-    readClaimedBy(account).then(setClaimed).catch(() => {});
+    let on = true;
+    setClaimed(0n);
+    if (!account) return undefined;
+    readClaimedBy(account).then(v => { if (on) setClaimed(v); }).catch(() => {});
+    return () => { on = false; };
   }, [account, mintedAt]);
 
-  /* What THIS wallet may claim from the allowlist, with the proofs. Fetched
-   * once per connected wallet: stage terms are fixed by the published root, so
-   * the only thing that moves is the clock, and that is derived locally. */
+  /* Refresh this wallet's proofs too: publishing or replacing the root must
+   * reach an already-open tab without requiring a disconnect/reload. */
   const [allow, setAllow] = useState(EMPTY_ALLOWLIST);
   useEffect(() => {
     if (!account) { setAllow(EMPTY_ALLOWLIST); return undefined; }
     let on = true;
-    fetchAllowlist(account).then((a) => { if (on) setAllow(a); });
-    return () => { on = false; };
+    let loading = false;
+    setAllow(EMPTY_ALLOWLIST);
+    const load = async () => {
+      if (loading || document.visibilityState === "hidden") return;
+      loading = true;
+      const a = await fetchAllowlist(account);
+      if (on) setAllow(previous => a.failed && previous.stages.length ? previous : a);
+      loading = false;
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    load();
+    const timer = setInterval(load, 30_000);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", load);
+    return () => { on = false; clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("online", load); };
   }, [account]);
 
   /* Counted against chain time, corrected for however wrong this machine's
@@ -201,12 +230,10 @@ export default function Mint() {
    * in more than ten minutes changes nothing until then, so poll it slowly. A
    * tab nobody is looking at does not poll at all, and catches up the moment
    * it is looked at again. */
-  /* Something can still change if a public phase is configured, if this wallet
-   * holds a stage, or if the schedule shows stages at all — that last one
-   * matters for a stages-only drop seen by a visitor who has not connected,
-   * where the condition is all zeros and would otherwise read as inert. */
-  const shouldPoll = (!!drop?.configured || allow.stages.length > 0 || (phases?.stages?.length ?? 0) > 0)
-    && !(drop && isTerminal(drop));
+  /* An unconfigured drop can open later. Only a collection-wide end or an
+   * exhausted prepared supply stops polling; a spent public phase is not enough. */
+  const shouldPoll = !!CONTRACT && !drop?.ended
+    && !(facts?.lazySupply > 0n && facts.minted >= facts.lazySupply);
   const farOff = !!drop && !drop.started && Number(drop.startsAt) * 1000 - chainNow > 600_000;
   const pollMs = farOff ? POLL_MS * 3 : POLL_MS;
   useEffect(() => {
@@ -215,9 +242,11 @@ export default function Mint() {
     const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
     const id = setInterval(tick, pollMs);
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", refresh);
     return () => {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", refresh);
     };
   }, [shouldPoll, pollMs, refresh]);
 
@@ -338,7 +367,9 @@ export default function Mint() {
    * live phase and its price. Quantity is handled separately below, because a
    * verdict at one quantity says something about the others. */
   const shapeKey = canPreflight
-    ? `${active.kind}:${active.stageIndex ?? "public"}:${account}:${String(active.price)}`
+    ? `${active.kind}:${account}:${mintedAt}:${JSON.stringify(active.kind === "stage"
+      ? [active.stage.params, active.stage.proof]
+      : [String(drop.price), drop.currency, String(drop.perWallet), String(drop.startsAt), String(drop.endsAt)])}`
     : null;
 
   /* { shape, okUpTo } — the largest quantity known to pass for this shape.
@@ -406,10 +437,13 @@ export default function Mint() {
       /* The watcher below already saw this land on chain and moved on. The
        * response arriving afterwards is just late news. */
       if (run.current !== id) return;
+      if (!/^0x[0-9a-f]{64}$/i.test(hash)) throw new Error("The wallet did not return a transaction hash. Check your wallet before retrying.");
+      savePendingMint(CHAIN.id, CONTRACT, tx, hash);
       setTxHash(hash);
 
       setPhase("pending");
       const { mined, success, receipt } = await waitForReceipt(hash);
+      if (run.current !== id) return;
 
       if (!mined) {
         // Still in the mempool after three minutes. Hand them the explorer link
@@ -419,13 +453,18 @@ export default function Mint() {
       }
 
       if (!success) {
+        const reason = await revertReason(tx, receipt.blockNumber);
+        if (run.current !== id) return;
+        forgetPendingMint(CHAIN.id, CONTRACT, tx.from);
+        pending.current = null;
         setPhase("failed");
-        setError(await revertReason(tx, receipt.blockNumber) || "The transaction failed on-chain.");
+        setError(reason || "The transaction failed on-chain.");
         refresh();
         return;
       }
 
       setPhase("done");
+      forgetPendingMint(CHAIN.id, CONTRACT, tx.from);
       setMintedAt(Date.now());
       pending.current = null;
       refresh();
@@ -437,22 +476,31 @@ export default function Mint() {
     }
   }, [refresh]);
 
+  useEffect(() => {
+    if (!account || pending.current) return;
+    const saved = loadPendingMint(CHAIN.id, CONTRACT, account);
+    if (!saved) return;
+    const id = ++run.current;
+    pending.current = { id, account, tx: saved.tx, before: null };
+    follow(Promise.resolve(saved.hash), saved.tx, id);
+  }, [account, follow]);
+
   /* The wallet's on-chain count for the live phase, recorded as the baseline
    * for this attempt. If the read fails the baseline stays null and the
    * watcher simply never fires — the ordinary promise path still works, and
    * nothing is claimed that was not observed. */
   const readBaseline = useCallback(async (id) => {
     const p = pending.current;
-    if (!p || p.id !== id || !account) return;
+    if (!p || p.id !== id) return;
     try {
       const v = p.kind === "stage"
-        ? await readStageClaimedBy(p.stageIndex, account)
-        : await readClaimedBy(account);
+        ? await readStageClaimedBy(p.stageIndex, p.account)
+        : await readClaimedBy(p.account);
       if (pending.current?.id === id) pending.current.before = v;
     } catch {
       /* Unknown baseline: the watcher stays out of it. */
     }
-  }, [account]);
+  }, []);
 
   const send = useCallback((tx) => sendTransactionAsync({
     account,
@@ -466,6 +514,9 @@ export default function Mint() {
    * same turn as the tap, and an async function that awaits first would give
    * that up even if nothing before the await did any work. */
   const mint = () => {
+    // React disabling renders after the event; the ref also blocks double taps
+    // arriving before that render and attempts from the sticky control.
+    if (busy || pending.current || !active || !account || chainId !== CHAIN.id) return;
     setError(null);
     setTxHash(null);
     const tx = buildTx();
@@ -476,7 +527,7 @@ export default function Mint() {
      * declare a mint that never happened. Missing a success is recoverable —
      * claiming a false one is not. */
     const id = (run.current += 1);
-    pending.current = { id, before: null, kind: active?.kind, stageIndex: active?.stageIndex ?? null };
+    pending.current = { id, tx, account, quantity, before: null, kind: active?.kind, stageIndex: active?.stageIndex ?? null };
 
     if (verdictCovers(quantity)) {
       setPhase("wallet");
@@ -494,11 +545,14 @@ export default function Mint() {
       try {
         setPhase("checking");
         await simulateClaim(tx);
+        if (run.current !== id) return;
         setPhase("wallet");
         const sent = send(tx);
         readBaseline(id);
         await follow(sent, tx, id);
       } catch (e) {
+        if (run.current !== id) return;
+        pending.current = null;
         setError(readableError(e));
         setPhase("idle");
       }
@@ -527,17 +581,19 @@ export default function Mint() {
   useEffect(() => {
     if (phase !== "wallet" || !account) return undefined;
     let on = true;
+    let checking = false;
 
     const check = async () => {
       const p = pending.current;
       /* before === null means the baseline read has not answered yet. Without
        * it there is nothing to compare against, so wait rather than guess. */
-      if (!on || !p || p.before === null || run.current !== p.id) return;
+      if (!on || checking || document.visibilityState === "hidden" || !p || p.before === null || run.current !== p.id) return;
+      checking = true;
       try {
         const now = p.kind === "stage"
-          ? await readStageClaimedBy(p.stageIndex, account)
-          : await readClaimedBy(account);
-        if (!on || run.current !== p.id || now <= p.before) return;
+          ? await readStageClaimedBy(p.stageIndex, p.account)
+          : await readClaimedBy(p.account);
+        if (!on || run.current !== p.id || now - p.before < BigInt(p.quantity)) return;
         run.current += 1;          // the pending continuation is now stale
         pending.current = null;
         setPhase("done");
@@ -545,7 +601,7 @@ export default function Mint() {
         refresh();
       } catch {
         /* A failed read means we still do not know. Say nothing and try again. */
-      }
+      } finally { checking = false; }
     };
 
     const onVisible = () => { if (document.visibilityState === "visible") check(); };
@@ -679,10 +735,71 @@ export default function Mint() {
   /* Why this wallet is being shown a closed door rather than a stage. Only ever
    * about the allowlist — the public phase explains itself below. */
   const listNote = allow.failed
-    ? "the allowlist could not be checked — reload to try again"
+    ? "the allowlist could not be checked — retrying automatically"
     : account
       ? ineligibleNote(allow.reason)
       : (phases?.stages?.length ? "connect your wallet to check the allowlist" : null);
+
+  const transactionStatus = (<>
+      {/* The request is with the wallet, which on a phone is another app that
+          may not have come forward on its own. A link the user presses is the
+          one hand-off the OS always honours, since the press is a gesture.
+
+          Same tab, no target: a wallet's own scheme (metamask://) is
+          intercepted by the OS before any navigation happens, and the page is
+          still here underneath when they come back, whereas opening a tab
+          first adds a step iOS sometimes refuses outright. The link comes from
+          the connected session, so that wallet is definitely installed. */}
+      {phase === "wallet" && (
+        walletLink ? (
+          <a className={styles.mintPending} href={walletLink}>
+            OPEN WALLET TO SIGN ↗
+          </a>
+        ) : (
+          /* No deep link — an injected wallet, an in-wallet browser, or a
+             session that carries no redirect. Still say what is being waited
+             on, because the CTA going quiet is not an instruction. */
+          <p className={styles.mintPending}>WAITING FOR YOU TO SIGN IN YOUR WALLET…</p>
+        )
+      )}
+
+      {/* A hash means "submitted", and says so, until a receipt says otherwise. */}
+      {txHash && phase === "pending" && (
+        <a className={styles.mintPending} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
+          WAITING FOR CONFIRMATION ↗
+        </a>
+      )}
+      {txHash && phase === "slow" && (
+        <a className={styles.mintPending} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
+          STILL PENDING — FOLLOW IT ON THE EXPLORER ↗
+        </a>
+      )}
+      {txHash && phase === "done" && (
+        <a className={styles.mintOk} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
+          MINTED ✓ VIEW TRANSACTION ↗
+        </a>
+      )}
+      {/* Confirmed by reading the chain rather than by the wallet's reply, so
+          there is no hash to link. Still a mint, and said so. */}
+      {phase === "done" && !txHash && <div className={styles.mintOk}>MINTED ✓</div>}
+      {txHash && phase === "failed" && (
+        <a className={styles.mintPending} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
+          TRANSACTION FAILED ↗
+        </a>
+      )}
+
+      {/* Waiting on a wallet that may never answer — a rejection that got lost
+          on the way back leaves this pending forever. Hand the button back. */}
+      {phase === "wallet" && waitedLong && (
+        <button type="button" className={styles.mintReset} onClick={giveUp}>
+          CANCEL IN YOUR WALLET, THEN RESET
+        </button>
+      )}
+
+      {error && <p className={styles.mintErr}>{error}</p>}
+      {readError && <p className={styles.mintErr}>Connection interrupted. Retrying automatically…</p>}
+      {phase === "slow" && txHash && <button type="button" className={styles.mintReset} onClick={() => follow(Promise.resolve(txHash), pending.current?.tx, run.current)}>CHECK CONFIRMATION</button>}
+  </>);
 
   /* Every closed/holding state still shows how far the drop got and what the
    * schedule is — "MINT NOT OPEN YET" beside a list of when it opens is the
@@ -690,6 +807,7 @@ export default function Mint() {
   const shell = (headline, note) => (
     <div className={styles.mint}>
       <div className={styles.mintClosed}>{headline}</div>
+      {transactionStatus}
       {note && <p className={styles.note}>{note}</p>}
       <Progress drop={progress} />
       <Phases drop={drop} phases={phases} chainNow={chainNow} />
@@ -702,6 +820,7 @@ export default function Mint() {
   const connectShell = (headline, note) => (
     <div className={styles.mint}>
       <div className={styles.stageBanner}>{headline}</div>
+      {transactionStatus}
       {note && <p className={styles.note}>{note}</p>}
       <Progress drop={progress} />
       <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
@@ -710,7 +829,7 @@ export default function Mint() {
   );
 
   if (!CONTRACT) return shell("MINT OPENS SOON", "2048 pieces · stored on Arweave, forever");
-  if (!drop) return shell(error || "READING THE CHAIN…");
+  if (!drop) return shell(readError || "READING THE CHAIN…");
 
   /* Nothing is mintable by this wallet right now. A stage it holds is the most
    * useful thing to say — it outranks anything about the public phase, because
@@ -765,7 +884,7 @@ export default function Mint() {
     /* The allowlist could not be reached. Never let that read as "not on the
      * list" — it is a question we failed to ask, not an answer. */
     if (liveOnSchedule && allow.failed) {
-      return shell("COULD NOT CHECK THE ALLOWLIST", "reload to try again");
+      return shell("COULD NOT CHECK THE ALLOWLIST", "retrying automatically");
     }
     if (!drop.configured) return shell("MINT NOT OPEN YET", listNote || "the drop is deployed, the phase is not live");
     if (drop.soldOut) return shell("SOLD OUT", `all ${String(drop.supply)} gone`);
@@ -851,62 +970,7 @@ export default function Mint() {
         )}
       </div>
 
-      {/* The request is with the wallet, which on a phone is another app that
-          may not have come forward on its own. A link the user presses is the
-          one hand-off the OS always honours, since the press is a gesture.
-
-          Same tab, no target: a wallet's own scheme (metamask://) is
-          intercepted by the OS before any navigation happens, and the page is
-          still here underneath when they come back, whereas opening a tab
-          first adds a step iOS sometimes refuses outright. The link comes from
-          the connected session, so that wallet is definitely installed. */}
-      {phase === "wallet" && (
-        walletLink ? (
-          <a className={styles.mintPending} href={walletLink}>
-            OPEN WALLET TO SIGN ↗
-          </a>
-        ) : (
-          /* No deep link — an injected wallet, an in-wallet browser, or a
-             session that carries no redirect. Still say what is being waited
-             on, because the CTA going quiet is not an instruction. */
-          <p className={styles.mintPending}>WAITING FOR YOU TO SIGN IN YOUR WALLET…</p>
-        )
-      )}
-
-      {/* A hash means "submitted", and says so, until a receipt says otherwise. */}
-      {txHash && phase === "pending" && (
-        <a className={styles.mintPending} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
-          WAITING FOR CONFIRMATION ↗
-        </a>
-      )}
-      {txHash && phase === "slow" && (
-        <a className={styles.mintPending} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
-          STILL PENDING — FOLLOW IT ON THE EXPLORER ↗
-        </a>
-      )}
-      {txHash && phase === "done" && (
-        <a className={styles.mintOk} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
-          MINTED ✓ VIEW TRANSACTION ↗
-        </a>
-      )}
-      {/* Confirmed by reading the chain rather than by the wallet's reply, so
-          there is no hash to link. Still a mint, and said so. */}
-      {phase === "done" && !txHash && <div className={styles.mintOk}>MINTED ✓</div>}
-      {txHash && phase === "failed" && (
-        <a className={styles.mintPending} href={explorerTx(txHash)} target="_blank" rel="noreferrer">
-          TRANSACTION FAILED ↗
-        </a>
-      )}
-
-      {/* Waiting on a wallet that may never answer — a rejection that got lost
-          on the way back leaves this pending forever. Hand the button back. */}
-      {phase === "wallet" && waitedLong && (
-        <button type="button" className={styles.mintReset} onClick={giveUp}>
-          NOTHING HAPPENED? TAP TO TRY AGAIN
-        </button>
-      )}
-
-      {error && <p className={styles.mintErr}>{error}</p>}
+      {transactionStatus}
       <p className={styles.note}>
         {cap ? `max ${String(cap)} per wallet · ` : ""}
         {onStage

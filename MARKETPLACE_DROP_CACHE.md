@@ -1,5 +1,12 @@
 # Caching drop state for the marketplace
 
+> Historical design notes. The 2026-09-23 hardening update is documented in
+> [MINT_LAUNCH.md](docs/MINT_LAUNCH.md). The current refresh makes six RPC methods
+> in two HTTP requests (including collection supply), wallet reads now have a
+> restricted server route, and the old free-tier/throughput estimates below do
+> not cover the full mint flow. JSON-RPC batching also does not guarantee that
+> separate `latest` reads use the same block.
+
 A note for ArtifactX (the ELEMENT repo), written from the TERMINL site, where
 the same change shipped first. TERMINL's `pages/api/drop.js` and the
 `readDropFacts` / `serializeDropFacts` / `reviveDropFacts` / `fetchDropFacts` helpers in `lib/mint.js` are the

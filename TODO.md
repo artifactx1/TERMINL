@@ -28,11 +28,12 @@ open unless explicitly checked.
       to that Reown project's allowed domains at cloud.reown.com — a dashboard
       step, no CLI. Without it WalletConnect shows a verification warning in
       the wallet; connections still work.
-- [x] `RPC_URL` — `https://rpc.mainnet.chain.robinhood.com` on Production and
-      Preview. Production was already serving successful reads through this
-      public fallback; the mainnet endpoint is now explicit.
-- [ ] Optional: provision and verify a keyed mainnet RPC before replacing the
-      public endpoint. Never pair a testnet RPC with the mainnet contract.
+- [x] `RPC_URL` — verified Alchemy Robinhood mainnet endpoint restored on
+      Production, Preview and local development. The public mainnet endpoint
+      remains the fallback, and wallet chain configuration carries no key.
+- [ ] Upgrade Alchemy from Free before launch and confirm the account's actual
+      throughput allowance. The other app is not live; capacity planning is
+      primarily for TERMINL. See `docs/MINT_LAUNCH.md` for limits and evidence.
 - [x] `NEXT_PUBLIC_SITE_URL` — `https://terminl.net` on Production
       (2026-09-03), for `og:url`, `canonical` and the WalletConnect metadata.
 
@@ -44,9 +45,10 @@ open unless explicitly checked.
 
 ## Alchemy
 
-- [ ] Decide free tier vs pay-as-you-go. The cached route keeps the site under
-      the free ceiling (500 CU/s) regardless of visitors; PAYG is insurance,
-      not a requirement. See MARKETPLACE_DROP_CACHE.md, lesson 11.
+- [ ] Use paid capacity for launch: shared viewer caching does not eliminate
+      per-minter simulation/confirmation calls. The older free-tier estimate in
+      MARKETPLACE_DROP_CACHE.md applies only to shared drop reads and is obsolete
+      for the complete mint flow.
 - [ ] Restrict the key to server use in the Alchemy dashboard (no browser
       origins needed — nothing in the browser calls it).
 

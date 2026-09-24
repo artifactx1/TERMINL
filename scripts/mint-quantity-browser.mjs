@@ -65,7 +65,7 @@ try {
     await page.route('**/api/allowlist/*', route => route.fulfill({ json: {
       eligible: !scenario.public, stages: scenario.public ? [] : [stage],
     } }));
-    await page.route(/https:\/\/rpc\.(mainnet|testnet)\.chain\.robinhood\.com/, route => {
+    await page.route(/\/api\/mint-rpc$|https:\/\/rpc\.(mainnet|testnet)\.chain\.robinhood\.com/, route => {
       const answer = call => {
         let result = '0x';
         if (call.method === 'eth_chainId') result = '0x1237';

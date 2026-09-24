@@ -1,4 +1,4 @@
-import { CONTRACT, describeDrop, isTerminal, lastRpcSource, readDropFacts, serializeDropFacts } from "../../lib/mint";
+import { CONTRACT, lastRpcSource, readDropFacts, serializeDropFacts } from "../../lib/mint.js";
 
 /*
  * The drop's facts, read once and shared.
@@ -27,9 +27,8 @@ import { CONTRACT, describeDrop, isTerminal, lastRpcSource, readDropFacts, seria
  * cached copy is never wrong about the phase opening. That is what makes the
  * caching safe.
  *
- * Per-wallet reads stay direct from the browser: they are one call per connect,
- * and a keyed endpoint that answers for any address anyone types is a way to
- * spend the key's allowance from the outside.
+ * Per-wallet reads use the separate restricted mint-rpc route. They must not
+ * share the collection-wide response cache.
  */
 
 /* How long the CDN may serve one copy. Live or upcoming: seconds. Terminal:
@@ -49,11 +48,12 @@ async function readOnce() {
   if (!inflight) {
     inflight = (async () => {
       const facts = await readDropFacts();
-      const state = describeDrop(facts.condition, facts.endsAt, facts.chainNow);
+      const terminal = (facts.endsAt > 0n && facts.chainNow > facts.endsAt)
+        || (facts.lazySupply > 0n && facts.minted >= facts.lazySupply);
       const next = {
         at: Date.now(),
         body: serializeDropFacts(facts),
-        cache: isTerminal(state) ? TERMINAL_CACHE : LIVE_CACHE,
+        cache: terminal ? TERMINAL_CACHE : LIVE_CACHE,
         source: lastRpcSource,
       };
       memo = next;
@@ -80,6 +80,7 @@ export default async function handler(req, res) {
     res.setHeader("X-RPC-Source", source);
     return res.status(200).json(body);
   } catch (e) {
+    console.error(JSON.stringify({ event: "mint_drop_read_failed", code: e?.code || null }));
     // Never let a provider blip get cached as the truth.
     res.setHeader("Cache-Control", "no-store");
     return res.status(503).json({ error: e?.message || "rpc failed" });

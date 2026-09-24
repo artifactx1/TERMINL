@@ -19,7 +19,7 @@ import { allowlistBase } from "../../../lib/phases";
  * short all the same, since a stage's terms stop being claimable the second
  * its window closes.
  */
-const CACHE = "public, s-maxage=30, stale-while-revalidate=60";
+const CACHE = "public, s-maxage=15, stale-while-revalidate=15";
 const NONE = { eligible: false, reason: "no_allowlist", stages: [] };
 
 const isAddress = (v) => /^0x[0-9a-fA-F]{40}$/.test(String(v || ""));
@@ -85,6 +85,7 @@ export default async function handler(req, res) {
       })),
     });
   } catch (e) {
+    console.error(JSON.stringify({ event: "mint_allowlist_read_failed", name: e?.name || "Error" }));
     /* A backend that cannot be reached must not read as "not on the list" —
      * that would quietly turn a server outage into a closed door for people who
      * are on it. Say it failed and let the panel offer a retry. */

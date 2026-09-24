@@ -11,10 +11,9 @@ import { allowlistBase } from "../../lib/phases";
  * contract, GET only, and the response is trimmed to the fields the schedule
  * renders, so this cannot be used as a relay into the marketplace API.
  *
- * Stage definitions change when the artist edits them, which is rarely and
- * never during a live stage, so the CDN may hold a copy for a minute.
+ * Keep the cache short so publication and owner corrections reach open tabs.
  */
-const CACHE = "public, s-maxage=60, stale-while-revalidate=300";
+const CACHE = "public, s-maxage=15, stale-while-revalidate=15";
 const EMPTY = { published: false, stages: [] };
 
 
@@ -61,6 +60,7 @@ export default async function handler(req, res) {
       })),
     });
   } catch (e) {
+    console.error(JSON.stringify({ event: "mint_phases_read_failed", name: e?.name || "Error" }));
     res.setHeader("Cache-Control", "no-store");
     return res.status(503).json({ error: e?.message || "allowlist api failed" });
   }

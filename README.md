@@ -243,9 +243,12 @@ styles/                CRT/terminal treatment
   or closed. The route serves facts, not state: the panel decides "started"
   and "ended" itself against a clock corrected to chain time, with the `Age`
   header folded in, so a cached copy is never wrong about the phase opening.
-  Per-wallet reads stay direct, and if the route is unreachable the panel
-  reads the chain itself rather than showing a closed mint. The reasoning and
-  the measurements are in `MARKETPLACE_DROP_CACHE.md`.
+  Wallet counters, simulations and receipts use the restricted `/api/mint-rpc`
+  route with the same private provider and public fallback. The wallet still
+  signs and submits its own transactions. Requests time out, provider throttling
+  triggers failover, and submitted hashes survive a page reload. See
+  [the launch audit](docs/MINT_LAUNCH.md) for current verification and launch gates;
+  `MARKETPLACE_DROP_CACHE.md` records the earlier shared-cache design.
 - **The schedule is shown in every state.** Under the mint control sits a
   progress bar and every phase — allowlist stages from ArtifactX's backend,
   the public phase from the contract — soonest first, each with its price,
