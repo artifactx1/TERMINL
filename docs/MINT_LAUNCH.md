@@ -1,5 +1,17 @@
 # TERMINL mint launch audit — 2026-09-23
 
+> 2026-09-24: The site is temporarily wired to mainnet rehearsal contract
+> `0x0ccb402fD57b9302A3C4Cd6DE4f34771A47d03ab` for real wallet testing.
+> The official-contract observations below are historical. Restore the official
+> address in local/Vercel configuration and committed defaults, then redeploy
+> and rerun the readiness check before launch.
+>
+> Rehearsal contract read at `2026-09-24T11:31:42Z`: name `TMNLT`,
+> prepared supply **10,000**, minted **10,000**, public-phase claimed **9,400**.
+> The backend has published GTD/FCFS stages with a matching on-chain root.
+> More prepared supply and suitable phase terms, or a fresh contract, are needed
+> to exercise additional successful mints. No transaction was signed by this audit.
+
 ## Scope and status
 
 Official contract: `0xc9A4088fD8D2A3327BE33b28646d789549f0188A`.

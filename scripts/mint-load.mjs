@@ -4,10 +4,13 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
+import nextEnv from '@next/env';
+nextEnv.loadEnvConfig(process.cwd(), false);
 
 const port = Number(process.env.MINT_LOAD_PORT || 4007);
 const native = BigInt('0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee');
-const contract = '0xc9A4088fD8D2A3327BE33b28646d789549f0188A';
+const contract = process.env.NEXT_PUBLIC_TERMINL_CONTRACT;
+assert.match(contract || '', /^0x[0-9a-f]{40}$/i);
 const word = n => BigInt(n).toString(16).padStart(64, '0');
 let requests = 0, methods = 0;
 const rpc = http.createServer(async (req, res) => {

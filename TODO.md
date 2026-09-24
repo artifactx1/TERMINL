@@ -1,7 +1,15 @@
 # Before the mint
 
-Launch configuration updated 2026-09-23. Older verification items below remain
+Launch configuration updated 2026-09-24. Older verification items below remain
 open unless explicitly checked.
+
+## Mainnet rehearsal
+
+- [x] Temporarily select `0x0ccb402fD57b9302A3C4Cd6DE4f34771A47d03ab`
+      for the frontend and mint API routes on mainnet (`4663`).
+- [ ] Complete real wallet public/allowlist mint testing, including mobile handoff.
+- [ ] Restore the official launch address below in local config, `.env.production`,
+      and Vercel Production/Preview; redeploy and rerun the launch readiness check.
 
 ## Official contract readiness
 
@@ -16,11 +24,11 @@ open unless explicitly checked.
 
 ## Vercel environment
 
-- [x] `NEXT_PUBLIC_TERMINL_CONTRACT` and `NEXT_PUBLIC_CHAIN_ID` — official
+- [x] `NEXT_PUBLIC_TERMINL_CONTRACT` and `NEXT_PUBLIC_CHAIN_ID` — rehearsal
       mainnet address above and `4663` on Production and Preview, with matching
       committed production defaults and local configuration.
 - [x] `ALLOWLIST_API_URL` — `https://artifactxserver-production.up.railway.app`
-      on Production and Preview. The backend responds for the official contract;
+      on Production and Preview. The backend uses the selected contract;
       stage definitions and proofs are selected by contract address.
 - [x] `NEXT_PUBLIC_REOWN_PROJECT_ID` — set on Production and Preview
       (2026-09-03) to the ArtifactX project id from ELEMENT/.env.testnet.

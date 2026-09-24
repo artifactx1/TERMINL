@@ -2,6 +2,10 @@
 // or real transactions are produced; RPC and mint API responses are fixtures.
 import assert from 'node:assert/strict';
 import { chromium, webkit } from 'playwright';
+import nextEnv from '@next/env';
+nextEnv.loadEnvConfig(process.cwd(), false);
+const contract = process.env.NEXT_PUBLIC_TERMINL_CONTRACT;
+assert.match(contract || '', /^0x[0-9a-f]{40}$/i);
 const base = process.env.MINT_TEST_URL || 'http://127.0.0.1:4007';
 const wallet = '0x1111111111111111111111111111111111111111';
 const hash = '0x' + 'ab'.repeat(32);
@@ -159,7 +163,7 @@ try {
       const sends = await page.evaluate(() => window.mintSends);
       assert.equal(sends.length, ['simulation revert', 'reload pending'].includes(name) ? 0 : 1, 'Only one transaction request, no resubmission after reload');
       if (sends.length) {
-        assert.equal(sends[0].to.toLowerCase(), '0xc9a4088fd8d2a3327be33b28646d789549f0188a');
+        assert.equal(sends[0].to.toLowerCase(), contract.toLowerCase());
         assert.equal(sends[0].data.slice(0, 10), stageMode ? '0x1ba84308' : '0x84bb1e42');
       }
       assert.deepEqual(errors, []);
