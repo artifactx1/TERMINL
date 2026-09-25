@@ -2032,80 +2032,80 @@
       ]
     },
     {
-      "id": "mall-rat-cold-storage-chloe-atlas-v1",
+      "id": "mall-rat-cold-storage-chloe-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/cold-storage-chloe-atlas-v1.webp",
-      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "source": "public/arcade/mall-rat/cold-storage-chloe-motion-atlas-v2.webp",
+      "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1024,
-        "height": 1024
+        "width": 1152,
+        "height": 1536
       },
-      "decodedBudgetBytes": 4194304,
+      "decodedBudgetBytes": 7077888,
       "variants": [
-        "v1"
+        "v2"
       ],
       "games": [
         "mall-rat"
       ]
     },
     {
-      "id": "mall-rat-diamond-hands-pepe-atlas-v1",
+      "id": "mall-rat-diamond-hands-pepe-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/diamond-hands-pepe-atlas-v1.webp",
-      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "source": "public/arcade/mall-rat/diamond-hands-pepe-motion-atlas-v2.webp",
+      "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1024,
-        "height": 1024
+        "width": 1152,
+        "height": 1536
       },
-      "decodedBudgetBytes": 4194304,
+      "decodedBudgetBytes": 7077888,
       "variants": [
-        "v1"
+        "v2"
       ],
       "games": [
         "mall-rat"
       ]
     },
     {
-      "id": "mall-rat-margin-call-max-atlas-v1",
+      "id": "mall-rat-margin-call-max-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/margin-call-max-atlas-v1.webp",
-      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "source": "public/arcade/mall-rat/margin-call-max-motion-atlas-v2.webp",
+      "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1024,
-        "height": 1024
+        "width": 1152,
+        "height": 1536
       },
-      "decodedBudgetBytes": 4194304,
+      "decodedBudgetBytes": 7077888,
       "variants": [
-        "v1"
+        "v2"
       ],
       "games": [
         "mall-rat"
       ]
     },
     {
-      "id": "mall-rat-mev-mia-atlas-v1",
+      "id": "mall-rat-mev-mia-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/mev-mia-atlas-v1.webp",
-      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "source": "public/arcade/mall-rat/mev-mia-motion-atlas-v2.webp",
+      "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1024,
-        "height": 1024
+        "width": 1152,
+        "height": 1536
       },
-      "decodedBudgetBytes": 4194304,
+      "decodedBudgetBytes": 7077888,
       "variants": [
-        "v1"
+        "v2"
       ],
       "games": [
         "mall-rat"

@@ -20,6 +20,7 @@ export default function MallTouchControls({game}){
   <div className={s.actions}>
    {action('bank','BANK',s.bank)}
    {action('special',game.view?.meter>=100?'SPECIAL ↗':'SPECIAL',s.special)}
+   {action('grab','GRAB',s.grab)}
    {action('action',p&&!p.grounded&&!p.rail?'FLIP':'OLLIE',s.ollie)}
    <small>AUTO GRIND + MANUAL</small>
   </div>

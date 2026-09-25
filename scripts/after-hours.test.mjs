@@ -39,6 +39,9 @@ test('quick touch taps survive release before a simulation read; pause clears al
  const input=attachInput(new EventTarget(),{kind:'mall',pause(){},restart(){},debug(){}});
  try{
   input.touch('action',true,1);input.touch('action',false,1);assert.equal(input.read().action,true);assert.equal(input.read().action,undefined);
+  const skate=createMall();input.touch('action',true,1);const firstTap=input.read();stepMall(skate,firstTap);assert.equal(skate.player.grounded,false);
+  input.touch('action',false,1);input.touch('action',true,1);const secondTap=input.read();assert.notEqual(firstTap.pressIds.action,secondTap.pressIds.action);stepMall(skate,secondTap);assert.ok(skate.combo.history.includes('KICKFLIP'));
+  const count=skate.combo.count;stepMall(skate,secondTap);assert.equal(skate.combo.count,count);input.touch('action',false,1);
   input.stick({x:.4,y:-.5});assert.equal(input.read().steer,.4);input.touch('special',true,2);input.clear();const neutral=input.read();assert.equal(neutral.special,undefined);assert.equal(neutral.forward,undefined);assert.equal(neutral.steer,undefined);
  }finally{input.dispose();for(const [key,descriptor]of Object.entries(originals)){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}
 });
@@ -46,4 +49,37 @@ test('skaters remain stopped without input and braking never accelerates backwar
  const s=createMall({practice:true}),spawn={...s.player};for(let i=0;i<180;i++)stepMall(s,{});assert.equal(s.player.speed,0);assert.equal(s.player.x,spawn.x);assert.equal(s.player.z,spawn.z);
  for(let i=0;i<20;i++)stepMall(s,{forward:true});assert.ok(s.player.speed>0);for(let i=0;i<120;i++)stepMall(s,{back:true,forward:true});assert.equal(s.player.speed,0);
  const z=s.player.z;for(let i=0;i<30;i++)stepMall(s,{back:true});assert.equal(s.player.z,z);
+});
+
+import {facingFrame,sampleSkatePose,SKATE_CLIPS} from '../lib/arcade/after-hours/mall-animation.mjs';
+import {MALL_MOTION} from '../lib/arcade/after-hours/mall-motion-data.mjs';
+test('chase view sees the back at every compass heading; spins expose side and front views',()=>{
+ for(const yaw of [0,Math.PI/2,Math.PI,Math.PI*1.5,Math.PI*7])assert.equal(facingFrame(yaw,yaw,5),5);
+ assert.equal(facingFrame(Math.PI,0),SKATE_CLIPS.front);assert.equal(facingFrame(Math.PI/2,0),SKATE_CLIPS.right);assert.equal(facingFrame(-Math.PI/2,0),SKATE_CLIPS.left);
+ for(const sheet of Object.values(MALL_MOTION)){assert.equal(sheet.frames.length,12);for(const f of sheet.frames){assert.ok(f.x+f.width<=sheet.width&&f.y+f.height<=sheet.height);assert.ok(f.width>0&&f.height>0);}}
+});
+function emptySkatepark(){const s=createMall({practice:true});s.world.props=[];s.world.solids=[];s.world.rails=[];s.world.floors=[{x:0,z:0,w:170,d:170,y:0}];Object.assign(s.player,{x:30,z:20,speed:18});return s;}
+test('air spins preserve forward momentum and use the same heading for body and board',()=>{
+ const s=emptySkatepark();stepMall(s,{jump:true});for(let i=0;i<30;i++)stepMall(s,{right:true});
+ assert.ok(s.player.spin>3);assert.ok(s.player.yaw<.25);assert.ok(s.player.z<13);assert.equal(sampleSkatePose(s,0).bodyYaw,s.player.yaw+s.player.visualSpin);
+});
+test('flip animation has a cooldown; landing compresses and a buffered ollie fires after touchdown',()=>{
+ const s=emptySkatepark();stepMall(s,{jump:true});stepMall(s,{flip:true});const started=s.player.trickStarted;
+ for(let i=0;i<10;i++)stepMall(s,{flip:i%2===0});assert.equal(s.player.trickStarted,started);assert.ok(sampleSkatePose(s,0).boardRoll>0);
+ while(!s.player.grounded)stepMall(s,{});assert.equal(sampleSkatePose(s,0).rearFrame,SKATE_CLIPS.crouch);assert.equal(s.events.some(e=>e.type==='land'),true);
+ Object.assign(s.player,{grounded:false,y:.06,vy:-5,coyote:0});stepMall(s,{jump:true});assert.equal(s.player.grounded,true);stepMall(s,{});assert.equal(s.player.grounded,false);assert.ok(s.player.vy>10);
+});
+test('ramp lip converts speed into an airborne transfer without pressing jump',()=>{
+ const s=emptySkatepark();s.world.floors.push({x:30,z:5,w:7,d:6,y:0,rise:2.5});Object.assign(s.player,{z:2.1,y:.1,yaw:Math.PI,speed:20});
+ let launched=false;for(let i=0;i<30;i++){stepMall(s,{forward:true});if(!s.player.grounded&&s.player.vy>4){launched=true;break;}}
+ assert.equal(launched,true);assert.ok(s.combo.history.includes('RAMP TRANSFER'));
+});
+test('touch balance assistance sustains a manual; overbalancing loses the unbanked line',()=>{
+ const s=emptySkatepark();trick(s,'OLLIE',60);for(let i=0;i<180;i++)stepMall(s,{forward:true,manual:true,touchAssist:true});assert.equal(s.player.bail,0);assert.ok(Math.abs(s.player.balance)<.1);assert.ok(s.combo.count>0);
+ s.player.balance=1.05;s.player.manual=true;stepMall(s,{forward:true,manual:true});assert.ok(s.player.bail>0);assert.equal(s.combo.count,0);
+});
+
+test('rolling down a ramp follows its surface without an accidental launch',()=>{
+ const s=emptySkatepark();s.world.floors.push({x:30,z:5,w:7,d:6,y:0,rise:2.5});Object.assign(s.player,{z:7.5,y:2.3,yaw:0,speed:21});
+ for(let i=0;i<14;i++){stepMall(s,{forward:true});assert.equal(s.player.grounded,true);assert.equal(s.player.vy,0);}
 });
