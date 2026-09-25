@@ -2034,81 +2034,521 @@
     {
       "id": "mall-rat-cold-storage-chloe-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/cold-storage-chloe-motion-atlas-v2.webp",
+      "source": "public/arcade/mall-rat/cold-storage-chloe-motion-atlas-v3.webp",
       "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1152,
-        "height": 1536
+        "width": 960,
+        "height": 1280
       },
-      "decodedBudgetBytes": 7077888,
+      "decodedBudgetBytes": 4915200,
       "variants": [
         "v2"
       ],
       "games": [
         "mall-rat"
+      ],
+      "frames": [
+        {
+          "name": "coast",
+          "x": 16,
+          "y": 16,
+          "width": 158,
+          "height": 283,
+          "footX": 79,
+          "footY": 280
+        },
+        {
+          "name": "push-contact",
+          "x": 336,
+          "y": 16,
+          "width": 156,
+          "height": 278,
+          "footX": 78,
+          "footY": 275
+        },
+        {
+          "name": "push-extend",
+          "x": 656,
+          "y": 16,
+          "width": 174,
+          "height": 281,
+          "footX": 87,
+          "footY": 278
+        },
+        {
+          "name": "push-recover",
+          "x": 16,
+          "y": 336,
+          "width": 192,
+          "height": 280,
+          "footX": 96,
+          "footY": 277
+        },
+        {
+          "name": "crouch",
+          "x": 336,
+          "y": 336,
+          "width": 193,
+          "height": 232,
+          "footX": 97,
+          "footY": 229
+        },
+        {
+          "name": "ollie",
+          "x": 656,
+          "y": 336,
+          "width": 247,
+          "height": 259,
+          "footX": 124,
+          "footY": 256
+        },
+        {
+          "name": "flip",
+          "x": 16,
+          "y": 656,
+          "width": 268,
+          "height": 246,
+          "footX": 134,
+          "footY": 243
+        },
+        {
+          "name": "grab",
+          "x": 336,
+          "y": 656,
+          "width": 170,
+          "height": 211,
+          "footX": 85,
+          "footY": 208
+        },
+        {
+          "name": "grind",
+          "x": 656,
+          "y": 656,
+          "width": 280,
+          "height": 272,
+          "footX": 140,
+          "footY": 269
+        },
+        {
+          "name": "left",
+          "x": 16,
+          "y": 976,
+          "width": 187,
+          "height": 286,
+          "footX": 94,
+          "footY": 283
+        },
+        {
+          "name": "front",
+          "x": 336,
+          "y": 976,
+          "width": 220,
+          "height": 284,
+          "footX": 110,
+          "footY": 281
+        },
+        {
+          "name": "right",
+          "x": 656,
+          "y": 976,
+          "width": 180,
+          "height": 286,
+          "footX": 90,
+          "footY": 283
+        }
       ]
     },
     {
       "id": "mall-rat-diamond-hands-pepe-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/diamond-hands-pepe-motion-atlas-v2.webp",
+      "source": "public/arcade/mall-rat/diamond-hands-pepe-motion-atlas-v3.webp",
       "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1152,
-        "height": 1536
+        "width": 960,
+        "height": 1280
       },
-      "decodedBudgetBytes": 7077888,
+      "decodedBudgetBytes": 4915200,
       "variants": [
         "v2"
       ],
       "games": [
         "mall-rat"
+      ],
+      "frames": [
+        {
+          "name": "coast",
+          "x": 16,
+          "y": 16,
+          "width": 165,
+          "height": 284,
+          "footX": 83,
+          "footY": 281
+        },
+        {
+          "name": "push-contact",
+          "x": 336,
+          "y": 16,
+          "width": 183,
+          "height": 285,
+          "footX": 92,
+          "footY": 282
+        },
+        {
+          "name": "push-extend",
+          "x": 656,
+          "y": 16,
+          "width": 182,
+          "height": 286,
+          "footX": 91,
+          "footY": 283
+        },
+        {
+          "name": "push-recover",
+          "x": 16,
+          "y": 336,
+          "width": 175,
+          "height": 271,
+          "footX": 88,
+          "footY": 268
+        },
+        {
+          "name": "crouch",
+          "x": 336,
+          "y": 336,
+          "width": 198,
+          "height": 217,
+          "footX": 99,
+          "footY": 214
+        },
+        {
+          "name": "ollie",
+          "x": 656,
+          "y": 336,
+          "width": 270,
+          "height": 241,
+          "footX": 135,
+          "footY": 238
+        },
+        {
+          "name": "flip",
+          "x": 16,
+          "y": 656,
+          "width": 275,
+          "height": 221,
+          "footX": 138,
+          "footY": 218
+        },
+        {
+          "name": "grab",
+          "x": 336,
+          "y": 656,
+          "width": 163,
+          "height": 191,
+          "footX": 82,
+          "footY": 188
+        },
+        {
+          "name": "grind",
+          "x": 656,
+          "y": 656,
+          "width": 271,
+          "height": 253,
+          "footX": 136,
+          "footY": 250
+        },
+        {
+          "name": "left",
+          "x": 16,
+          "y": 976,
+          "width": 186,
+          "height": 262,
+          "footX": 93,
+          "footY": 259
+        },
+        {
+          "name": "front",
+          "x": 336,
+          "y": 976,
+          "width": 185,
+          "height": 265,
+          "footX": 93,
+          "footY": 262
+        },
+        {
+          "name": "right",
+          "x": 656,
+          "y": 976,
+          "width": 190,
+          "height": 261,
+          "footX": 95,
+          "footY": 258
+        }
       ]
     },
     {
       "id": "mall-rat-margin-call-max-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/margin-call-max-motion-atlas-v2.webp",
+      "source": "public/arcade/mall-rat/margin-call-max-motion-atlas-v3.webp",
       "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1152,
-        "height": 1536
+        "width": 960,
+        "height": 1280
       },
-      "decodedBudgetBytes": 7077888,
+      "decodedBudgetBytes": 4915200,
       "variants": [
         "v2"
       ],
       "games": [
         "mall-rat"
+      ],
+      "frames": [
+        {
+          "name": "coast",
+          "x": 16,
+          "y": 16,
+          "width": 114,
+          "height": 245,
+          "footX": 57,
+          "footY": 242
+        },
+        {
+          "name": "push-contact",
+          "x": 336,
+          "y": 16,
+          "width": 143,
+          "height": 245,
+          "footX": 72,
+          "footY": 242
+        },
+        {
+          "name": "push-extend",
+          "x": 656,
+          "y": 16,
+          "width": 140,
+          "height": 245,
+          "footX": 70,
+          "footY": 242
+        },
+        {
+          "name": "push-recover",
+          "x": 16,
+          "y": 336,
+          "width": 152,
+          "height": 230,
+          "footX": 76,
+          "footY": 227
+        },
+        {
+          "name": "crouch",
+          "x": 336,
+          "y": 336,
+          "width": 137,
+          "height": 203,
+          "footX": 69,
+          "footY": 200
+        },
+        {
+          "name": "ollie",
+          "x": 656,
+          "y": 336,
+          "width": 223,
+          "height": 214,
+          "footX": 112,
+          "footY": 211
+        },
+        {
+          "name": "flip",
+          "x": 16,
+          "y": 656,
+          "width": 238,
+          "height": 173,
+          "footX": 119,
+          "footY": 170
+        },
+        {
+          "name": "grab",
+          "x": 336,
+          "y": 656,
+          "width": 132,
+          "height": 180,
+          "footX": 66,
+          "footY": 177
+        },
+        {
+          "name": "grind",
+          "x": 656,
+          "y": 656,
+          "width": 250,
+          "height": 226,
+          "footX": 125,
+          "footY": 223
+        },
+        {
+          "name": "left",
+          "x": 16,
+          "y": 976,
+          "width": 149,
+          "height": 284,
+          "footX": 75,
+          "footY": 281
+        },
+        {
+          "name": "front",
+          "x": 336,
+          "y": 976,
+          "width": 184,
+          "height": 286,
+          "footX": 92,
+          "footY": 283
+        },
+        {
+          "name": "right",
+          "x": 656,
+          "y": 976,
+          "width": 151,
+          "height": 282,
+          "footX": 76,
+          "footY": 279
+        }
       ]
     },
     {
       "id": "mall-rat-mev-mia-motion-atlas-v2",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/mev-mia-motion-atlas-v2.webp",
+      "source": "public/arcade/mall-rat/mev-mia-motion-atlas-v3.webp",
       "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1152,
-        "height": 1536
+        "width": 960,
+        "height": 1280
       },
-      "decodedBudgetBytes": 7077888,
+      "decodedBudgetBytes": 4915200,
       "variants": [
         "v2"
       ],
       "games": [
         "mall-rat"
+      ],
+      "frames": [
+        {
+          "name": "coast",
+          "x": 16,
+          "y": 16,
+          "width": 112,
+          "height": 257,
+          "footX": 56,
+          "footY": 254
+        },
+        {
+          "name": "push-contact",
+          "x": 336,
+          "y": 16,
+          "width": 132,
+          "height": 256,
+          "footX": 66,
+          "footY": 253
+        },
+        {
+          "name": "push-extend",
+          "x": 656,
+          "y": 16,
+          "width": 147,
+          "height": 251,
+          "footX": 74,
+          "footY": 248
+        },
+        {
+          "name": "push-recover",
+          "x": 16,
+          "y": 336,
+          "width": 156,
+          "height": 251,
+          "footX": 78,
+          "footY": 248
+        },
+        {
+          "name": "crouch",
+          "x": 336,
+          "y": 336,
+          "width": 135,
+          "height": 199,
+          "footX": 68,
+          "footY": 196
+        },
+        {
+          "name": "ollie",
+          "x": 656,
+          "y": 336,
+          "width": 222,
+          "height": 237,
+          "footX": 111,
+          "footY": 234
+        },
+        {
+          "name": "flip",
+          "x": 16,
+          "y": 656,
+          "width": 235,
+          "height": 222,
+          "footX": 118,
+          "footY": 219
+        },
+        {
+          "name": "grab",
+          "x": 336,
+          "y": 656,
+          "width": 192,
+          "height": 180,
+          "footX": 96,
+          "footY": 177
+        },
+        {
+          "name": "grind",
+          "x": 656,
+          "y": 656,
+          "width": 262,
+          "height": 241,
+          "footX": 131,
+          "footY": 238
+        },
+        {
+          "name": "left",
+          "x": 16,
+          "y": 976,
+          "width": 141,
+          "height": 273,
+          "footX": 71,
+          "footY": 270
+        },
+        {
+          "name": "front",
+          "x": 336,
+          "y": 976,
+          "width": 198,
+          "height": 286,
+          "footX": 99,
+          "footY": 283
+        },
+        {
+          "name": "right",
+          "x": 656,
+          "y": 976,
+          "width": 145,
+          "height": 266,
+          "footX": 73,
+          "footY": 263
+        }
       ]
     },
     {
@@ -2550,6 +2990,390 @@
       "games": [
         "rug-exe"
       ]
+    },
+    {
+      "id": "mall-acrobatics-margin-call-max",
+      "role": "skate-acrobatics-atlas",
+      "source": "public/arcade/mall-rat/margin-call-max-acrobatics-atlas-v3.webp",
+      "character": "margin-call-max",
+      "games": [
+        "mall-rat"
+      ],
+      "variants": [
+        "frontflip",
+        "backflip"
+      ],
+      "provenance": "Built-in image_gen; prompts in docs/mall-rat-acrobatics-prompts.json and alpha-prompts.json; packed by scripts/prepare-mall-acrobatics.mjs",
+      "rights": "Generated project artwork based on canonical TERMINL degen reference",
+      "review": "development",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 512
+      },
+      "frames": [
+        {
+          "name": "somersault-0",
+          "x": 6,
+          "y": 6,
+          "width": 163,
+          "height": 242,
+          "footX": 82,
+          "footY": 239
+        },
+        {
+          "name": "somersault-45",
+          "x": 262,
+          "y": 6,
+          "width": 177,
+          "height": 234,
+          "footX": 89,
+          "footY": 231
+        },
+        {
+          "name": "somersault-90",
+          "x": 518,
+          "y": 6,
+          "width": 185,
+          "height": 134,
+          "footX": 93,
+          "footY": 131
+        },
+        {
+          "name": "somersault-135",
+          "x": 774,
+          "y": 6,
+          "width": 171,
+          "height": 211,
+          "footX": 86,
+          "footY": 208
+        },
+        {
+          "name": "somersault-180",
+          "x": 6,
+          "y": 262,
+          "width": 140,
+          "height": 244,
+          "footX": 70,
+          "footY": 241
+        },
+        {
+          "name": "somersault-225",
+          "x": 262,
+          "y": 262,
+          "width": 198,
+          "height": 167,
+          "footX": 99,
+          "footY": 164
+        },
+        {
+          "name": "somersault-270",
+          "x": 518,
+          "y": 262,
+          "width": 146,
+          "height": 225,
+          "footX": 73,
+          "footY": 222
+        },
+        {
+          "name": "somersault-315",
+          "x": 774,
+          "y": 262,
+          "width": 182,
+          "height": 240,
+          "footX": 91,
+          "footY": 237
+        }
+      ],
+      "decodedBudgetBytes": 2097152
+    },
+    {
+      "id": "mall-acrobatics-diamond-hands-pepe",
+      "role": "skate-acrobatics-atlas",
+      "source": "public/arcade/mall-rat/diamond-hands-pepe-acrobatics-atlas-v3.webp",
+      "character": "diamond-hands-pepe",
+      "games": [
+        "mall-rat"
+      ],
+      "variants": [
+        "frontflip",
+        "backflip"
+      ],
+      "provenance": "Built-in image_gen; prompts in docs/mall-rat-acrobatics-prompts.json and alpha-prompts.json; packed by scripts/prepare-mall-acrobatics.mjs",
+      "rights": "Generated project artwork based on canonical TERMINL degen reference",
+      "review": "development",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 512
+      },
+      "frames": [
+        {
+          "name": "somersault-0",
+          "x": 6,
+          "y": 6,
+          "width": 180,
+          "height": 233,
+          "footX": 90,
+          "footY": 230
+        },
+        {
+          "name": "somersault-45",
+          "x": 262,
+          "y": 6,
+          "width": 182,
+          "height": 244,
+          "footX": 91,
+          "footY": 241
+        },
+        {
+          "name": "somersault-90",
+          "x": 518,
+          "y": 6,
+          "width": 204,
+          "height": 150,
+          "footX": 102,
+          "footY": 147
+        },
+        {
+          "name": "somersault-135",
+          "x": 774,
+          "y": 6,
+          "width": 166,
+          "height": 227,
+          "footX": 83,
+          "footY": 224
+        },
+        {
+          "name": "somersault-180",
+          "x": 6,
+          "y": 262,
+          "width": 179,
+          "height": 216,
+          "footX": 90,
+          "footY": 213
+        },
+        {
+          "name": "somersault-225",
+          "x": 262,
+          "y": 262,
+          "width": 162,
+          "height": 204,
+          "footX": 81,
+          "footY": 201
+        },
+        {
+          "name": "somersault-270",
+          "x": 518,
+          "y": 262,
+          "width": 201,
+          "height": 243,
+          "footX": 101,
+          "footY": 240
+        },
+        {
+          "name": "somersault-315",
+          "x": 774,
+          "y": 262,
+          "width": 212,
+          "height": 226,
+          "footX": 106,
+          "footY": 223
+        }
+      ],
+      "decodedBudgetBytes": 2097152
+    },
+    {
+      "id": "mall-acrobatics-mev-mia",
+      "role": "skate-acrobatics-atlas",
+      "source": "public/arcade/mall-rat/mev-mia-acrobatics-atlas-v3.webp",
+      "character": "mev-mia",
+      "games": [
+        "mall-rat"
+      ],
+      "variants": [
+        "frontflip",
+        "backflip"
+      ],
+      "provenance": "Built-in image_gen; prompts in docs/mall-rat-acrobatics-prompts.json and alpha-prompts.json; packed by scripts/prepare-mall-acrobatics.mjs",
+      "rights": "Generated project artwork based on canonical TERMINL degen reference",
+      "review": "development",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 512
+      },
+      "frames": [
+        {
+          "name": "somersault-0",
+          "x": 6,
+          "y": 6,
+          "width": 147,
+          "height": 215,
+          "footX": 74,
+          "footY": 212
+        },
+        {
+          "name": "somersault-45",
+          "x": 262,
+          "y": 6,
+          "width": 187,
+          "height": 207,
+          "footX": 94,
+          "footY": 204
+        },
+        {
+          "name": "somersault-90",
+          "x": 518,
+          "y": 6,
+          "width": 192,
+          "height": 108,
+          "footX": 96,
+          "footY": 105
+        },
+        {
+          "name": "somersault-135",
+          "x": 774,
+          "y": 6,
+          "width": 131,
+          "height": 244,
+          "footX": 66,
+          "footY": 241
+        },
+        {
+          "name": "somersault-180",
+          "x": 6,
+          "y": 262,
+          "width": 115,
+          "height": 229,
+          "footX": 58,
+          "footY": 226
+        },
+        {
+          "name": "somersault-225",
+          "x": 262,
+          "y": 262,
+          "width": 157,
+          "height": 146,
+          "footX": 79,
+          "footY": 143
+        },
+        {
+          "name": "somersault-270",
+          "x": 518,
+          "y": 262,
+          "width": 176,
+          "height": 228,
+          "footX": 88,
+          "footY": 225
+        },
+        {
+          "name": "somersault-315",
+          "x": 774,
+          "y": 262,
+          "width": 169,
+          "height": 218,
+          "footX": 85,
+          "footY": 215
+        }
+      ],
+      "decodedBudgetBytes": 2097152
+    },
+    {
+      "id": "mall-acrobatics-cold-storage-chloe",
+      "role": "skate-acrobatics-atlas",
+      "source": "public/arcade/mall-rat/cold-storage-chloe-acrobatics-atlas-v3.webp",
+      "character": "cold-storage-chloe",
+      "games": [
+        "mall-rat"
+      ],
+      "variants": [
+        "frontflip",
+        "backflip"
+      ],
+      "provenance": "Built-in image_gen; prompts in docs/mall-rat-acrobatics-prompts.json and alpha-prompts.json; packed by scripts/prepare-mall-acrobatics.mjs",
+      "rights": "Generated project artwork based on canonical TERMINL degen reference",
+      "review": "development",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 512
+      },
+      "frames": [
+        {
+          "name": "somersault-0",
+          "x": 6,
+          "y": 6,
+          "width": 151,
+          "height": 243,
+          "footX": 76,
+          "footY": 240
+        },
+        {
+          "name": "somersault-45",
+          "x": 262,
+          "y": 6,
+          "width": 197,
+          "height": 214,
+          "footX": 99,
+          "footY": 211
+        },
+        {
+          "name": "somersault-90",
+          "x": 518,
+          "y": 6,
+          "width": 181,
+          "height": 150,
+          "footX": 91,
+          "footY": 147
+        },
+        {
+          "name": "somersault-135",
+          "x": 774,
+          "y": 6,
+          "width": 140,
+          "height": 244,
+          "footX": 70,
+          "footY": 241
+        },
+        {
+          "name": "somersault-180",
+          "x": 6,
+          "y": 262,
+          "width": 137,
+          "height": 230,
+          "footX": 69,
+          "footY": 227
+        },
+        {
+          "name": "somersault-225",
+          "x": 262,
+          "y": 262,
+          "width": 175,
+          "height": 172,
+          "footX": 88,
+          "footY": 169
+        },
+        {
+          "name": "somersault-270",
+          "x": 518,
+          "y": 262,
+          "width": 195,
+          "height": 233,
+          "footX": 98,
+          "footY": 230
+        },
+        {
+          "name": "somersault-315",
+          "x": 774,
+          "y": 262,
+          "width": 191,
+          "height": 226,
+          "footX": 96,
+          "footY": 223
+        }
+      ],
+      "decodedBudgetBytes": 2097152
     }
   ]
 }

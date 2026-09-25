@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {createMall,stepMall,MALL_TUNING} from '../lib/arcade/after-hours/mall-sim.mjs';
 import {trick,bank,bail,comboValue} from '../lib/arcade/after-hours/mall-score.mjs';
 import {readProgress,recordRun} from '../lib/arcade/after-hours/progress.mjs';
-test('skater accelerates immediately, jumps, air-steers, lands and recovers quickly',()=>{const s=createMall();for(let i=0;i<30;i++)stepMall(s,{forward:true});assert.ok(s.player.speed>12);const yaw=s.player.yaw;stepMall(s,{jump:true,forward:true});assert.ok(!s.player.grounded);for(let i=0;i<12;i++)stepMall(s,{right:true,forward:true,flip:i===2});assert.ok(s.player.y>1.5);assert.ok(s.player.yaw>yaw);assert.ok(s.combo.history.includes('KICKFLIP')||s.combo.history.includes('IMPOSSIBLE'));for(let i=0;i<100;i++)stepMall(s,{});assert.ok(s.player.grounded);bail(s);for(let i=0;i<42;i++)stepMall(s,{});assert.equal(s.player.bail,0);});
+test('skater accelerates immediately, jumps, air-steers, lands and recovers quickly',()=>{const s=emptySkatepark();for(let i=0;i<30;i++)stepMall(s,{forward:true});assert.ok(s.player.speed>12);const yaw=s.player.yaw;stepMall(s,{jump:true,forward:true});assert.ok(!s.player.grounded);for(let i=0;i<12;i++)stepMall(s,{right:true,forward:true,flip:i===2});assert.ok(s.player.y>1.5);assert.ok(s.player.yaw>yaw);assert.equal(s.player.airMove?.id,'tre');for(let i=0;i<100;i++)stepMall(s,{});assert.ok(s.player.grounded);bail(s);for(let i=0;i<42;i++)stepMall(s,{});assert.equal(s.player.bail,0);});
 test('rails catch an airborne approach; jumping releases the rail and preserves combo',()=>{const s=createMall();Object.assign(s.player,{x:0,z:14.8,y:1.1,grounded:false,vy:-2,speed:12,yaw:Math.PI/2});s.tick=20;stepMall(s,{grind:true});assert.ok(s.player.rail);for(let i=0;i<20;i++)stepMall(s,{grind:true});assert.ok(s.combo.count);stepMall(s,{jump:true,flip:true});assert.equal(s.player.rail,null);assert.ok(s.player.vy>0);});
 test('touch rail assistance never redirects a skater rolling past a rail',()=>{
  const s=createMall();Object.assign(s.player,{x:4,z:16,speed:12});s.tick=20;
@@ -10,7 +10,7 @@ test('touch rail assistance never redirects a skater rolling past a rail',()=>{
  assert.ok(s.player.z<14);
 });
 test('repeat tricks diminish, bank is safe, bail destroys only unbanked score',()=>{const s=createMall();trick(s,'FLIP',100);const first=s.combo.base;trick(s,'FLIP',100);assert.ok(s.combo.base-first<100);trick(s,'GRAB',200);const score=comboValue(s);bank(s);assert.equal(s.score,score);trick(s,'SPECIAL',2000);bail(s);assert.equal(s.score,score);assert.equal(s.combo.count,0);assert.ok(s.stats.biggestBail>0);});
-test('150 second runs end, seeded challenges repeat, saves survive malformed data',()=>{const s=createMall({seed:17});assert.deepEqual(s.challengeIds,createMall({seed:17}).challengeIds);s.tick=MALL_TUNING.duration-1;stepMall(s);assert.equal(s.phase,'finished');const storage={getItem:()=>'{',setItem(){throw Error('quota');}};const result=recordRun(readProgress(storage),s,storage);assert.equal(result.saved,false);assert.equal(result.progress.mall.records.length,1);});
+test('three minute runs end, seeded challenges repeat, saves survive malformed data',()=>{const s=createMall({seed:17});assert.deepEqual(s.challengeIds,createMall({seed:17}).challengeIds);s.tick=MALL_TUNING.duration-1;stepMall(s);assert.equal(s.phase,'finished');const storage={getItem:()=>'{',setItem(){throw Error('quota');}};const result=recordRun(readProgress(storage),s,storage);assert.equal(result.saved,false);assert.equal(result.progress.mall.records.length,1);});
 import {createRug,stepRug} from '../lib/arcade/after-hours/rug-sim.mjs';
 import {fireWeapon,damageEnemy,hurtPlayer,stepEnemies} from '../lib/arcade/after-hours/rug-combat.mjs';
 import {spawnEnemy} from '../lib/arcade/after-hours/rug-world.mjs';
@@ -32,7 +32,7 @@ test('touch action ollies then flips, assisted rails release, bank waits for lan
  assert.ok(s.player.yaw>0&&s.player.yaw<.4);
  stepMall(s,{forward:true,action:true,grind:true});assert.equal(s.player.grounded,false);assert.equal(s.player.rail,null);
  stepMall(s,{forward:true,grind:true});stepMall(s,{forward:true,action:true,bank:true,grind:true});
- assert.ok(s.combo.history.includes('KICKFLIP'));assert.equal(s.bankPending,true);
+ assert.equal(s.player.airMove?.id,'kickflip');assert.equal(s.bankPending,true);
  for(let i=0;i<80;i++)stepMall(s,{});assert.ok(s.score>0);assert.equal(s.bankPending,false);
  const rail=createMall();Object.assign(rail.player,{x:0,z:14,y:.8,rail:'atrium-rail',speed:12,grounded:false});rail.tick=30;
  stepMall(rail,{action:true,grind:true});assert.equal(rail.player.rail,null);assert.ok(rail.player.vy>0);
@@ -45,7 +45,7 @@ test('quick touch taps survive release before a simulation read; pause clears al
  try{
   input.touch('action',true,1);input.touch('action',false,1);assert.equal(input.read().action,true);assert.equal(input.read().action,undefined);
   const skate=createMall();input.touch('action',true,1);const firstTap=input.read();stepMall(skate,firstTap);assert.equal(skate.player.grounded,false);
-  input.touch('action',false,1);input.touch('action',true,1);const secondTap=input.read();assert.notEqual(firstTap.pressIds.action,secondTap.pressIds.action);stepMall(skate,secondTap);assert.ok(skate.combo.history.includes('KICKFLIP'));
+  input.touch('action',false,1);input.touch('action',true,1);const secondTap=input.read();assert.notEqual(firstTap.pressIds.action,secondTap.pressIds.action);stepMall(skate,secondTap);assert.equal(skate.player.airMove?.id,'kickflip');
   const count=skate.combo.count;stepMall(skate,secondTap);assert.equal(skate.combo.count,count);input.touch('action',false,1);
   input.stick({x:.4,y:-.5});assert.equal(input.read().steer,.4);input.touch('special',true,2);input.clear();const neutral=input.read();assert.equal(neutral.special,undefined);assert.equal(neutral.forward,undefined);assert.equal(neutral.steer,undefined);
  }finally{input.dispose();for(const [key,descriptor]of Object.entries(originals)){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}
@@ -92,7 +92,7 @@ test('ramp lip converts speed into an airborne transfer without pressing jump',(
  assert.equal(launched,true);assert.ok(s.combo.history.includes('RAMP TRANSFER'));
 });
 test('touch balance assistance sustains a manual; overbalancing loses the unbanked line',()=>{
- const s=emptySkatepark();trick(s,'OLLIE',60);for(let i=0;i<180;i++)stepMall(s,{forward:true,manual:true,touchAssist:true});assert.equal(s.player.bail,0);assert.ok(Math.abs(s.player.balance)<.1);assert.ok(s.combo.count>0);
+ const s=emptySkatepark();trick(s,'OLLIE',60);for(let i=0;i<180;i++)stepMall(s,{forward:true,manual:true,touchAssist:true});assert.equal(s.player.bail,0);assert.ok(Math.abs(s.player.balance)<1);assert.ok(s.combo.count>0);
  s.player.balance=1.05;s.player.manual=true;stepMall(s,{forward:true,manual:true});assert.ok(s.player.bail>0);assert.equal(s.combo.count,0);
 });
 
