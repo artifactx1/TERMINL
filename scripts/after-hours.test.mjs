@@ -99,7 +99,7 @@ test('a landing catches the board and a quick new ollie does not replay the prev
  stepMall(s);assert.equal(s.player.visualSpin,0);stepMall(s,{jump:true});const pose=sampleSkatePose(s,0);assert.equal(pose.boardRoll,0);assert.equal(pose.rearFrame,SKATE_CLIPS.ollie);
 });
 test('grip clears the beveled deck and wheels rotate around a fixed axle',async()=>{
- const THREE=await import('three'),{makeSkateboard}=await import('../lib/arcade/after-hours/skateboard.js');
+ const THREE=await import('three'),{makeSkateboard,poseSkateboard}=await import('../lib/arcade/after-hours/skateboard.js');
  const material=new THREE.MeshBasicMaterial(),scene={disposables:[],gripMaterial:material,mat:()=>material,
   plane(parent,x,y,z,w,h,mat){const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);mesh.position.set(x,y,z);parent.add(mesh);return mesh;},
   mesh(parent,x,y,z,w,h,d){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);parent.add(mesh);return mesh;}};
@@ -107,9 +107,25 @@ test('grip clears the beveled deck and wheels rotate around a fixed axle',async(
  assert.ok(new THREE.Box3().setFromObject(grip).min.y-new THREE.Box3().setFromObject(slab).max.y>.015);
  const ray=new THREE.Raycaster(new THREE.Vector3(.2,3,.4),new THREE.Vector3(0,-1,0));assert.equal(ray.intersectObjects([grip,slab])[0].object,grip);
  for(const angle of [0,.5,1.5,3,5]){for(const wheel of wheels){wheel.rotation.x=angle;board.updateMatrixWorld(true);const width=new THREE.Box3().setFromObject(wheel).getSize(new THREE.Vector3()).x;assert.ok(Math.abs(width-.12)<.00001);}}
+ // Check the actual deck center through a full flip, not just Euler angles.
+ const deckCenter=slab.geometry.boundingBox.getCenter(new THREE.Vector3()),fixedCenter=slab.localToWorld(deckCenter.clone());
+ for(let i=0;i<=24;i++){
+  const pose={bodyYaw:0,boardPitch:.2,boardRoll:i/24*Math.PI*2,bodyLift:.3,flipping:true,bail:0};poseSkateboard(board,pose);board.updateMatrixWorld(true);
+  assert.ok(slab.localToWorld(deckCenter.clone()).distanceTo(fixedCenter)<1e-7,'deck center must not orbit during a flip');
+ }
+ for(const [pitch,roll,yaw]of [[0,0,0],[.4,0,.7],[.16,.08,2],[-.2,-.28,-1]]){
+  const feet=poseSkateboard(board,{bodyYaw:yaw,boardPitch:pitch,boardRoll:roll,bodyLift:0,flipping:false,bail:0}).clone();board.updateMatrixWorld(true);
+  assert.ok(feet.distanceTo(grip.getWorldPosition(new THREE.Vector3()))<1e-7,'planted feet must follow the deck contact point');
+ }
  board.traverse(o=>o.geometry?.dispose());for(const d of scene.disposables)d.dispose();material.dispose();
 });
 
 test('holding the touch ollie while steering does not request an air spin',()=>{
  const s=emptySkatepark();for(let i=0;i<12;i++){stepMall(s,{action:true,steer:.7,touchAssist:true});assert.equal(sampleSkatePose(s,0).bodyYaw,s.player.yaw);}
+});
+
+test('ollies stay connected and a flip catches the deck before the next trick',()=>{
+ const s=emptySkatepark();stepMall(s,{jump:true});assert.equal(sampleSkatePose(s,0).bodyLift,0);
+ stepMall(s,{flip:true});for(let i=0;i<22;i++)stepMall(s);const pose=sampleSkatePose(s,0);
+ assert.equal(pose.boardRoll,0);assert.ok(pose.bodyLift<1e-7);assert.equal(pose.flipping,false);assert.equal(pose.rearFrame,SKATE_CLIPS.ollie);
 });

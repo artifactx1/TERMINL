@@ -13,12 +13,17 @@ try{
   await clock();await page.getByRole('button',{name:'BREAK IN →'}).click();
   // Allow real image decoding while the deterministic simulation clock is stopped.
   await page.waitForTimeout(700);await advance(2,{});
-  const capture=async label=>{const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(data.bodyYaw,data.boardYaw);await page.screenshot({path:`artifacts/mall-motion-v2/${id}-${label}.png`});return data;};
+  const capture=async label=>{const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(data.bodyYaw,data.boardYaw);assert.equal(data.boardPivot,'deck-center');await page.screenshot({path:`artifacts/mall-motion-v2/${id}-${label}.png`});return data;};
   assert.equal((await capture('coast')).skatePose,'coast');
   await advance(18,{forward:true});assert.match((await capture('push')).skatePose,/push/);
   await advance(1,{forward:true,jump:true});await advance(8,{forward:true});assert.equal((await capture('ollie')).skatePose,'ollie');
-  await advance(1,{flip:true});await advance(10,{});assert.equal((await capture('flip')).skatePose,'flip');
-  await advance(16,{});await advance(1,{grab:true});assert.equal((await capture('grab')).skatePose,'grab');
+  await advance(1,{flip:true});if(id==='max')await capture('flip-0');
+  await advance(5,{});if(id==='max')await capture('flip-5');
+  await advance(5,{});assert.equal((await capture('flip')).skatePose,'flip');
+  await advance(5,{});if(id==='max')await capture('flip-15');
+  await advance(7,{});if(id==='max')await capture('flip-catch');
+  assert.equal(Number(await page.locator('canvas').getAttribute('data-board-roll')),0);
+  await advance(4,{});await advance(1,{grab:true});assert.equal((await capture('grab')).skatePose,'grab');
   await advance(32,{manual:true});await capture('landing');
   await advance(1,{jump:true});await advance(30,{right:true,grab:true});assert.equal((await capture('spin')).skatePose,'front');
   await advance(50,{bank:true});assert.ok(Number(await page.locator('canvas').getAttribute('data-score'))>0);
