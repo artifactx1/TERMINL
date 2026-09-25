@@ -60,7 +60,7 @@ test('chase view sees the back at every compass heading; spins expose side and f
 });
 function emptySkatepark(){const s=createMall({practice:true});s.world.props=[];s.world.solids=[];s.world.rails=[];s.world.floors=[{x:0,z:0,w:170,d:170,y:0}];Object.assign(s.player,{x:30,z:20,speed:18});return s;}
 test('air spins preserve forward momentum and use the same heading for body and board',()=>{
- const s=emptySkatepark();stepMall(s,{jump:true});for(let i=0;i<30;i++)stepMall(s,{right:true});
+ const s=emptySkatepark();stepMall(s,{jump:true});for(let i=0;i<30;i++)stepMall(s,{right:true,grab:true});
  assert.ok(s.player.spin>3);assert.ok(s.player.yaw<.25);assert.ok(s.player.z<13);assert.equal(sampleSkatePose(s,0).bodyYaw,s.player.yaw+s.player.visualSpin);
 });
 test('flip animation has a cooldown; landing compresses and a buffered ollie fires after touchdown',()=>{
@@ -82,4 +82,34 @@ test('touch balance assistance sustains a manual; overbalancing loses the unbank
 test('rolling down a ramp follows its surface without an accidental launch',()=>{
  const s=emptySkatepark();s.world.floors.push({x:30,z:5,w:7,d:6,y:0,rise:2.5});Object.assign(s.player,{z:7.5,y:2.3,yaw:0,speed:21});
  for(let i=0;i<14;i++){stepMall(s,{forward:true});assert.equal(s.player.grounded,true);assert.equal(s.player.vy,0);}
+});
+
+test('ordinary air steering keeps the board aligned with travel without a trick spin',()=>{
+ const s=emptySkatepark();stepMall(s,{jump:true});
+ for(let i=0;i<35;i++){stepMall(s,{right:true});const pose=sampleSkatePose(s,0);assert.equal(pose.bodyYaw,s.player.yaw);assert.equal(pose.boardRoll,0);}
+ assert.ok(s.player.yaw>0);
+});
+test('wheel rotation follows distance, not run age or changes in speed',()=>{
+ const a=emptySkatepark(),b=emptySkatepark();b.tick=4000;
+ for(let i=0;i<20;i++){stepMall(a,{forward:true});stepMall(b,{forward:true});assert.equal(a.player.wheelAngle,b.player.wheelAngle);}
+ a.player.speed=0;const rotation=a.player.wheelAngle;for(let i=0;i<20;i++)stepMall(a);assert.equal(a.player.wheelAngle,rotation);
+});
+test('a landing catches the board and a quick new ollie does not replay the previous flip',()=>{
+ const s=emptySkatepark();Object.assign(s.player,{grounded:false,y:.01,vy:-1,visualSpin:2,trickType:'flip',trickStarted:s.tick,trickDuration:26});
+ stepMall(s);assert.equal(s.player.visualSpin,0);stepMall(s,{jump:true});const pose=sampleSkatePose(s,0);assert.equal(pose.boardRoll,0);assert.equal(pose.rearFrame,SKATE_CLIPS.ollie);
+});
+test('grip clears the beveled deck and wheels rotate around a fixed axle',async()=>{
+ const THREE=await import('three'),{makeSkateboard}=await import('../lib/arcade/after-hours/skateboard.js');
+ const material=new THREE.MeshBasicMaterial(),scene={disposables:[],gripMaterial:material,mat:()=>material,
+  plane(parent,x,y,z,w,h,mat){const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);mesh.position.set(x,y,z);parent.add(mesh);return mesh;},
+  mesh(parent,x,y,z,w,h,d){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);parent.add(mesh);return mesh;}};
+ const board=makeSkateboard(scene),{slab,grip,wheels}=board.userData;board.updateMatrixWorld(true);
+ assert.ok(new THREE.Box3().setFromObject(grip).min.y-new THREE.Box3().setFromObject(slab).max.y>.015);
+ const ray=new THREE.Raycaster(new THREE.Vector3(.2,3,.4),new THREE.Vector3(0,-1,0));assert.equal(ray.intersectObjects([grip,slab])[0].object,grip);
+ for(const angle of [0,.5,1.5,3,5]){for(const wheel of wheels){wheel.rotation.x=angle;board.updateMatrixWorld(true);const width=new THREE.Box3().setFromObject(wheel).getSize(new THREE.Vector3()).x;assert.ok(Math.abs(width-.12)<.00001);}}
+ board.traverse(o=>o.geometry?.dispose());for(const d of scene.disposables)d.dispose();material.dispose();
+});
+
+test('holding the touch ollie while steering does not request an air spin',()=>{
+ const s=emptySkatepark();for(let i=0;i<12;i++){stepMall(s,{action:true,steer:.7,touchAssist:true});assert.equal(sampleSkatePose(s,0).bodyYaw,s.player.yaw);}
 });

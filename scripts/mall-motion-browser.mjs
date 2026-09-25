@@ -20,8 +20,11 @@ try{
   await advance(1,{flip:true});await advance(10,{});assert.equal((await capture('flip')).skatePose,'flip');
   await advance(16,{});await advance(1,{grab:true});assert.equal((await capture('grab')).skatePose,'grab');
   await advance(32,{manual:true});await capture('landing');
-  await advance(1,{jump:true});await advance(30,{right:true});assert.equal((await capture('spin')).skatePose,'front');
+  await advance(1,{jump:true});await advance(30,{right:true,grab:true});assert.equal((await capture('spin')).skatePose,'front');
   await advance(50,{bank:true});assert.ok(Number(await page.locator('canvas').getAttribute('data-score'))>0);
+  await page.keyboard.press('r');await page.waitForTimeout(100);await advance(18,{forward:true});await advance(1,{jump:true});
+  for(let i=0;i<6;i++){await advance(4,{right:true});const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(data.boardYaw,data.yaw);assert.equal(Number(data.boardRoll),0);}
+  await capture('steering-no-spin');
   console.log('PASS',name,'rear push / ollie / animated flip / grab / landing / directional spin / board heading / bank');
  }
  assert.deepEqual(errors,[]);
