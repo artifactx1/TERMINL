@@ -99,7 +99,7 @@ test('a landing catches the board and a quick new ollie does not replay the prev
  stepMall(s);assert.equal(s.player.visualSpin,0);stepMall(s,{jump:true});const pose=sampleSkatePose(s,0);assert.equal(pose.boardRoll,0);assert.equal(pose.rearFrame,SKATE_CLIPS.ollie);
 });
 test('grip clears the beveled deck and wheels rotate around a fixed axle',async()=>{
- const THREE=await import('three'),{makeSkateboard,poseSkateboard}=await import('../lib/arcade/after-hours/skateboard.js');
+ const THREE=await import('three'),{makeSkateboard,poseSkateboard,poseSkaterRig}=await import('../lib/arcade/after-hours/skateboard.js');
  const material=new THREE.MeshBasicMaterial(),scene={disposables:[],gripMaterial:material,mat:()=>material,
   plane(parent,x,y,z,w,h,mat){const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);mesh.position.set(x,y,z);parent.add(mesh);return mesh;},
   mesh(parent,x,y,z,w,h,d){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);parent.add(mesh);return mesh;}};
@@ -117,6 +117,16 @@ test('grip clears the beveled deck and wheels rotate around a fixed axle',async(
   const feet=poseSkateboard(board,{bodyYaw:yaw,boardPitch:pitch,boardRoll:roll,bodyLift:0,flipping:false,bail:0}).clone();board.updateMatrixWorld(true);
   assert.ok(feet.distanceTo(grip.getWorldPosition(new THREE.Vector3()))<1e-7,'planted feet must follow the deck contact point');
  }
+ // Semantic yaw turns toward +X. Three.js rotates a -Z model toward -X for +Y.
+ const rig=new THREE.Group(),rider=new THREE.Mesh(new THREE.PlaneGeometry(1,1),material);rig.add(board,rider);rig.userData={board,sprite:rider};
+ const frame={width:100,height:200,footX:47,footY:196};
+ for(const yaw of [-2,-.7,0,.7,2]){
+  const pose={bodyYaw:yaw,boardPitch:0,boardRoll:0,bodyLift:0,flipping:false,bail:0,lean:0,frame:0};poseSkaterRig(rig,pose,frame,.01);rig.updateMatrixWorld(true);
+  const nose=new THREE.Vector3(0,0,-1).transformDirection(board.matrixWorld),forward=new THREE.Vector3(Math.sin(yaw),0,-Math.cos(yaw));assert.ok(nose.dot(forward)>.999999,'board nose must point along actual travel');
+  const riderForward=new THREE.Vector3(0,0,-1).transformDirection(rider.matrixWorld);assert.ok(riderForward.dot(nose)>.999999,'rider and board must turn together');
+  const foot=new THREE.Vector3(frame.footX/frame.width-.5,.5-frame.footY/frame.height,0);rider.localToWorld(foot);assert.ok(foot.distanceTo(grip.getWorldPosition(new THREE.Vector3()))<1e-7,'feet remain planted while steering');
+ }
+ rider.geometry.dispose();
  board.traverse(o=>o.geometry?.dispose());for(const d of scene.disposables)d.dispose();material.dispose();
 });
 

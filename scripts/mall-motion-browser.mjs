@@ -13,7 +13,7 @@ try{
   await clock();await page.getByRole('button',{name:'BREAK IN →'}).click();
   // Allow real image decoding while the deterministic simulation clock is stopped.
   await page.waitForTimeout(700);await advance(2,{});
-  const capture=async label=>{const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(data.bodyYaw,data.boardYaw);assert.equal(data.boardPivot,'deck-center');await page.screenshot({path:`artifacts/mall-motion-v2/${id}-${label}.png`});return data;};
+  const capture=async label=>{const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(Number(data.bodyYaw),Number(data.boardYaw));assert.equal(data.boardPivot,'deck-center');assert.equal(data.riderRender,'shared-heading-mesh');await page.screenshot({path:`artifacts/mall-motion-v2/${id}-${label}.png`});return data;};
   assert.equal((await capture('coast')).skatePose,'coast');
   await advance(18,{forward:true});assert.match((await capture('push')).skatePose,/push/);
   await advance(1,{forward:true,jump:true});await advance(8,{forward:true});assert.equal((await capture('ollie')).skatePose,'ollie');
@@ -28,8 +28,17 @@ try{
   await advance(1,{jump:true});await advance(30,{right:true,grab:true});assert.equal((await capture('spin')).skatePose,'front');
   await advance(50,{bank:true});assert.ok(Number(await page.locator('canvas').getAttribute('data-score'))>0);
   await page.keyboard.press('r');await page.waitForTimeout(100);await advance(18,{forward:true});await advance(1,{jump:true});
-  for(let i=0;i<6;i++){await advance(4,{right:true});const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(data.boardYaw,data.yaw);assert.equal(Number(data.boardRoll),0);}
+  for(let i=0;i<6;i++){await advance(4,{right:true});const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(Number(data.boardYaw),Number(data.yaw));assert.equal(Number(data.boardRoll),0);assert.equal(Number(data.riderYaw),Number(data.boardYaw));const yaw=Number(data.yaw);assert.ok(Math.abs(Number(data.boardForwardX)-Math.sin(yaw))<.001);assert.ok(Math.abs(Number(data.boardForwardZ)+Math.cos(yaw))<.001);}
   await capture('steering-no-spin');
+  if(id==='max'){
+   await page.keyboard.press('r');await page.waitForTimeout(100);await advance(18,{forward:true});
+   for(const direction of ['left','right']){for(let i=0;i<3;i++){
+    const before=await page.locator('canvas').evaluate(c=>({...c.dataset}));await advance(6,{forward:true,[direction]:true});const after=await page.locator('canvas').evaluate(c=>({...c.dataset}));
+    const dx=Number(after.x)-Number(before.x),dz=Number(after.z)-Number(before.z),distance=Math.hypot(dx,dz);
+    assert.ok((dx*Number(after.boardForwardX)+dz*Number(after.boardForwardZ))/distance>.98,'board nose follows actual displacement');
+    assert.equal(Number(after.riderYaw),Number(after.boardYaw));await capture(`ground-${direction}-${i}`);
+   }}
+  }
   console.log('PASS',name,'rear push / ollie / animated flip / grab / landing / directional spin / board heading / bank');
  }
  assert.deepEqual(errors,[]);

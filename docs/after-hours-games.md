@@ -83,3 +83,9 @@ Verification adds regression coverage for deck/grip separation, wheel axle geome
 The earlier stability fix left the board assembly pivot at ground level while the slab sat above it. The assembly is now centered on the slab's actual geometry bounds, preserving its resting placement. `poseSkateboard` rotates the centered assembly and derives the rider's foot anchor from the transformed grip surface. Ordinary ollies and grabs no longer add an independent vertical hover. Flips briefly separate the feet, complete one rotation, and return to a planted catch pose during the final fifth of the trick.
 
 Regression coverage tracks the actual deck center through 25 flip angles and verifies that planted feet follow the grip through combined pitch, roll and heading changes. The browser script captures takeoff, quarter-turn, inverted, three-quarter-turn and catch frames, with the comparison in `artifacts/mall-motion-v2/flip-pivot-sequence.png`. All 28 focused tests and all four skater browser flows passed.
+
+### Steering direction and shared rider transform
+
+The steering defect had two additional causes: simulation yaw uses `(sin(yaw), -cos(yaw))` for forward travel, but a Three.js model whose nose is local `-Z` requires **negative** Y rotation for that convention. Also, the rider was a camera-facing `THREE.Sprite`, so the board turned independently underneath an image that stayed facing the camera.
+
+The rider is now an alpha-cutout textured mesh. Rider and board share one parent heading transform; front/side/rear art compensates only for its authored viewing direction. The foot anchor follows the transformed deck. Tests compare the real transformed board nose against travel and compare rider/board world directions, including left and right turns. Browser checks also compare the board nose against measured player displacement, with a steering contact sheet in `artifacts/mall-motion-v2/steering-connected.png`.
