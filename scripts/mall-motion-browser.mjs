@@ -31,12 +31,16 @@ try{
   for(let i=0;i<6;i++){await advance(4,{right:true});const data=await page.locator('canvas').evaluate(c=>({...c.dataset}));assert.equal(Number(data.boardYaw),Number(data.yaw));assert.equal(Number(data.boardRoll),0);assert.equal(Number(data.riderYaw),Number(data.boardYaw));const yaw=Number(data.yaw);assert.ok(Math.abs(Number(data.boardForwardX)-Math.sin(yaw))<.001);assert.ok(Math.abs(Number(data.boardForwardZ)+Math.cos(yaw))<.001);}
   await capture('steering-no-spin');
   if(id==='max'){
-   await page.keyboard.press('r');await page.waitForTimeout(100);await advance(18,{forward:true});
+   await page.keyboard.press('r');await page.waitForTimeout(100);
+   await advance(45,{right:true});assert.equal(Number(await page.locator('canvas').getAttribute('data-yaw')),0);
+   await advance(18,{forward:true});
    for(const direction of ['left','right']){for(let i=0;i<3;i++){
     const before=await page.locator('canvas').evaluate(c=>({...c.dataset}));await advance(6,{forward:true,[direction]:true});const after=await page.locator('canvas').evaluate(c=>({...c.dataset}));
     const dx=Number(after.x)-Number(before.x),dz=Number(after.z)-Number(before.z),distance=Math.hypot(dx,dz);
-    assert.ok((dx*Number(after.boardForwardX)+dz*Number(after.boardForwardZ))/distance>.98,'board nose follows actual displacement');
+    assert.ok((dx*Number(after.boardForwardX)+dz*Number(after.boardForwardZ))/distance>.98,`board nose follows actual displacement: ${JSON.stringify({direction,before,after})}`);
     assert.equal(Number(after.riderYaw),Number(after.boardYaw));await capture(`ground-${direction}-${i}`);
+    const headingError=Number(after.chaseYaw)-Number(after.yaw);
+    assert.ok(Math.abs(Math.atan2(Math.sin(headingError),Math.cos(headingError)))<.001,'chase view must not swing sideways around the planted feet');
    }}
   }
   console.log('PASS',name,'rear push / ollie / animated flip / grab / landing / directional spin / board heading / bank');

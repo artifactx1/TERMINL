@@ -15,7 +15,7 @@ async function clock(page){await page.evaluate(()=>{
 try{
  for(const viewport of [{width:390,height:844},{width:844,height:390}]){
   const context=await browser.newContext({viewport,hasTouch:true,isMobile:true,deviceScaleFactor:1});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:4000/os/mall-rat');await page.getByRole('button',{name:'BREAK IN →'}).waitFor();await page.screenshot({path:`artifacts/after-hours-v2/mall-menu-${viewport.width}.png`});
+  await page.goto((process.env.ARCADE_TEST_URL||'http://127.0.0.1:4000')+'/os/mall-rat');await page.getByRole('button',{name:'BREAK IN →'}).waitFor();await page.screenshot({path:`artifacts/after-hours-v2/mall-menu-${viewport.width}.png`});
   await clock(page);await page.getByRole('button',{name:'BREAK IN →'}).tap();await page.waitForTimeout(1000);await frames(page,2);
   const client=await context.newCDPSession(page),stick=await page.getByRole('application').boundingBox(),action=await page.getByRole('button',{name:'OLLIE',exact:true}).boundingBox();
   let touches=[];const send=async(type,points=touches)=>client.send('Input.dispatchTouchEvent',{type,touchPoints:points});
@@ -32,6 +32,19 @@ try{
   await page.getByRole('button',{name:'PAUSE / HELP'}).tap();const tick=await page.locator('canvas').getAttribute('data-tick');await frames(page,12);assert.equal(await page.locator('canvas').getAttribute('data-tick'),tick);
   await page.getByRole('button',{name:'BACK TO IT →'}).tap();await frames(page,18);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.keyboard.press('r');await page.waitForTimeout(100);await frames(page,2);
+  touches=[point(stick,1)];await send('touchStart');await frames(page,18);
+  for(const direction of [-1,1]){
+   touches=[point(stick,1,direction*26,-12)];await send('touchMove');
+   for(let i=0;i<3;i++){
+    await frames(page,6);const d=await page.locator('canvas').evaluate(c=>({...c.dataset}));
+    assert.equal(Number(d.combo),0,'rolling past a rail must not auto-grind');
+    const delta=Number(d.chaseYaw)-Number(d.yaw);assert.ok(Math.abs(Math.atan2(Math.sin(delta),Math.cos(delta)))<.001);
+    assert.equal(Number(d.riderYaw),Number(d.boardYaw));
+   }
+   await page.screenshot({path:`artifacts/after-hours-v2/mall-carve-${direction}-${viewport.width}.png`});
+  }
+  touches=[];await send('touchEnd');
   console.log('PASS two-thumb ollie + flip + grab, release, pause/resume and layout',viewport);await context.close();
  }
  assert.deepEqual(errors,[]);

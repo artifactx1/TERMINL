@@ -3,7 +3,12 @@ import {createMall,stepMall,MALL_TUNING} from '../lib/arcade/after-hours/mall-si
 import {trick,bank,bail,comboValue} from '../lib/arcade/after-hours/mall-score.mjs';
 import {readProgress,recordRun} from '../lib/arcade/after-hours/progress.mjs';
 test('skater accelerates immediately, jumps, air-steers, lands and recovers quickly',()=>{const s=createMall();for(let i=0;i<30;i++)stepMall(s,{forward:true});assert.ok(s.player.speed>12);const yaw=s.player.yaw;stepMall(s,{jump:true,forward:true});assert.ok(!s.player.grounded);for(let i=0;i<12;i++)stepMall(s,{right:true,forward:true,flip:i===2});assert.ok(s.player.y>1.5);assert.ok(s.player.yaw>yaw);assert.ok(s.combo.history.includes('KICKFLIP')||s.combo.history.includes('IMPOSSIBLE'));for(let i=0;i<100;i++)stepMall(s,{});assert.ok(s.player.grounded);bail(s);for(let i=0;i<42;i++)stepMall(s,{});assert.equal(s.player.bail,0);});
-test('rails snap from forgiving approach; manual and jump preserve combo',()=>{const s=createMall();Object.assign(s.player,{x:0,z:14.8,speed:12,yaw:Math.PI/2});s.tick=20;stepMall(s,{grind:true});assert.ok(s.player.rail);for(let i=0;i<20;i++)stepMall(s,{grind:true});assert.ok(s.combo.count);stepMall(s,{jump:true,flip:true});assert.equal(s.player.rail,null);assert.ok(s.player.vy>0);});
+test('rails catch an airborne approach; jumping releases the rail and preserves combo',()=>{const s=createMall();Object.assign(s.player,{x:0,z:14.8,y:1.1,grounded:false,vy:-2,speed:12,yaw:Math.PI/2});s.tick=20;stepMall(s,{grind:true});assert.ok(s.player.rail);for(let i=0;i<20;i++)stepMall(s,{grind:true});assert.ok(s.combo.count);stepMall(s,{jump:true,flip:true});assert.equal(s.player.rail,null);assert.ok(s.player.vy>0);});
+test('touch rail assistance never redirects a skater rolling past a rail',()=>{
+ const s=createMall();Object.assign(s.player,{x:4,z:16,speed:12});s.tick=20;
+ for(let i=0;i<16;i++){stepMall(s,{forward:true,grind:true,touchAssist:true});assert.equal(s.player.rail,null);assert.equal(s.player.yaw,0);assert.equal(s.player.grounded,true);}
+ assert.ok(s.player.z<14);
+});
 test('repeat tricks diminish, bank is safe, bail destroys only unbanked score',()=>{const s=createMall();trick(s,'FLIP',100);const first=s.combo.base;trick(s,'FLIP',100);assert.ok(s.combo.base-first<100);trick(s,'GRAB',200);const score=comboValue(s);bank(s);assert.equal(s.score,score);trick(s,'SPECIAL',2000);bail(s);assert.equal(s.score,score);assert.equal(s.combo.count,0);assert.ok(s.stats.biggestBail>0);});
 test('150 second runs end, seeded challenges repeat, saves survive malformed data',()=>{const s=createMall({seed:17});assert.deepEqual(s.challengeIds,createMall({seed:17}).challengeIds);s.tick=MALL_TUNING.duration-1;stepMall(s);assert.equal(s.phase,'finished');const storage={getItem:()=>'{',setItem(){throw Error('quota');}};const result=recordRun(readProgress(storage),s,storage);assert.equal(result.saved,false);assert.equal(result.progress.mall.records.length,1);});
 import {createRug,stepRug} from '../lib/arcade/after-hours/rug-sim.mjs';
@@ -59,6 +64,18 @@ test('chase view sees the back at every compass heading; spins expose side and f
  for(const sheet of Object.values(MALL_MOTION)){assert.equal(sheet.frames.length,12);for(const f of sheet.frames){assert.ok(f.x+f.width<=sheet.width&&f.y+f.height<=sheet.height);assert.ok(f.width>0&&f.height>0);}}
 });
 function emptySkatepark(){const s=createMall({practice:true});s.world.props=[];s.world.solids=[];s.world.rails=[];s.world.floors=[{x:0,z:0,w:170,d:170,y:0}];Object.assign(s.player,{x:30,z:20,speed:18});return s;}
+test('steering carves in the requested direction and cannot pivot a stopped board',()=>{
+ for(const direction of [-1,1]){
+  const s=emptySkatepark();s.player.speed=0;const start={...s.player};
+  for(let i=0;i<90;i++)stepMall(s,{steer:direction});
+  assert.equal(s.player.yaw,start.yaw);assert.equal(s.player.x,start.x);assert.equal(s.player.z,start.z);
+  for(let i=0;i<20;i++)stepMall(s,{forward:true,steer:direction});
+  assert.ok((s.player.x-start.x)*direction>0);assert.ok(s.player.yaw*direction>0);
+  for(let i=0;i<60;i++)stepMall(s,{back:true,steer:direction});
+  assert.equal(s.player.speed,0);const yaw=s.player.yaw;
+  for(let i=0;i<30;i++)stepMall(s,{steer:direction});assert.equal(s.player.yaw,yaw);
+ }
+});
 test('air spins preserve forward momentum and use the same heading for body and board',()=>{
  const s=emptySkatepark();stepMall(s,{jump:true});for(let i=0;i<30;i++)stepMall(s,{right:true,grab:true});
  assert.ok(s.player.spin>3);assert.ok(s.player.yaw<.25);assert.ok(s.player.z<13);assert.equal(sampleSkatePose(s,0).bodyYaw,s.player.yaw+s.player.visualSpin);
