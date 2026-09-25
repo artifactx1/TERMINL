@@ -40,7 +40,8 @@
     "test:csp:browser": "node scripts/csp-browser.mjs",
     "test:after-hours": "node --test scripts/after-hours.test.mjs",
     "test:after-hours:routes": "node scripts/after-hours-pilot.mjs --output=/tmp/terminl-rug-plans.json",
-    "test:after-hours:browser": "npm run test:after-hours:routes && node scripts/after-hours-browser.mjs"
+    "test:after-hours:browser": "npm run test:after-hours:routes && node scripts/after-hours-browser.mjs",
+    "test:after-hours:touch": "node scripts/mall-touch-browser.mjs && node scripts/rug-touch-browser.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.8",

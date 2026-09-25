@@ -1,8 +1,8 @@
 {
   "version": 1,
   "releaseApproved": false,
-  "decodedMemoryBudgetBytes": 167772160,
-  "runtimePolicy": "Public character portraits, illustrated combat and finisher atlases, stage plates and racing assets. Declared asset decode memory is bounded below; display canvases are additional. No unpublished collection art exported. After-hours game scenes load on their own routes. The 160 MiB inventory budget includes generated signage and launcher previews; WebGL render targets are additional.",
+  "decodedMemoryBudgetBytes": 201326592,
+  "runtimePolicy": "Aggregate inventory budget 192 MiB includes all illustrated arcade art. Mall Rat loads only the selected degen atlas plus shared mall textures; RUG.EXE loads its own enemy textures and the selected first-person weapon. Games are route-loaded and their renderers dispose GPU resources on unmount. Source PNG sheets are not loaded by gameplay. WebGL render targets and canvases are additional.",
   "assets": [
     {
       "id": "max-reference-v1",
@@ -2012,7 +2012,7 @@
       "id": "after-hours-worlds-v1",
       "role": "procedural-3d-worlds",
       "source": "lib/arcade/after-hours/scene.js",
-      "provenance": "Original low-poly geometry, character rigs and canvas-generated signage authored in this repository.",
+      "provenance": "Shared Three.js scene primitives and bounded game objects; MallScene and RugScene add illustrated textures and sprites.",
       "rights": "Original project-authored geometry and textures.",
       "review": "development-only",
       "humanApproved": false,
@@ -2028,6 +2028,526 @@
       ],
       "games": [
         "mall-rat",
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "mall-rat-cold-storage-chloe-atlas-v1",
+      "role": "skate-sprite-atlas",
+      "source": "public/arcade/mall-rat/cold-storage-chloe-atlas-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 4194304,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-diamond-hands-pepe-atlas-v1",
+      "role": "skate-sprite-atlas",
+      "source": "public/arcade/mall-rat/diamond-hands-pepe-atlas-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 4194304,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-margin-call-max-atlas-v1",
+      "role": "skate-sprite-atlas",
+      "source": "public/arcade/mall-rat/margin-call-max-atlas-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 4194304,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-mev-mia-atlas-v1",
+      "role": "skate-sprite-atlas",
+      "source": "public/arcade/mall-rat/mev-mia-atlas-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 4194304,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-prop-0-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/mall-rat/prop-0-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 384,
+        "height": 429
+      },
+      "decodedBudgetBytes": 658944,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-prop-1-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/mall-rat/prop-1-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 384,
+        "height": 467
+      },
+      "decodedBudgetBytes": 717312,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-prop-2-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/mall-rat/prop-2-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 384,
+        "height": 288
+      },
+      "decodedBudgetBytes": 442368,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-prop-3-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/mall-rat/prop-3-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 382,
+        "height": 512
+      },
+      "decodedBudgetBytes": 782336,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-prop-4-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/mall-rat/prop-4-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 324,
+        "height": 512
+      },
+      "decodedBudgetBytes": 663552,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-prop-5-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/mall-rat/prop-5-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 384,
+        "height": 451
+      },
+      "decodedBudgetBytes": 692736,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "mall-rat-storefront-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/mall-rat/storefront-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1536,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 6291456,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "rug-exe-enemy-0-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/enemy-0-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 512,
+        "height": 495
+      },
+      "decodedBudgetBytes": 1013760,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-enemy-1-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/enemy-1-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 437,
+        "height": 512
+      },
+      "decodedBudgetBytes": 894976,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-enemy-2-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/enemy-2-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 505,
+        "height": 512
+      },
+      "decodedBudgetBytes": 1034240,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-enemy-3-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/enemy-3-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 473,
+        "height": 512
+      },
+      "decodedBudgetBytes": 968704,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-enemy-4-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/enemy-4-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 365,
+        "height": 512
+      },
+      "decodedBudgetBytes": 747520,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-enemy-5-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/enemy-5-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 398,
+        "height": 512
+      },
+      "decodedBudgetBytes": 815104,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-special-0-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/special-0-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 512,
+        "height": 450
+      },
+      "decodedBudgetBytes": 921600,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-special-1-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/special-1-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 377,
+        "height": 512
+      },
+      "decodedBudgetBytes": 772096,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-special-2-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/special-2-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 471,
+        "height": 512
+      },
+      "decodedBudgetBytes": 964608,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-special-3-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/special-3-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 512,
+        "height": 474
+      },
+      "decodedBudgetBytes": 970752,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-wall-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/wall-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1024,
+        "height": 1024
+      },
+      "decodedBudgetBytes": 4194304,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-weapon-0-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/weapon-0-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 512,
+        "height": 482
+      },
+      "decodedBudgetBytes": 987136,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-weapon-1-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/weapon-1-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 512,
+        "height": 493
+      },
+      "decodedBudgetBytes": 1009664,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-weapon-2-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/weapon-2-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 512,
+        "height": 455
+      },
+      "decodedBudgetBytes": 931840,
+      "variants": [
+        "v1"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "rug-exe-weapon-3-v1",
+      "role": "illustrated-game-texture",
+      "source": "public/arcade/rug-exe/weapon-3-v1.webp",
+      "provenance": "Built-in imagegen; canonical TERMINL portraits referenced for skaters. Alpha silhouettes packed with Sharp. Prompts recorded in docs.",
+      "rights": "Generated adaptation for this project; no new third-party license asserted.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 512,
+        "height": 453
+      },
+      "decodedBudgetBytes": 927744,
+      "variants": [
+        "v1"
+      ],
+      "games": [
         "rug-exe"
       ]
     }

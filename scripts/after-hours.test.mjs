@@ -21,3 +21,29 @@ test('every campaign spawn, exit and required control is outside solid geometry'
 test('secret panels open side rooms; walking inside awards one discovery',()=>{const s=createRug({level:1});s.enemies=[];const secret=s.world.secrets[0];openSecret(s,secret);assert.equal(s.world.solids.find(b=>b.id===secret.panelId).broken,true);assert.equal(s.secrets.length,0);Object.assign(s.player,{x:secret.roomX,z:secret.roomZ,y:0});stepRug(s);stepRug(s);assert.deepEqual(s.secrets,[secret.id]);assert.ok(s.unlocked.includes(7));});
 test('final level ends with escape, never a conventional boss fight',()=>{const s=createRug({level:7});s.enemies=[];s.world.switches.forEach(c=>c.used=true);s.kills=s.initialEnemies;Object.assign(s.player,s.world.exit);stepRug(s,{interact:true});assert.ok(s.escape>0);assert.equal(s.phase,'playing');assert.deepEqual(s.world.exit,s.world.spawn);Object.assign(s.player,s.world.spawn);stepRug(s);assert.equal(s.phase,'complete');});
 test('long sessions bound defeated actors, health drops and free-skate replay data',()=>{const s=createRug();s.enemies=[];for(let i=0;i<600;i++){const e=spawnEnemy('bot',0,0,i+100);s.enemies.push(e);damageEnemy(s,e,100);}stepRug(s);assert.equal(s.enemies.length,0);assert.ok(s.world.pickups.length<=120);const mall=createMall({practice:true});for(let i=0;i<600;i++)stepMall(mall);assert.equal(mall.ghost.length,0);});
+test('touch action ollies then flips, assisted rails release, bank waits for landing',()=>{
+ const s=createMall({practice:true});
+ for(let i=0;i<20;i++)stepMall(s,{forward:true,steer:.3});
+ assert.ok(s.player.yaw>0&&s.player.yaw<.4);
+ stepMall(s,{forward:true,action:true,grind:true});assert.equal(s.player.grounded,false);assert.equal(s.player.rail,null);
+ stepMall(s,{forward:true,grind:true});stepMall(s,{forward:true,action:true,bank:true,grind:true});
+ assert.ok(s.combo.history.includes('KICKFLIP'));assert.equal(s.bankPending,true);
+ for(let i=0;i<80;i++)stepMall(s,{});assert.ok(s.score>0);assert.equal(s.bankPending,false);
+ const rail=createMall();Object.assign(rail.player,{x:0,z:14,y:.8,rail:'atrium-rail',speed:12,grounded:false});rail.tick=30;
+ stepMall(rail,{action:true,grind:true});assert.equal(rail.player.rail,null);assert.ok(rail.player.vy>0);
+});
+test('quick touch taps survive release before a simulation read; pause clears all inputs',async()=>{
+ const {attachInput}=await import('../lib/arcade/after-hours/input.js');
+ const originals=Object.fromEntries(['window','document','navigator'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]));
+ Object.defineProperty(globalThis,'window',{value:new EventTarget(),configurable:true});Object.defineProperty(globalThis,'document',{value:new EventTarget(),configurable:true});Object.defineProperty(globalThis,'navigator',{value:{getGamepads:()=>[]},configurable:true});
+ const input=attachInput(new EventTarget(),{kind:'mall',pause(){},restart(){},debug(){}});
+ try{
+  input.touch('action',true,1);input.touch('action',false,1);assert.equal(input.read().action,true);assert.equal(input.read().action,undefined);
+  input.stick({x:.4,y:-.5});assert.equal(input.read().steer,.4);input.touch('special',true,2);input.clear();const neutral=input.read();assert.equal(neutral.special,undefined);assert.equal(neutral.forward,undefined);assert.equal(neutral.steer,undefined);
+ }finally{input.dispose();for(const [key,descriptor]of Object.entries(originals)){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete globalThis[key];}}
+});
+test('skaters remain stopped without input and braking never accelerates backward',()=>{
+ const s=createMall({practice:true}),spawn={...s.player};for(let i=0;i<180;i++)stepMall(s,{});assert.equal(s.player.speed,0);assert.equal(s.player.x,spawn.x);assert.equal(s.player.z,spawn.z);
+ for(let i=0;i<20;i++)stepMall(s,{forward:true});assert.ok(s.player.speed>0);for(let i=0;i<120;i++)stepMall(s,{back:true,forward:true});assert.equal(s.player.speed,0);
+ const z=s.player.z;for(let i=0;i<30;i++)stepMall(s,{back:true});assert.equal(s.player.z,z);
+});
