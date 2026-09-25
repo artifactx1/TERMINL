@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { createFight, stepFight, botInput, INPUT, MOVES, CHARACTERS, STAGES } from "../../lib/arcade/rumble-sim.mjs";
+import { createFight, stepFight, botInput, INPUT, MOVES, CHARACTERS, STAGES, RUMBLE_RULES_VERSION } from "../../lib/arcade/rumble-sim.mjs";
+import { FINISHERS, FINISH_WINDOW_TICKS } from "../../lib/arcade/rumble-finishers.mjs";
+import { FINISHER_SPRITES } from "../../lib/arcade/rumble-finisher-sprite-data.mjs";
 import { drawRumble } from "../../lib/arcade/rumble-render";
 import { RUMBLE_SPRITES } from "../../lib/arcade/rumble-sprites.mjs";
 import { RumbleAudio } from "../../lib/arcade/rumble-audio";
@@ -32,6 +34,7 @@ export default function Rumble({assetLabEnabled=false}){
   const [rtt,setRtt]=useState(0),[assetError,setAssetError]=useState(false),[resume,setResume]=useState(null);
   const canvas=useRef(null),arena=useRef(null),images=useRef({}),audio=useRef(null),client=useRef(null),game=useRef(null);
   const state=useRef({mode,paused,training,lesson,prefs});state.current={mode,paused,training,lesson,prefs,circuit,settings,movesOpen};
+  const finisherPulse=useRef(0);
   const input=useRef(0),keyboard=useRef(0),touch=useRef(0),pad=useRef(0),keys=useRef(new Map());
   const metrics=useRef({frames:0,totalMs:0,maxMs:0}),lastUI=useRef(0),lessonStart=useRef(0),matchId=useRef(null);
   const roster=ROSTER.find(r=>r.id===character);
@@ -44,14 +47,14 @@ export default function Rumble({assetLabEnabled=false}){
     if(parseInvitation(window.location.href))setInvite(window.location.href);
     try{setCircuitSave(readCircuit(localStorage.getItem(CIRCUIT_KEY)));}catch{}
     let disposed=false;
-    const assets=[...LEVELS,...Object.entries(RUMBLE_SPRITES).map(([id,sheet])=>({id,image:sheet.src}))];
+    const assets=[...LEVELS,...Object.entries(RUMBLE_SPRITES).map(([id,sheet])=>({id,image:sheet.src})),...Object.entries(FINISHER_SPRITES).map(([id,sheet])=>({id:`finisher-${id}`,image:sheet.src}))];
     for(const asset of assets){const image=new window.Image();image.onload=()=>{if(!disposed)images.current[asset.id]=image;};image.onerror=()=>{if(!disposed)setAssetError(true);};image.src=asset.image;}
     audio.current=new RumbleAudio();
     return ()=>{disposed=true;images.current={};client.current?.dispose({leave:false});audio.current?.dispose();};
   },[]);
   useEffect(()=>{if(!prefsReady)return;audio.current?.setVolumes({music:prefs.music,sfx:prefs.sfx});try{localStorage.setItem("terminl:rumble-prefs",JSON.stringify(prefs));}catch{}},[prefs,prefsReady]);
   useEffect(()=>{audio.current?.setPaused(mode==="menu"||(mode==="practice"&&paused));},[mode,paused]);
-  const resetInput=()=>{input.current=0;keyboard.current=0;touch.current=0;pad.current=0;keys.current.clear();client.current?.setInput(0);setTouchReset(n=>n+1);};
+  const resetInput=()=>{finisherPulse.current=0;input.current=0;keyboard.current=0;touch.current=0;pad.current=0;keys.current.clear();client.current?.setInput(0);setTouchReset(n=>n+1);};
   const updateInput=()=>{const value=keyboard.current|touch.current|pad.current;if(value!==input.current){input.current=value;client.current?.setInput(value);}};
   const updateInputRef=useRef(updateInput);updateInputRef.current=updateInput;
   useEffect(()=>{
@@ -89,9 +92,11 @@ export default function Rumble({assetLabEnabled=false}){
       const controller=navigator.getGamepads?.()?.find?.(p=>p?.connected);
       if(controller&&!current.settings&&!current.movesOpen&&!(current.mode==='practice'&&current.paused)){let value=0;const down=i=>controller.buttons[i]?.pressed;const x=controller.axes[0]||0,y=controller.axes[1]||0;if(x<-.3||down(14))value|=1;if(x>.3||down(15))value|=2;if(y>.4||down(13))value|=8;if(down(0)||down(12))value|=4;if(down(2))value|=16;if(down(3))value|=32;if(down(1))value|=64;if(down(4))value|=128;if(down(5))value|=256;if(down(6))value|=512;if(down(7))value|=1024;pad.current=value;updateInputRef.current();}
       else if(pad.current){pad.current=0;updateInputRef.current();}
+      let fightInput=input.current;
+      if(finisherPulse.current>0){fightInput=finisherPulse.current>=10||finisherPulse.current<=2?0:INPUT.SUPER;finisherPulse.current--;client.current?.setInput(fightInput);if(!finisherPulse.current)client.current?.setInput(input.current);}
       let draw;
       if(current.mode==="practice"&&game.current){
-        if(!current.paused){accumulator+=elapsed;while(accumulator>=FRAME){game.current=stepFight(game.current,[input.current,current.training&&current.lesson<2?0:current.circuit?circuitInput(game.current,current.circuit):botInput(game.current,1)]);accumulator-=FRAME;}}
+        if(!current.paused){accumulator+=elapsed;while(accumulator>=FRAME){game.current=stepFight(game.current,[fightInput,current.training&&current.lesson<2?0:current.circuit?circuitInput(game.current,current.circuit):botInput(game.current,1)]);accumulator-=FRAME;}}
         draw=game.current;
         if(current.training&&draw.phase==="fight"){
           if(current.lesson===0&&Math.abs(draw.players[0].x-lessonStart.current)>90)setLesson(1);
@@ -105,6 +110,8 @@ export default function Rumble({assetLabEnabled=false}){
         const renderMs=performance.now()-started;metrics.current.frames++;metrics.current.totalMs+=renderMs;metrics.current.maxMs=Math.max(metrics.current.maxMs,renderMs);
         el.dataset.tick=String(draw.tick);el.dataset.phase=draw.phase;el.dataset.p0=String(Math.round(draw.players[0].x));el.dataset.hp=draw.players.map(p=>p.hp).join(",");
         el.dataset.input=String(input.current);el.dataset.action=draw.players[0].action?.id||'';el.dataset.grounded=String(draw.players[0].grounded);
+        el.dataset.finisher=draw.finisher?.activated?draw.finisher.character:'';
+        el.dataset.finisherFrame=String(draw.phase==='finisher'?draw.phaseTick:-1);
         el.dataset.fighterArt=draw.players.every(p=>images.current[p.character]?.naturalWidth)?'illustrated-sprites':'loading-fallback';
         // Audio follows authoritative events only; never predicted hit effects.
         audio.current?.update(current.mode==="online"?client.current.state:draw);
@@ -144,6 +151,7 @@ export default function Rumble({assetLabEnabled=false}){
     else if(kind==="create")action={type:"create",name:name.trim()||"ANON",character,stage};
     else {const parsed=parseInvitation(invite);if(!parsed){setNotice("Paste the complete invitation link, including its scoped token.");return;}action={type:"join",...parsed,name:name.trim()||"ANON",character,spectator:kind==="watch"};}
     client.current?.dispose({leave:false});resetInput();setView(null);setRoom(null);setResult(null);setJoined(null);setMode("online");
+    if(action)action={...action,game:"rekt-rumble",rulesVersion:RUMBLE_RULES_VERSION};
     const next=new RumbleClient(url,receive);client.current=next;if(kind==="resume")next.session=resume;next.connect(action);audio.current?.unlock();
   };
   const leave=()=>{client.current?.dispose();client.current=null;resetInput();game.current=null;setMode("menu");setRoom(null);setView(null);setJoined(null);setResult(null);setPaused(false);audio.current?.setVolumes({music:0,sfx:prefs.sfx});};
@@ -155,6 +163,9 @@ export default function Rumble({assetLabEnabled=false}){
   const playing=mode==="practice"||!!view;
   const slot=mode==="practice"?0:joined?.slot;
   const canReconnect=mode==='online'&&['disconnected','unavailable'].includes(connection)&&!!client.current?.canReconnect();
+  const finishWindow=view?.phase==='finishWindow';
+  const canFinish=finishWindow&&view.finisher.player===slot&&!paused&&!settings&&!movesOpen;
+  const finisher=FINISHERS[view?.finisher?.character||character];
   const selectedMoves=Array.isArray(MOVES[character])?MOVES[character]:Object.values(MOVES[character]||{});
   return <div className={`${s.shell} ${mode!=="menu"?s.inGame:""}`}>
     <header className={s.header}><Link href="/os"><b>TERMINL</b><span>ARCADE</span></Link><span className={s.buildTag}>REKT RUMBLE / SOLO + ONLINE</span><div>{mode!=="menu"&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{resetInput();setSettings(true);if(mode==="practice")setPaused(true);}}>SETTINGS</button><button onClick={fullscreen} aria-label="Toggle fullscreen">⛶</button></div></header>
@@ -179,14 +190,15 @@ export default function Rumble({assetLabEnabled=false}){
           {training&&lesson===3&&<div className={s.lesson}><b>BASICS COMPLETE ✓</b><p>Try GRAB ({bind(512)}) up close. Down + SPECIAL is your rising attack; toward your rival + SPECIAL lunges. SUPER ({bind(1024)}) needs 100% meter.</p><button onClick={()=>setTraining(false)}>KEEP FIGHTING →</button></div>}
           {paused&&mode==="practice"&&!settings&&!movesOpen&&<div className={s.gameOverlay}><h2>TAKE A BREATHER.</h2><p>Practice is paused. Online matches never pause for one player.</p><button className={s.primary} onClick={()=>{setPaused(false);audio.current?.unlock();}}>BACK TO IT →</button></div>}
           {mode==="online"&&connection!=="connected"&&<div className={s.reconnect}>{canReconnect?<>CONNECTION LOST · <button onClick={()=>client.current?.reconnect()}>RECONNECT NOW</button> · Match clock continues.</>:'CONNECTION LOST · Reconnecting. Match clock continues.'}</div>}
+          {finishWindow&&!paused&&!settings&&!movesOpen&&<div className={s.finisherPrompt} role="status"><b>FINISH IT</b><span>{finisher.name.toUpperCase()} · {Math.ceil(Math.max(0,FINISH_WINDOW_TICKS-view.phaseTick)/60)}s</span>{canFinish?<><button className={s.primary} disabled={mode==='online'&&connection!=='connected'} onClick={()=>{audio.current?.unlock();finisherPulse.current=12;}}>FINISH THEM →</button><small>Press SUPER ({bind(INPUT.SUPER)}) · No meter required</small></>:<small>{ROSTER.find(r=>r.id===view.finisher.character)?.name} can deliver the final blow.</small>}</div>}
           {finished&&<div className={s.gameOverlay}><span className={s.eyebrow}>{mode==="online"?"SERVER-CONFIRMED RESULT":circuit?circuit.index===5&&winner===0?"CIRCUIT COMPLETE":"SOLO CIRCUIT":"PRACTICE COMPLETE"}</span><h2>{winner===null||winner===-1?"MUTUAL COPING.":slot===-1?`${room?.players[winner]?.name||"FIGHTER"} WINS`:winner===slot?"BAG SECURED.":"LIQUIDATED."}</h2><p>{(outcome?.wins||view?.wins)?.join(" — ")} · {mode==="online"?"Recorded by the room server. No cash or NFT rewards.":circuit?winner===0?circuit.index===5?"All six opponents defeated.":"Next opponent unlocked.":"Retry this fight to continue your circuit.":"Ready for another round?"}</p><button className={s.primary} onClick={()=>mode==="practice"?practice(false,circuit?(winner===0?(circuit.index===5?newCircuit(circuit.character):advanceCircuit(circuit,0)):circuit):null):client.current?.send({type:"rematch"})}>{mode==="practice"?circuit?winner===0?circuit.index===5?"PLAY CIRCUIT AGAIN →":"NEXT OPPONENT →":"RETRY FIGHT →":"RUN IT BACK →":room?.players[joined?.slot]?.rematch?"WAITING FOR OPPONENT…":"VOTE REMATCH →"}</button><button className={s.textButton} onClick={leave}>BACK TO FIGHTER SELECT</button></div>}
         </div>
         <div className={s.fightFooter}><p><b>{bind(1)} / {bind(2)} MOVE · {bind(4)} JUMP · {bind(8)} CROUCH</b><span className={s.combatKeys}>{bind(16)} PUNCH · {bind(32)} KICK · {bind(64)} SPECIAL</span><span className={s.combatKeys}>{bind(256)} DASH · {bind(512)} GRAB · {bind(1024)} SUPER · {bind(128)} BLOCK</span></p><span>{view?.events?.at(-1)?.text||"Missed specials are punishable. Grabs beat blocks."}</span></div>
-        {slot!==-1&&<TouchControls resetKey={touchReset} meter={view?.players[slot||0]?.meter||0} feedback={view?.players[slot||0]?.action?MOVES[view.players[slot||0].character][view.players[slot||0].action.id]?.name:touch.current&1024&&(view?.players[slot||0]?.meter||0)<1000?'SUPER needs 100% meter · earn it by fighting':''} disabled={paused||settings||movesOpen||finished||mode==='online'&&connection!=='connected'} onChange={value=>{touch.current=value;updateInputRef.current();}}/>}
+        {slot!==-1&&<TouchControls resetKey={touchReset} meter={canFinish?1000:view?.players[slot||0]?.meter||0} feedback={view?.players[slot||0]?.action?MOVES[view.players[slot||0].character][view.players[slot||0].action.id]?.name:touch.current&1024&&(view?.players[slot||0]?.meter||0)<1000?'SUPER needs 100% meter · earn it by fighting':''} disabled={paused||settings||movesOpen||finished||view?.phase==='finisher'||finishWindow&&!canFinish||mode==='online'&&connection!=='connected'} onChange={value=>{touch.current=value;updateInputRef.current();}}/>}
       </>}
     </main>}
     {settings&&<Panel title="SYSTEM SETTINGS" close={()=>setSettings(false)}><p>Online matches keep running while this panel is open.</p>{[["music","MUSIC"],["sfx","SOUND EFFECTS"]].map(([key,label])=><label key={key}>{label}<input type="range" min="0" max="1" step=".05" value={prefs[key]} onChange={e=>{audio.current?.unlock();setPrefs(p=>({...p,[key]:Number(e.target.value)}));}} /></label>)}<button className={s.secondary} onClick={()=>setPrefs(p=>({...p,music:0,sfx:0}))}>MUTE ALL</button><label><input type="checkbox" checked={prefs.reducedMotion} onChange={e=>setPrefs(p=>({...p,reducedMotion:e.target.checked}))} /> REDUCED MOTION</label><label><input type="checkbox" checked={prefs.shake} onChange={e=>setPrefs(p=>({...p,shake:e.target.checked}))} /> CAMERA SHAKE</label><label>QUALITY<select value={prefs.quality} onChange={e=>setPrefs(p=>({...p,quality:e.target.value}))}><option value="high">High</option><option value="low">Low / mobile</option></select></label><h3>Keyboard controls</h3><KeyboardGuide keys={prefs.keys}/><p>Left hand moves; right hand fights; thumb blocks. Arrow keys also work with the default layout.</p><button className={s.secondary} onClick={()=>{resetInput();setPrefs(p=>({...p,keys:{...DEFAULT_KEYS},controlsVersion:CONTROL_VERSION}));}}>RESET KEYBOARD LAYOUT</button><p>To customize, focus a field and press a key. Duplicate assignments are replaced.</p><div className={s.keyGrid}>{ACTIONS.map(([bit,label])=><label key={bit}>{label}<input aria-label={`Key for ${label}`} readOnly value={bind(bit)} onKeyDown={e=>{if(["Tab","Escape","Meta","Control","Alt"].includes(e.key)||e.metaKey||e.ctrlKey||e.altKey)return;e.preventDefault();e.stopPropagation();const key=e.key.length===1?e.key.toLowerCase():e.key;setPrefs(p=>{const map=Object.fromEntries(Object.entries(p.keys).filter(([k,v])=>v!==bit&&k.toLowerCase()!==key.toLowerCase()));map[key]=bit;return {...p,keys:map,controlsVersion:CONTROL_VERSION};});}} /></label>)}</div><p>Controller: stick/D-pad move; A jump; X punch; Y kick; B special; LB block; RB dash; LT grab; RT super. Hardware validation pending.</p></Panel>}
-    {movesOpen&&<Panel title="KNOW YOUR BAD HABITS" close={()=>setMovesOpen(false)}><KeyboardGuide keys={prefs.keys}/><p>{bind(1)} / {bind(2)} move, {bind(4)} jumps, and {bind(8)} crouches. Hold {bind(128)} to block. Crouch-block stops low attacks; standing block stops aerial attacks. {bind(512)} grabs nearby opponents and also escapes a grab during its short escape window.</p><p>Down + PUNCH / KICK gives low attacks; jumping changes them to aerial attacks. Down + SPECIAL gives a rising attack; toward your rival + SPECIAL lunges. {bind(256)} dashes; {bind(1024)} spends a full meter on your super. Missed kicks and specials leave you open.</p><div className={s.moveTable}>{selectedMoves.map((move,i)=><article key={move.id||i}><h3>{move.name||move.id}</h3><p>{move.counterplay||move.description}</p><small>START {move.startup} · ACTIVE {move.active} · RECOVER {move.recovery} · DAMAGE {move.damage}</small></article>)}</div><p>Online: leaving or disconnecting does not pause the fight. Rejoin within 15 seconds. No ranked ladder or ownership advantages in this slice.</p></Panel>}
+    {movesOpen&&<Panel title="KNOW YOUR BAD HABITS" close={()=>setMovesOpen(false)}><KeyboardGuide keys={prefs.keys}/><p>{bind(1)} / {bind(2)} move, {bind(4)} jumps, and {bind(8)} crouches. Hold {bind(128)} to block. Crouch-block stops low attacks; standing block stops aerial attacks. {bind(512)} grabs nearby opponents and also escapes a grab during its short escape window.</p><p>Down + PUNCH / KICK gives low attacks; jumping changes them to aerial attacks. Down + SPECIAL gives a rising attack; toward your rival + SPECIAL lunges. {bind(256)} dashes; {bind(1024)} spends a full meter on your super. Missed kicks and specials leave you open.</p><article className={s.finisherHelp}><h3>FINISHER · {FINISHERS[character].name}</h3><p>{FINISHERS[character].description} Win the match by knockout, then press SUPER ({bind(INPUT.SUPER)}) or tap FINISH THEM within four seconds. No meter needed. Let the timer expire to take the win.</p></article><div className={s.moveTable}>{selectedMoves.map((move,i)=><article key={move.id||i}><h3>{move.name||move.id}</h3><p>{move.counterplay||move.description}</p><small>START {move.startup} · ACTIVE {move.active} · RECOVER {move.recovery} · DAMAGE {move.damage}</small></article>)}</div><p>Online: leaving or disconnecting does not pause the fight. Rejoin within 15 seconds. No ranked ladder or ownership advantages in this slice.</p></Panel>}
   </div>;
 }
 

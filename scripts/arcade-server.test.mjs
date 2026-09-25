@@ -7,7 +7,7 @@ import { WebSocket } from 'ws';
 import { startArcadeServer } from '../server/arcade/index.mjs';
 import { openJournal } from '../server/arcade/journal.mjs';
 import { replayFight } from '../lib/arcade/rollback.mjs';
-import { INPUT, stateHash } from '../lib/arcade/rumble-sim.mjs';
+import { INPUT, stateHash, RUMBLE_RULES_VERSION } from '../lib/arcade/rumble-sim.mjs';
 import { RACE_RULES, RACE_RULES_VERSION, raceHash } from '../lib/arcade/race-sim.mjs';
 import {encodeRaceInput} from '../lib/arcade/race-input.mjs';
 
@@ -45,7 +45,7 @@ async function client(url, latency = 0) {
   };
   socket.on('error', () => {});
   await wait((m) => m.type === 'welcome');
-  return { socket, messages, wait, send: (value) => delayed(() => { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); }), get state() { return state; }, get estimatedTick() { return state ? state.tick + Math.floor((performance.now() - stateAt) / (1000 / 60)) : 0; }, close: () => { for (const timer of delays) clearTimeout(timer); socket.close(); } };
+  return { socket, messages, wait, send: (value) => delayed(() => { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(['create','join','resume'].includes(value.type)&&value.rulesVersion===undefined?{...value,rulesVersion:RUMBLE_RULES_VERSION}:value)); }), get state() { return state; }, get estimatedTick() { return state ? state.tick + Math.floor((performance.now() - stateAt) / (1000 / 60)) : 0; }, close: () => { for (const timer of delays) clearTimeout(timer); socket.close(); } };
 }
 async function pair(runtime, options = {}) {
   const a = await client(runtime.url, options.latency || 0);
@@ -66,8 +66,8 @@ test('content capabilities, expanded fighters and race rooms enforce game-specif
   const runtime=await setup(t),a=await client(runtime.url),b=await client(runtime.url),watch=await client(runtime.url);
   const health=await fetch(`${runtime.http}/health`).then(r=>r.json());assert.equal(health.characters.length,6);assert.deepEqual(health.games,['rekt-rumble','wen-lambo']);assert.equal(health.vehicles.length,6);
   assert.equal(health.tracks.length,6);assert.equal(health.rulesVersions['wen-lambo'],RACE_RULES_VERSION);
-  a.send({type:'create',game:'rekt-rumble',rulesVersion:1,name:'Mia',character:'mia',stage:'dead-mall'});const fighterInvite=await a.wait(m=>m.type==='joined');
-  b.send({type:'join',name:'Chloe',character:'chloe',game:'rekt-rumble',rulesVersion:1,code:fighterInvite.code,token:fighterInvite.token});await b.wait(m=>m.type==='joined');await start(a,b);assert.deepEqual(a.state.players.map(p=>p.character),['mia','chloe']);
+  a.send({type:'create',game:'rekt-rumble',rulesVersion:RUMBLE_RULES_VERSION,name:'Mia',character:'mia',stage:'dead-mall'});const fighterInvite=await a.wait(m=>m.type==='joined');
+  b.send({type:'join',name:'Chloe',character:'chloe',game:'rekt-rumble',rulesVersion:RUMBLE_RULES_VERSION,code:fighterInvite.code,token:fighterInvite.token});await b.wait(m=>m.type==='joined');await start(a,b);assert.deepEqual(a.state.players.map(p=>p.character),['mia','chloe']);
   a.send({type:'leave'});b.send({type:'leave'});
   const c=await client(runtime.url),d=await client(runtime.url);
   c.send({type:'create',game:'wen-lambo',rulesVersion:1,name:'Old driver',character:'comet',stage:'night-market'});await c.wait(m=>m.type==='error'&&m.code==='unsupported_game');
@@ -245,7 +245,7 @@ test('two independent sockets complete a full best-of-three combat match; durabl
     if (!a.state) return;
     const [p, enemy] = a.state.players;
     const distance = Math.abs(p.x - enemy.x);
-    const input = distance > 70 ? (p.x < enemy.x ? INPUT.RIGHT : INPUT.LEFT) : sequence % 34 < 2 ? INPUT.HEAVY : 0;
+    const input = a.state.phase==='finishWindow' ? (a.state.phaseTick>20?INPUT.SUPER:0) : distance > 70 ? (p.x < enemy.x ? INPUT.RIGHT : INPUT.LEFT) : sequence % 34 < 2 ? INPUT.HEAVY : 0;
     a.send({ type: 'input', tick: a.estimatedTick + 2, seq: sequence++, input });
   }, 20);
   t.after(() => clearInterval(stream));
@@ -257,6 +257,9 @@ test('two independent sockets complete a full best-of-three combat match; durabl
   const reproduced = replayFight(replay.replay);
   assert.equal(reproduced.winner, result.winner); assert.equal(stateHash(reproduced), replay.replay.hash);
   assert.ok(replay.replay.confirmed);
+  assert.equal(replay.replay.rulesVersion,RUMBLE_RULES_VERSION);
+  assert.equal(reproduced.finisher.activated,true);
+  assert.ok(a.messages.some(m=>m.type==='snapshot'&&m.state.phase==='finisher'));
   assert.ok(a.messages.some((m) => m.type === 'snapshot' && m.state.phase === 'roundOver'));
 });
 

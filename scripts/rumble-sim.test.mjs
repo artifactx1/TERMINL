@@ -78,7 +78,7 @@ test('laundromat telegraphs real boundary changes; mall geometry stays fixed',()
 test('best of three carries meter, resets health and confirms a two-round winner',()=>{
   let s=fight();s.players[0].meter=420;s.players[1].hp=0;s=stepFight(s);assert.equal(s.phase,'roundOver');assert.deepEqual(s.wins,[1,0]);
   s=frames(s,120);assert.equal(s.round,2);assert.equal(s.phase,'intro');assert.equal(s.players[1].hp,1000);assert.equal(s.players[0].meter,420);
-  s=frames(s,90);s.players[1].hp=0;s=stepFight(s);s=frames(s,120);assert.equal(s.phase,'finished');assert.equal(s.winner,0);
+  s=frames(s,90);s.players[1].hp=0;s=stepFight(s);s=frames(s,120);assert.equal(s.phase,'finishWindow');s=frames(s,240);assert.equal(s.phase,'finished');assert.equal(s.winner,0);
 });
 test('timeouts and repeated draws terminate by the fifth round with a declared draw',()=>{
   let s=fight();for(let r=0;r<5;r++){s.roundTicks=1;s=stepFight(s);assert.equal(s.roundWinner,null);s=frames(s,120);if(r<4)s=frames(s,90);}

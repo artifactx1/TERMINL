@@ -1,8 +1,8 @@
 {
   "version": 1,
   "releaseApproved": false,
-  "decodedMemoryBudgetBytes": 134217728,
-  "runtimePolicy": "Six public portraits, two Rumble stage plates, six generated racing panoramas, one scenery atlas and one Pepe body atlas. Road, course props and wheels are code-native. Declared assets below 80 MiB decoded; display canvases additional. Overview cache capped at two tracks (8 MiB). No unpublished art exported.",
+  "decodedMemoryBudgetBytes": 167772160,
+  "runtimePolicy": "Public character portraits, illustrated combat and finisher atlases, stage plates and racing assets. Declared asset decode memory is bounded below; display canvases are additional. No unpublished collection art exported. After-hours game scenes load on their own routes. The 160 MiB inventory budget includes generated signage and launcher previews; WebGL render targets are additional.",
   "assets": [
     {
       "id": "max-reference-v1",
@@ -306,7 +306,10 @@
         "warning",
         "fight",
         "win",
-        "loss"
+        "loss",
+        "finishReady",
+        "finisherStart",
+        "finisherImpact"
       ],
       "variants": [
         "dead-mall-score",
@@ -1309,100 +1312,100 @@
       ]
     },
     {
-      "id": "mia-illustrated-atlas-v1",
+      "id": "mia-illustrated-atlas-v2",
       "role": "character-sprite-atlas",
-      "source": "public/arcade/fighters/mia-atlas-v1.webp",
+      "source": "public/arcade/fighters/mia-atlas-v2.webp",
       "reference": "mia-reference-v1",
       "character": "mia",
-      "provenance": "Recovered original generated nine-pose companion sprite sheet. Illustration pixels packed without repainting or rescaling; used directly in gameplay.",
+      "provenance": "Existing project sprite sheet edited with built-in image generation to replace the paper whip with Flash Strike; packed without rescaling.",
       "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1311,
-        "height": 1309
+        "width": 1208,
+        "height": 1316
       },
-      "decodedBudgetBytes": 6864396,
+      "decodedBudgetBytes": 6358912,
       "frames": [
         {
           "name": "idle",
           "x": 8,
           "y": 8,
-          "width": 309,
-          "height": 406,
+          "width": 310,
+          "height": 410,
           "pivotX": 155,
-          "footY": 404
+          "footY": 408
         },
         {
           "name": "punch",
-          "x": 325,
+          "x": 326,
           "y": 8,
-          "width": 351,
-          "height": 403,
-          "pivotX": 140,
-          "footY": 401
+          "width": 352,
+          "height": 405,
+          "pivotX": 141,
+          "footY": 403
         },
         {
           "name": "kick",
-          "x": 684,
+          "x": 686,
           "y": 8,
-          "width": 375,
-          "height": 400,
-          "pivotX": 101,
-          "footY": 398
+          "width": 380,
+          "height": 402,
+          "pivotX": 103,
+          "footY": 400
         },
         {
           "name": "special",
           "x": 8,
-          "y": 422,
-          "width": 505,
-          "height": 403,
-          "pivotX": 217,
-          "footY": 401
+          "y": 426,
+          "width": 395,
+          "height": 406,
+          "pivotX": 170,
+          "footY": 404
         },
         {
           "name": "sweep",
-          "x": 521,
-          "y": 422,
-          "width": 422,
-          "height": 278,
+          "x": 411,
+          "y": 426,
+          "width": 424,
+          "height": 280,
           "pivotX": 148,
-          "footY": 276
+          "footY": 278
         },
         {
           "name": "air",
-          "x": 951,
-          "y": 422,
-          "width": 352,
-          "height": 319,
-          "pivotX": 127,
-          "footY": 317
+          "x": 843,
+          "y": 426,
+          "width": 357,
+          "height": 323,
+          "pivotX": 129,
+          "footY": 321
         },
         {
           "name": "hit",
           "x": 8,
-          "y": 833,
-          "width": 377,
-          "height": 409,
+          "y": 840,
+          "width": 376,
+          "height": 412,
           "pivotX": 207,
-          "footY": 407
+          "footY": 410
         },
         {
           "name": "guard",
-          "x": 393,
-          "y": 833,
-          "width": 351,
-          "height": 410,
-          "pivotX": 176,
-          "footY": 408
+          "x": 392,
+          "y": 840,
+          "width": 353,
+          "height": 413,
+          "pivotX": 177,
+          "footY": 411
         },
         {
           "name": "victory",
-          "x": 752,
-          "y": 833,
-          "width": 306,
+          "x": 753,
+          "y": 840,
+          "width": 307,
           "height": 468,
-          "pivotX": 153,
+          "pivotX": 154,
           "footY": 466
         }
       ],
@@ -1645,6 +1648,387 @@
       ],
       "games": [
         "rekt-rumble"
+      ]
+    },
+    {
+      "id": "max-finisher-atlas-v1",
+      "role": "finisher-sprite-atlas",
+      "source": "public/arcade/fighters/max-finisher-atlas-v1.webp",
+      "reference": "max-reference-v1",
+      "character": "max",
+      "provenance": "Built-in image generation from project character references; three non-graphic finishing poses, packed without rescaling. Prompt specifications: docs/rumble-finishers.md.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1455,
+        "height": 709
+      },
+      "decodedBudgetBytes": 4126380,
+      "frames": [
+        {
+          "name": "windup",
+          "x": 8,
+          "y": 8,
+          "width": 505,
+          "height": 497,
+          "pivotX": 253,
+          "footY": 495
+        },
+        {
+          "name": "impact",
+          "x": 521,
+          "y": 8,
+          "width": 531,
+          "height": 693,
+          "pivotX": 266,
+          "footY": 691
+        },
+        {
+          "name": "victory",
+          "x": 1060,
+          "y": 8,
+          "width": 387,
+          "height": 679,
+          "pivotX": 194,
+          "footY": 677
+        }
+      ],
+      "games": [
+        "rekt-rumble"
+      ],
+      "variants": [
+        "windup",
+        "impact",
+        "victory"
+      ]
+    },
+    {
+      "id": "diamond-finisher-atlas-v1",
+      "role": "finisher-sprite-atlas",
+      "source": "public/arcade/fighters/diamond-finisher-atlas-v1.webp",
+      "reference": "diamond-reference-v1",
+      "character": "diamond",
+      "provenance": "Built-in image generation from project character references; three non-graphic finishing poses, packed without rescaling. Prompt specifications: docs/rumble-finishers.md.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1721,
+        "height": 624
+      },
+      "decodedBudgetBytes": 4295616,
+      "frames": [
+        {
+          "name": "windup",
+          "x": 8,
+          "y": 8,
+          "width": 499,
+          "height": 541,
+          "pivotX": 250,
+          "footY": 539
+        },
+        {
+          "name": "impact",
+          "x": 515,
+          "y": 8,
+          "width": 753,
+          "height": 608,
+          "pivotX": 241,
+          "footY": 606
+        },
+        {
+          "name": "victory",
+          "x": 1276,
+          "y": 8,
+          "width": 437,
+          "height": 550,
+          "pivotX": 219,
+          "footY": 548
+        }
+      ],
+      "games": [
+        "rekt-rumble"
+      ],
+      "variants": [
+        "windup",
+        "impact",
+        "victory"
+      ]
+    },
+    {
+      "id": "brian-finisher-atlas-v1",
+      "role": "finisher-sprite-atlas",
+      "source": "public/arcade/fighters/brian-finisher-atlas-v1.webp",
+      "reference": "brian-reference-v1",
+      "character": "brian",
+      "provenance": "Built-in image generation from project character references; three non-graphic finishing poses, packed without rescaling. Prompt specifications: docs/rumble-finishers.md.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1905,
+        "height": 698
+      },
+      "decodedBudgetBytes": 5318760,
+      "frames": [
+        {
+          "name": "windup",
+          "x": 8,
+          "y": 8,
+          "width": 613,
+          "height": 512,
+          "pivotX": 307,
+          "footY": 510
+        },
+        {
+          "name": "impact",
+          "x": 629,
+          "y": 8,
+          "width": 749,
+          "height": 525,
+          "pivotX": 337,
+          "footY": 523
+        },
+        {
+          "name": "victory",
+          "x": 1386,
+          "y": 8,
+          "width": 511,
+          "height": 682,
+          "pivotX": 256,
+          "footY": 680
+        }
+      ],
+      "games": [
+        "rekt-rumble"
+      ],
+      "variants": [
+        "windup",
+        "impact",
+        "victory"
+      ]
+    },
+    {
+      "id": "mia-finisher-atlas-v1",
+      "role": "finisher-sprite-atlas",
+      "source": "public/arcade/fighters/mia-finisher-atlas-v1.webp",
+      "reference": "mia-reference-v1",
+      "character": "mia",
+      "provenance": "Built-in image generation from project character references; three non-graphic finishing poses, packed without rescaling. Prompt specifications: docs/rumble-finishers.md.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1838,
+        "height": 696
+      },
+      "decodedBudgetBytes": 5116992,
+      "frames": [
+        {
+          "name": "windup",
+          "x": 8,
+          "y": 8,
+          "width": 557,
+          "height": 543,
+          "pivotX": 279,
+          "footY": 541
+        },
+        {
+          "name": "impact",
+          "x": 573,
+          "y": 8,
+          "width": 775,
+          "height": 680,
+          "pivotX": 233,
+          "footY": 678
+        },
+        {
+          "name": "victory",
+          "x": 1356,
+          "y": 8,
+          "width": 474,
+          "height": 678,
+          "pivotX": 237,
+          "footY": 676
+        }
+      ],
+      "games": [
+        "rekt-rumble"
+      ],
+      "variants": [
+        "windup",
+        "impact",
+        "victory"
+      ]
+    },
+    {
+      "id": "bernie-finisher-atlas-v1",
+      "role": "finisher-sprite-atlas",
+      "source": "public/arcade/fighters/bernie-finisher-atlas-v1.webp",
+      "reference": "bernie-reference-v1",
+      "character": "bernie",
+      "provenance": "Built-in image generation from project character references; three non-graphic finishing poses, packed without rescaling. Prompt specifications: docs/rumble-finishers.md.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1672,
+        "height": 705
+      },
+      "decodedBudgetBytes": 4715040,
+      "frames": [
+        {
+          "name": "windup",
+          "x": 8,
+          "y": 8,
+          "width": 474,
+          "height": 689,
+          "pivotX": 237,
+          "footY": 687
+        },
+        {
+          "name": "impact",
+          "x": 490,
+          "y": 8,
+          "width": 698,
+          "height": 507,
+          "pivotX": 279,
+          "footY": 505
+        },
+        {
+          "name": "victory",
+          "x": 1196,
+          "y": 8,
+          "width": 468,
+          "height": 591,
+          "pivotX": 234,
+          "footY": 589
+        }
+      ],
+      "games": [
+        "rekt-rumble"
+      ],
+      "variants": [
+        "windup",
+        "impact",
+        "victory"
+      ]
+    },
+    {
+      "id": "chloe-finisher-atlas-v1",
+      "role": "finisher-sprite-atlas",
+      "source": "public/arcade/fighters/chloe-finisher-atlas-v1.webp",
+      "reference": "chloe-reference-v1",
+      "character": "chloe",
+      "provenance": "Built-in image generation from project character references; three non-graphic finishing poses, packed without rescaling. Prompt specifications: docs/rumble-finishers.md.",
+      "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 1810,
+        "height": 662
+      },
+      "decodedBudgetBytes": 4792880,
+      "frames": [
+        {
+          "name": "windup",
+          "x": 8,
+          "y": 8,
+          "width": 517,
+          "height": 617,
+          "pivotX": 259,
+          "footY": 615
+        },
+        {
+          "name": "impact",
+          "x": 533,
+          "y": 8,
+          "width": 752,
+          "height": 601,
+          "pivotX": 241,
+          "footY": 599
+        },
+        {
+          "name": "victory",
+          "x": 1293,
+          "y": 8,
+          "width": 509,
+          "height": 646,
+          "pivotX": 255,
+          "footY": 644
+        }
+      ],
+      "games": [
+        "rekt-rumble"
+      ],
+      "variants": [
+        "windup",
+        "impact",
+        "victory"
+      ]
+    },
+    {
+      "id": "mall-rat-preview-v1",
+      "role": "launcher-preview",
+      "source": "public/arcade/after-hours/mall-rat-preview.png",
+      "provenance": "Screenshot of original code-native gameplay geometry from the local application.",
+      "rights": "Original project-authored procedural geometry and signs; no external artwork.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 800,
+        "height": 425
+      },
+      "decodedBudgetBytes": 1360000,
+      "variants": [
+        "launcher"
+      ],
+      "games": [
+        "mall-rat"
+      ]
+    },
+    {
+      "id": "rug-exe-preview-v1",
+      "role": "launcher-preview",
+      "source": "public/arcade/after-hours/rug-exe-preview.png",
+      "provenance": "Screenshot of original code-native gameplay geometry from the local application.",
+      "rights": "Original project-authored procedural geometry and signs; no external artwork.",
+      "review": "development-only",
+      "humanApproved": false,
+      "dimensions": {
+        "width": 800,
+        "height": 425
+      },
+      "decodedBudgetBytes": 1360000,
+      "variants": [
+        "launcher"
+      ],
+      "games": [
+        "rug-exe"
+      ]
+    },
+    {
+      "id": "after-hours-worlds-v1",
+      "role": "procedural-3d-worlds",
+      "source": "lib/arcade/after-hours/scene.js",
+      "provenance": "Original low-poly geometry, character rigs and canvas-generated signage authored in this repository.",
+      "rights": "Original project-authored geometry and textures.",
+      "review": "development-only",
+      "humanApproved": false,
+      "decodedBudgetBytes": 8388608,
+      "geometryBudget": {
+        "maxMeshes": 1800,
+        "maxProjectiles": 128,
+        "maxHazards": 12
+      },
+      "variants": [
+        "mall",
+        "protocol"
+      ],
+      "games": [
+        "mall-rat",
+        "rug-exe"
       ]
     }
   ]

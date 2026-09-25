@@ -26,7 +26,8 @@ export interface Fighter {
   previousInput: InputMask; [key: string]: unknown;
 }
 export interface FightState {
-  version: 1; tick: number; phase: 'intro' | 'fight' | 'roundOver' | 'finished';
+  version: 1 | 2; tick: number; phase: 'intro' | 'fight' | 'roundOver' | 'finishWindow' | 'finisher' | 'finished';
+  finisher?: { player: number; character: CharacterId; activated: boolean };
   phaseTick: number; round: number; wins: [number, number]; winner: number | null;
   stage: StageId; players: [Fighter, Fighter]; roundTicks: number;
   events: Array<{ id: string; tick: number; type: string; player?: number; x?: number; y?: number; text?: string }>;
@@ -41,10 +42,10 @@ export interface GameModule<State, Input> {
   dispose(): void;
 }
 export type ClientMessage =
-  | { type: 'create'; name: string; character: CharacterId; stage: StageId; game?: 'rekt-rumble'; rulesVersion?: 1 }
+  | { type: 'create'; name: string; character: CharacterId; stage: StageId; game?: 'rekt-rumble'; rulesVersion?: 1 | 2 }
   | { type: 'create'; name: string; character: VehicleId; stage: TrackId; game: 'wen-lambo'; rulesVersion: 6 }
-  | { type: 'join'; code: string; token: string; name: string; character: CharacterId | VehicleId; spectator?: boolean; game?: 'rekt-rumble' | 'wen-lambo'; rulesVersion?: 1 | 6 }
-  | { type: 'resume'; code: string; session: string; game?: 'rekt-rumble' | 'wen-lambo' }
+  | { type: 'join'; code: string; token: string; name: string; character: CharacterId | VehicleId; spectator?: boolean; game?: 'rekt-rumble' | 'wen-lambo'; rulesVersion?: 1 | 2 | 6 }
+  | { type: 'resume'; code: string; session: string; game?: 'rekt-rumble' | 'wen-lambo'; rulesVersion?: 1 | 2 | 6 }
   | { type: 'ready'; ready: boolean }
   | { type: 'input'; seq: number; tick: number; input: InputMask }
   | { type: 'rematch' }

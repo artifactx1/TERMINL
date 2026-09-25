@@ -147,3 +147,11 @@
 @media(max-width:600px) { .header a { gap:7px; }.header a b { font-size:15px; letter-spacing:.22em; }.header a span { font-size:8px; }.header { flex-shrink:0; } }
 
 .shell:not(.inGame)::after { content:""; position:fixed; inset:0; z-index:60; pointer-events:none; opacity:.35; background:var(--terminl-scanlines); }
+
+.finisherPrompt { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:min(360px,calc(100% - 24px)); padding:14px 18px; text-align:center; background:rgba(6,9,7,.94); border:1px solid var(--terminl-accent); z-index:3; }
+.finisherPrompt>b { display:block; color:var(--terminl-accent); font-size:26px; letter-spacing:.12em; }
+.finisherPrompt>span { display:block; font-size:10px; margin:8px 0; }
+.finisherPrompt .primary { justify-content:center; margin-top:12px; }
+.finisherPrompt small { display:block; font-size:9px; line-height:1.6; color:var(--terminl-dim); margin-top:10px; }
+.finisherHelp { border-left:2px solid var(--terminl-accent); padding:4px 16px; margin-bottom:20px; }
+@media(orientation:landscape) and (max-height:600px) { .finisherPrompt { top:4px; padding:8px 14px; }.finisherPrompt>b { font-size:18px; }.finisherPrompt .primary { min-height:36px; margin-top:6px; }.finisherPrompt small { margin-top:5px; } }

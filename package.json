@@ -2,7 +2,7 @@
   "name": "terminl",
   "version": "1.0.0",
   "private": true,
-  "description": "Mint site for TERMINL — 2048 generative CRT terminals, stored permanently on Arweave.",
+  "description": "Mint site for TERMINL \u2014 2048 generative CRT terminals, stored permanently on Arweave.",
   "scripts": {
     "dev": "next dev -p 4000",
     "build": "next build",
@@ -19,7 +19,7 @@
     "test:moon:browser": "node scripts/moon-browser.mjs",
     "dev:arcade": "ARCADE_LABS=1 next dev -p 4000",
     "arcade:server": "node server/arcade/index.mjs",
-    "test:arcade": "node --test scripts/arcade-transport.test.mjs scripts/rumble-sim.test.mjs scripts/rumble-roster.test.mjs scripts/race-sim.test.mjs scripts/race-rival.test.mjs scripts/race-art.test.mjs scripts/race-visibility.test.mjs scripts/touch-input.test.mjs scripts/rumble-controls.test.mjs scripts/arcade-server.test.mjs scripts/rumble-circuit.test.mjs",
+    "test:arcade": "node --test scripts/after-hours.test.mjs scripts/rumble-finishers.test.mjs scripts/arcade-transport.test.mjs scripts/rumble-sim.test.mjs scripts/rumble-roster.test.mjs scripts/race-sim.test.mjs scripts/race-rival.test.mjs scripts/race-art.test.mjs scripts/race-visibility.test.mjs scripts/touch-input.test.mjs scripts/rumble-controls.test.mjs scripts/arcade-server.test.mjs scripts/rumble-circuit.test.mjs",
     "test:touch:browser": "node scripts/touch-browser.mjs",
     "test:race:visibility": "node scripts/race-visibility-browser.mjs",
     "test:race:smoke": "node scripts/race-smoke.mjs",
@@ -37,7 +37,10 @@
     "test:rumble:art:browser": "node scripts/rumble-art-browser.mjs",
     "test:controls:browser": "node scripts/control-release-browser.mjs",
     "test:csp": "node --test scripts/csp.test.mjs",
-    "test:csp:browser": "node scripts/csp-browser.mjs"
+    "test:csp:browser": "node scripts/csp-browser.mjs",
+    "test:after-hours": "node --test scripts/after-hours.test.mjs",
+    "test:after-hours:routes": "node scripts/after-hours-pilot.mjs --output=/tmp/terminl-rug-plans.json",
+    "test:after-hours:browser": "npm run test:after-hours:routes && node scripts/after-hours-browser.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.8",
@@ -52,6 +55,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "sharp": "^0.35.4",
+    "three": "0.180.0",
     "viem": "^2.48.4",
     "wagmi": "^3.6.8",
     "ws": "8.21.3"

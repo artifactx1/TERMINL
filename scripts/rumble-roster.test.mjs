@@ -52,7 +52,7 @@ test('original v1 replay fixtures retain their pre-expansion state hashes',()=>{
     [['max','max'],'dead-mall','d7258afc'],[['max','max'],'laundromat','0526e822'],
     [['diamond','diamond'],'dead-mall','b3eea187'],[['diamond','diamond'],'laundromat','5f9812c1'],
   ];
-  for(const [characters,stage,hash] of fixtures){let state=createFight({characters,stage});for(let i=0;i<1200;i++)state=stepFight(state,[botInput(state,0),botInput(state,1)]);assert.equal(stateHash(state),hash,`${characters}/${stage}`);}
+  for(const [characters,stage,hash] of fixtures){let state=createFight({characters,stage,rulesVersion:1});for(let i=0;i<1200;i++)state=stepFight(state,[botInput(state,0),botInput(state,1)]);assert.equal(stateHash(state),hash,`${characters}/${stage}`);}
 });
 
 test('every rig draws every clip and move in both directions with finite canvas coordinates',()=>{

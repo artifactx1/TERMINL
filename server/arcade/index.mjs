@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { WebSocketServer, WebSocket } from 'ws';
 import { RollbackFight, ROLLBACK_WINDOW, FUTURE_WINDOW } from '../../lib/arcade/rollback.mjs';
-import { CHARACTERS } from '../../lib/arcade/rumble-sim.mjs';
+import { CHARACTERS, RUMBLE_RULES_VERSION } from '../../lib/arcade/rumble-sim.mjs';
 import { VEHICLES, TRACKS, RACE_RULES, RACE_RULES_VERSION } from '../../lib/arcade/race-sim.mjs';
 import { openJournal } from './journal.mjs';
 
@@ -29,8 +29,8 @@ const characters = new Set(Object.keys(CHARACTERS));
 const stages = new Set(['dead-mall', 'laundromat']);
 const games=['rekt-rumble','wen-lambo'];
 const validCharacter=(game,id)=>game==='wen-lambo'?Object.hasOwn(VEHICLES,id):characters.has(id);
-const rulesVersion=game=>game==='wen-lambo'?RACE_RULES_VERSION:1;
-const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':1,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-8'};
+const rulesVersion=game=>game==='wen-lambo'?RACE_RULES_VERSION:RUMBLE_RULES_VERSION;
+const capabilities={games,characters:[...characters],vehicles:Object.keys(VEHICLES),tracks:Object.keys(TRACKS),rulesVersions:{'rekt-rumble':RUMBLE_RULES_VERSION,'wen-lambo':RACE_RULES_VERSION},build:'arcade-content-9'};
 const nameOf = (value) => typeof value === 'string' && value.trim().length > 0 && value.length <= 24 && !/[\u0000-\u001f\u007f]/.test(value) ? value.trim() : null;
 const integer = (value, min, max) => Number.isSafeInteger(value) && value >= min && value <= max;
 

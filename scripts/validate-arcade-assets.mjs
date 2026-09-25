@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 import { ANIMATION_CLIPS, RIG_ANCHORS, fighterPose, attachmentAnchors } from '../lib/arcade/rumble-render.js';
 import { RUMBLE_SPRITES } from '../lib/arcade/rumble-sprites.mjs';
+import { FINISHER_SPRITES } from '../lib/arcade/rumble-finisher-sprite-data.mjs';
 import { SOUND_CUES } from '../lib/arcade/rumble-audio.js';
 import { RACE_SOUND_CUES } from '../lib/arcade/race-audio.js';
 
@@ -38,6 +39,11 @@ for(const a of manifest.assets){
     const sheet=RUMBLE_SPRITES[a.character];
     if(!sheet||a.source!=='public'+sheet.src||JSON.stringify(a.frames)!==JSON.stringify(sheet.frames))fail(a.id,'Sprite manifest differs from runtime');
     if(a.frames?.length!==9)fail(a.id,'Expected nine illustrated poses');
+  }
+  if(a.role==='finisher-sprite-atlas'){
+    const sheet=FINISHER_SPRITES[a.character];
+    if(!sheet||a.source!=='public'+sheet.src||JSON.stringify(a.frames)!==JSON.stringify(sheet.frames))fail(a.id,'Finisher manifest differs from runtime');
+    if(a.frames?.length!==3)fail(a.id,'Expected three finisher poses');
   }
   if(a.role==='articulated-character-rig'){
     if(!manifest.assets.some(ref=>ref.id===a.reference&&ref.role==='character-reference-portrait'))fail(a.id,'Missing canonical reference');
