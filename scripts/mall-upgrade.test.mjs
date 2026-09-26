@@ -59,3 +59,29 @@ test('all five named gaps and both routes can be completed from spawn using move
   else assert.ok(plan.completed.some(r=>r.id===plan.id&&r.seconds>0),plan.id+' must finish its gates');
  }
 });
+
+
+test('long transfers get a landing window and a buffered ollie keeps the same line',()=>{
+ const s=flat();s.world.zones=[];s.world.tapes=[];Object.assign(s.player,{grounded:false,y:18,vy:10,jumpedAt:0});startAir(s,'kickflip');
+ while(s.player.y>1||s.player.vy>0)stepMall(s);
+ assert.ok(s.combo.grace<0,'long air used up the old timer');
+ let buffered=false;
+ while(!s.player.grounded){const imminent=s.player.y+s.player.vy/60<.3;stepMall(s,imminent?{jump:true}:{});buffered||=imminent;}
+ assert.equal(buffered,true);assert.ok(s.combo.count>0);assert.ok(s.combo.grace>=43);assert.equal(s.score,0);
+ const count=s.combo.count;stepMall(s,{});assert.equal(s.player.grounded,false);assert.ok(s.combo.count>count,'buffered ollie extends rather than banks');
+ while(!s.player.grounded)stepMall(s);for(let i=0;i<46;i++)stepMall(s);assert.equal(s.combo.count,0);assert.ok(s.score>0,'coasting still banks automatically');
+});
+test('catch-window input queues exactly one next trick, holds cannot spam it, landing clears it',()=>{
+ const s=flat();stepMall(s,{jump:true});stepMall(s,{flip:true,jump:true});
+ for(let i=0;i<15;i++)stepMall(s,{jump:true});stepMall(s,{grab:true,jump:true});
+ assert.equal(s.player.queuedAir.id,'indy');assert.equal(s.player.airMove.id,'kickflip');
+ for(let i=0;i<12;i++)stepMall(s,{grab:true,jump:true});assert.equal(s.player.airMove.id,'indy');assert.equal(s.player.queuedAir,null);
+ while(!s.player.grounded)stepMall(s,{grab:true});assert.equal(s.combo.seen.KICKFLIP,1);assert.equal(s.combo.seen.INDY,1);assert.equal(s.player.queuedAir,null);
+ const early=flat();stepMall(early,{jump:true});stepMall(early,{flip:true});stepMall(early,{grab:true});assert.equal(early.player.queuedAir,null,'a press far before the catch is not a hidden macro');
+});
+test('bail recovery clears airborne animations and requires releasing a held link',()=>{
+ const s=flat();stepMall(s,{jump:true});stepMall(s,{backflip:true});stepMall(s,{bail:true,link:true});
+ assert.equal(s.player.airMove,null);assert.equal(s.player.spinMove,null);assert.equal(s.player.queuedAir,null);
+ for(let i=0;i<65;i++)stepMall(s,{link:true,forward:true});assert.equal(s.player.bail,0);assert.equal(s.player.manual,false);assert.equal(s.player.rail,null);assert.notEqual(sampleSkatePose(s,s.player.yaw).rearFrame,SKATE_CLIPS.grind);
+ stepMall(s,{forward:true});stepMall(s,{link:true,forward:true});assert.equal(s.player.manual,true,'a fresh deliberate hold works after recovery');
+});

@@ -13,7 +13,7 @@ Implementation of the supplied `TERMINL_Mall_Rat_RUG_EXE_Astra_Build_Brief.md`, 
 
 ## MALL RAT
 
-150-second score attack or untimed free skate. Max, Diamond Hands Pepe, MEV Mia and Cold Storage Chloe have four illustrated skate poses each, recognizable canonical outfits, small traits and different specials. Legacy character IDs preserve existing saves and perks. The interconnected mall includes the atrium, garage, food court, arcade, store, theater, service area, elevated roof and basement. A minimap and zone signs orient the player.
+180-second score attack or untimed free skate. Max, Diamond Hands Pepe, MEV Mia and Cold Storage Chloe have four illustrated skate poses each, recognizable canonical outfits, small traits and different specials. Legacy character IDs preserve existing saves and perks. The interconnected mall includes the atrium, garage, food court, arcade, store, theater, service area, elevated roof and basement. A minimap and zone signs orient the player.
 
 Movement includes acceleration/braking, steering, ollies, air rotation, flip/grab variations, forgiving rail snapping, manuals, wallrides, quick-turn/revert, bails and quick recovery. Ground movement preserves momentum. Rails, ramps, the fountain gap and rooftop access establish repeatable lines.
 
@@ -89,3 +89,18 @@ Regression coverage tracks the actual deck center through 25 flip angles and ver
 The steering defect had two additional causes: simulation yaw uses `(sin(yaw), -cos(yaw))` for forward travel, but a Three.js model whose nose is local `-Z` requires **negative** Y rotation for that convention. Also, the rider was a camera-facing `THREE.Sprite`, so the board turned independently underneath an image that stayed facing the camera.
 
 The rider is now an alpha-cutout textured mesh. Rider and board share one parent heading transform; front/side/rear art compensates only for its authored viewing direction. The foot anchor follows the transformed deck. Tests compare the real transformed board nose against travel and compare rider/board world directions, including left and right turns. Browser checks also compare the board nose against measured player displacement, with a steering contact sheet in `artifacts/mall-motion-v2/steering-connected.png`.
+
+
+### Combo flow and bail recovery (2026-09-26)
+
+- Long transfers now provide at least 45 simulation ticks to link the next ollie
+  or manual after landing. The HUD shows the remaining continuation window;
+  coasting still banks the line automatically.
+- A fresh trick press during the final 12 ticks of a catch queues one next aerial.
+  Held buttons do not repeat moves. Landing and bailing discard queued actions.
+- Bails clear airborne moves, rotations, queued jumps and grind balance. A held
+  grind/manual must be released before another link, preventing an involuntary
+  manual as soon as the skater recovers.
+- Focused simulation checks cover long transfers with buffered ollies, queued
+  catches, held-input recovery and existing course routes. The touch browser
+  suite additionally exercises these transitions with real input handlers.

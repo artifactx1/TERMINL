@@ -14,7 +14,7 @@ const data=page=>page.locator('canvas').evaluate(c=>({...c.dataset}));
 try{
  for(const viewport of [{width:390,height:844},{width:844,height:390}]){
   const context=await browser.newContext({viewport,isMobile:true,hasTouch:true,deviceScaleFactor:1}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(base+'/os/mall-rat');await page.getByRole('button',{name:'BREAK IN →'}).waitFor();await clock(page);await page.getByRole('button',{name:'BREAK IN →'}).tap();await page.waitForTimeout(900);await frames(page,2);
+  await page.goto(base+'/os/mall-rat',{waitUntil:'domcontentloaded',timeout:90000});await page.getByRole('button',{name:'BREAK IN →'}).waitFor();await clock(page);await page.getByRole('button',{name:'BREAK IN →'}).tap();await page.waitForTimeout(900);await frames(page,2);
   const client=await context.newCDPSession(page),point=async(name,id)=>{const r=await page.getByRole('button',{name,exact:true}).boundingBox();assert.ok(r&&r.width>=43&&r.height>=43,name+' usable thumb target');return {id,x:r.x+r.width/2,y:r.y+r.height/2};};
   const choose=await page.getByRole('button',{name:/CHOOSE TRICK/}).boundingBox();assert.ok(choose.height>=44,'trick selector is a full touch target');
   const stick=await page.getByRole('application').boundingBox();let touches=[{id:1,x:stick.x+stick.width/2,y:stick.y+stick.height/2}];
@@ -24,6 +24,12 @@ try{
   assert.ok(Number((await data(page)).y)>0);assert.equal(await page.getByRole('button',{name:'JUMP',exact:true}).count(),1,'jump label stays fixed in the air');
   touches.push(await point('KICKFLIP',2));await send('touchStart');await frames(page,1);await send('touchEnd',[touches.pop()]);await frames(page,10);assert.equal((await data(page)).trick,'kickflip');
   await page.screenshot({path:`artifacts/mall-park-v3/touch-kickflip-${viewport.width}.png`});touches=[];await send('touchEnd');await frames(page,280);assert.ok(Number((await data(page)).score)>0,'landing automatically banks');
+  // A real key press during the catch queues a grab without changing game state.
+  await page.keyboard.press('r');await page.waitForTimeout(200);await frames(page,2);
+  await page.keyboard.down('Space');await frames(page,2);await page.keyboard.down('j');await frames(page,1);await page.keyboard.up('j');await frames(page,16);
+  await page.keyboard.down('k');await frames(page,5);await page.getByText('NEXT: INDY',{exact:true}).waitFor();
+  await frames(page,8);assert.equal((await data(page)).trick,'indy');await page.keyboard.up('k');await page.keyboard.up('Space');
+  await page.screenshot({path:`artifacts/mall-park-v3/linked-air-${viewport.width}.png`});await frames(page,150);assert.ok(Number((await data(page)).score)>0);
   // A visible choice, followed by the same JUMP -> named trick sequence.
   for(const [choice,id]of [['FRONTFLIP','frontflip'],['BACKFLIP','backflip'],['VARIAL','varial'],['TRE FLIP','tre']]){
    await page.keyboard.press('r');await page.waitForTimeout(200);await frames(page,2);
@@ -39,6 +45,9 @@ try{
   const spin=await data(page);assert.ok(Math.abs(Number(spin.bodyYaw)-Number(spin.yaw))>6,'360 button completes an actual full rotation');
   await page.keyboard.press('r');await page.waitForTimeout(200);await frames(page,2);
   touches=[{id:1,x:stick.x+stick.width/2,y:stick.y+stick.height/2}];await send('touchStart');await frames(page,20);touches.push(await point('GRIND',2));await send('touchStart');await frames(page,6);assert.equal((await data(page)).manual,'true');await send('touchEnd',[touches.pop()]);await frames(page,2);assert.equal((await data(page)).manual,'false');
+  touches.push(await point('GRIND',2));await send('touchStart');await frames(page,6);await page.keyboard.press('x');await frames(page,65);
+  assert.equal((await data(page)).manual,'false','held GRIND stays released through bail recovery');assert.equal((await data(page)).rail,'');
+  await send('touchEnd',[touches.pop()]);await frames(page,2);touches.push(await point('GRIND',2));await send('touchStart');await frames(page,6);assert.equal((await data(page)).manual,'true','fresh touch can link again');await send('touchEnd',[touches.pop()]);await frames(page,2);
   for(const direction of [-1,1]){touches[0].x=stick.x+stick.width/2+direction*26;await send('touchMove');await frames(page,14);const d=await data(page);assert.equal(d.rail,'');assert.equal(d.manual,'false');assert.ok(Math.abs(Math.sin(Number(d.chaseYaw)-Number(d.yaw)))<.001);}
   touches=[];await send('touchEnd');await page.getByRole('button',{name:'PAUSE / HELP'}).tap();assert.ok(await page.getByText('1. ROLL',{exact:false}).isVisible());const tick=(await data(page)).tick;await frames(page,20);assert.equal((await data(page)).tick,tick);await page.getByRole('button',{name:'BACK TO IT →'}).tap();await frames(page,5);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await page.screenshot({path:`artifacts/mall-park-v3/touch-controls-${viewport.width}.png`});console.log('PASS clear mobile controls, visible picker, 4 advanced tricks, manual release, steering, banking and pause',viewport);await context.close();
