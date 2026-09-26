@@ -23,6 +23,14 @@ checks alone do not establish parity with Tony Hawk's Pro Skater.
   are covered by simulation checks. Portrait and landscape browser input tests
   exercise real controls rather than changing player state directly.
 
+- Camera: `mall-camera.test.mjs` projects the rider's head and deck throughout
+  every gap, both routes and the full district tour at three screen ratios.
+  The browser camera suite follows actual control inputs through the three
+  largest transfers and the bowl rim, checks framing/terrain clearance, and
+  captures the rendered peak positions. The bowl now has a flat pocket and smooth
+  transitions, preserving the chase distance at entry. This addresses measured transfer
+  clipping; it is not a blanket claim that all scenery occlusion is solved.
+
 ## Completion remains unproven
 
 - Full-course visual consistency and camera readability during complex lines,

@@ -104,3 +104,26 @@ The rider is now an alpha-cutout textured mesh. Rider and board share one parent
 - Focused simulation checks cover long transfers with buffered ollies, queued
   catches, held-input recovery and existing course routes. The touch browser
   suite additionally exercises these transitions with real input handlers.
+
+
+### Full-height chase camera and terrain clearance (2026-09-26)
+
+The previous camera followed 65% of airborne height. Replaying the canal and
+Snake Run lines projected the rider's head beyond the viewport on 37 frames.
+The camera now tracks the full jump with bounded vertical smoothing and follows
+its own terrain clearance. A shortened wall/rim camera also shortens look-ahead,
+keeping the deck visible instead of aiming past the player.
+
+`mall-camera.test.mjs` checks head/deck framing and lens clearance through all
+five gaps, both timed routes and the complete district tour on desktop,
+portrait and landscape. `mall-camera-browser.mjs` checks real input-driven
+transfers and bowl entry in the renderer; captures live under
+`artifacts/mall-camera/`. The travel heading remains shared with the board,
+preserving the previous steering-direction fix.
+
+The bowl itself now has a flat pocket and smooth entry/exit transitions. The old
+hemisphere approached a vertical cliff at the coping; it caused a sharp ground
+height change and a one-unit camera pull-in. The new profile keeps the normal
+chase distance through the tested bowl entry. Decorative depth bands sample the
+same surface as collision and rendering. Regression checks bound the transition
+slope and verify that the coping joins the deck smoothly.
