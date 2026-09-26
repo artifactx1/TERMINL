@@ -4,7 +4,7 @@ Site for **TERMINL** — 2048 generative CRT terminals. The mint runs here, on
 Robinhood Chain, against the collection's own drop contract; the site exists to
 sell the art without giving it away.
 
-> A celebration of art, memes and degenerate behavior.
+> You said you were done.
 
 **TERMINL Arcade is playable at `/os`.** Wen Lambo and Rekt Rumble lead the
 launcher, with Moon Mission as the solo adventure. No shop, credits or receipts.

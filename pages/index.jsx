@@ -35,16 +35,17 @@ const degenPortrait = (slug) => `${DEGEN_BASE}/${slug}.webp`;
  * og:image has to be an absolute URL — every scraper rejects a relative one,
  * and a Vercel preview domain changes on each deploy. So the card is served
  * from the bucket by default, which is stable before the site even has a
- * domain. Override either value once the real hostname is settled.
+ * domain. The production card now lives alongside the site so copy updates
+ * and the image deploy together.
  */
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL
   || (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : "")
 ).replace(/\/$/, "");
 
 const OG_IMAGE = process.env.NEXT_PUBLIC_OG_IMAGE
-  || "https://storage.googleapis.com/curent-marketplace/terminl/og.jpg";
+  || "https://terminl.net/og.jpg?v=you-said-you-were-done";
 
-const OG_TITLE = "TERMINL — WAGMI. Or maybe we won't.";
+const OG_TITLE = "TERMINL — You said you were done.";
 
 /** Alt text without giving away which piece it is. */
 const describe = (t) => ["TERMINL", t.screen && `— ${t.screen} on a ${t.chassis}`]
@@ -109,8 +110,7 @@ function Site({ data }) {
 
   /* Reused by every scraper. Three short facts ending on the hook — X truncates
      around 200 characters and Discord clips harder still. */
-  const blurb = `${data.supply} pixel machines. ${data.outcomes.rekt} already rekt. `
-    + `Only ${shown.length} have ever been shown.`;
+  const blurb = `${data.supply.toLocaleString('en-US')} pixel machines for people who deleted the exchange app, then checked the price in Safari. Meet the degens. Play the arcade.`;
 
   return (
     <>
@@ -177,7 +177,7 @@ function Site({ data }) {
             <a href="#art">ART</a>
             <a href="#degens">DEGENS</a>
             <a href="#tape">TAPE</a>
-            <Link className={styles.os} href="/os">BOOT OS ↗</Link>
+            <Link className={styles.os} href="/os">ARCADE ↗</Link>
             {CONTRACT ? (
               <a className={`${styles.os} ${styles.contractNav}`} href={`${CHAIN.explorer}/address/${CONTRACT}`} target="_blank" rel="noreferrer">CONTRACT ↗</a>
             ) : (
@@ -215,9 +215,10 @@ function Site({ data }) {
           </div>
 
           <div className={styles.readout}>
-            <h1 className={styles.headline}>WAGMI.<br />Or maybe<br />we won&rsquo;t.</h1>
+            <h1 className={styles.headline}>You said<br />you were<br />done.</h1>
             <p className={styles.blurb}>
-              {data.supply} pixel machines. Only {shown.length} have ever been shown.
+              {data.supply.toLocaleString('en-US')} pixel machines for people who deleted the exchange app,
+              then checked the price in Safari.
             </p>
 
             <div className={styles.score}>
@@ -249,8 +250,8 @@ function Site({ data }) {
         </div>
 
         <section className={styles.motto}>
-          <p>A celebration of art, memes<br />and degenerate behavior.</p>
-          <Link className={styles.osLaunch} href="/os">PLAY THE ARCADE <span>Wen Lambo. Rekt Rumble. One more round. ↗</span></Link>
+          <p>If you&rsquo;ve ever called a loss &ldquo;tuition,&rdquo;<br />you&rsquo;re among friends.</p>
+          <Link className={styles.osLaunch} href="/os">PLAY THE ARCADE <span>Something to do while your long-term hold gets longer. ↗</span></Link>
         </section>
 
         <Story data={data} />
@@ -259,8 +260,8 @@ function Site({ data }) {
           <div className={styles.sectionHead}>
             <h2>{shown.length} of {data.supply}</h2>
             <p>
-              That&rsquo;s all you get. The other {hidden} stay dark until somebody mints
-              them. No preview, no reveal page, no peeking at the metadata.
+              {shown.length} on display. The other {hidden.toLocaleString('en-US')} stay hidden until mint.
+              You&rsquo;ve bought things with less research. We&rsquo;ve seen your wallet.
             </p>
           </div>
           <div className={styles.grid}>
@@ -287,24 +288,24 @@ function Site({ data }) {
 
         <section className={styles.section}>
           <div className={styles.sectionHead}>
-            <h2>Your terminal is awake</h2>
+            <h2>Close the chart. Open a game.</h2>
           </div>
           <div className={styles.plain}>
             <p>
-              TERMINL OS is open. Run through a meme coin meltdown, dodge red candles,
-              and bank your bag before the crowd dumps. Race a friend&rsquo;s ghost
-              through the same course and see who makes it out with more.
+              Drive the Lambo you were going to buy in 2021. Fight the guy who said
+              &ldquo;easy 100x.&rdquo; Kickflip through a dead mall. We gave the degens
+              something to do with their hands besides refresh.
             </p>
             <p>
-              Win in-game credits, collect trophies, and give your desktop a new look.
-              Free to play, with progress saved in your browser. The money is fictional.
-              The receipts are worth keeping.
+              The arcade is free. You don&rsquo;t need a wallet or a TERMINL to play.
+              Bring a friend. You already gave them terrible financial advice;
+              the least you can do is let them punch you in Rekt Rumble.
             </p>
-            <p><Link href="/os">Boot TERMINL OS ↗</Link></p>
+            <p><Link href="/os">Play the arcade ↗</Link></p>
             <p>
-              What you get today: {data.supply} pieces of pixel art, every trait published,
-              stored on Arweave forever, and {data.traitTotals.Companion} degens who are all
-              down bad.
+              Here for the art? {data.supply.toLocaleString('en-US')} pixel machines,
+              {" "}{data.traitTotals.Companion} degens, and at least one character
+              you&rsquo;ll insist is based on your friend.
             </p>
           </div>
         </section>
@@ -442,30 +443,26 @@ function Story({ data }) {
         ))}
       </div>
       <div className={styles.storyText}>
-        <h2>Who&rsquo;s standing there</h2>
+        <h2>You know these people.</h2>
         <p>
-          Barry bought the top. Not this top — an earlier one, that nobody brings up any
-          more. He is still at the same machine in the same dead mall, holding a trophy he
-          bought for himself.
+          Barry bought the top and ordered himself a trophy. By the time it arrived,
+          shipping had cost more than the bag. He still displays it.
         </p>
         <p>
-          There are {f.regulars ?? data.traitTotals.Companion} of them and they have all
-          got a version of that. Paper Hands Paul, who sold and now has to watch.{" "}
-          {f.mostCommon ? `${f.mostCommon.name}, who turns up ${f.mostCommon.count} times because he keeps doing it. ` : ""}
-          A pigeon that smokes.{" "}
-          {f.gasFeeReceipt ? `${f.gasFeeReceipt} of them are holding a gas fee receipt. ` : ""}
-          {f.emptyWallet ? `${f.emptyWallet} are holding an empty wallet — not a joke about being broke, an actual trait, and ${f.emptyWallet} people are going to own it.` : ""}
+          Paper Hands Paul sold before the pump. He still sends the group chat articles
+          about why he was right.{" "}
+          {f.mostCommon ? `${f.mostCommon.name} appears ${f.mostCommon.count} times. Apparently the first liquidation didn’t take. ` : ""}
+          The pigeon doesn&rsquo;t trade. Best performer in the room.
         </p>
         <p>
-          The machines were already in the room. Somebody&rsquo;s boombox, a payphone, a
-          handheld left in a drawer in 1997, bolted down and wired up and still printing.
-          Nobody maintains them. Nobody turns them off either. That is not the interesting
-          part — the interesting part is who keeps showing up to watch.
+          TERMINL puts {f.regulars ?? data.traitTotals.Companion} of these people beside
+          glowing screens in dead malls, garages and rooms that need airing out.
+          Someone brought a bong. Nobody brought an exit strategy.
         </p>
         <p className={styles.storyLast}>
-          {data.outcomes.winner} of these people made it. {data.outcomes.rekt} got rekt. The
-          other {data.outcomes.open} are still standing there at 4am, waiting to find out
-          which.
+          {data.outcomes.winner} made it. {data.outcomes.rekt} got rekt.
+          {" "}{data.outcomes.open} are still refreshing. All of them will tell you
+          they&rsquo;re &ldquo;basically break-even.&rdquo;
         </p>
       </div>
     </section>
@@ -493,11 +490,11 @@ function Degens({ data }) {
   return (
     <section className={styles.section} id="degens">
       <div className={styles.sectionHead}>
-        <h2>The degens</h2>
+        <h2>The group chat, unfortunately.</h2>
         <p>
-          Every machine comes with one. They stand there holding something stupid and they
-          don&rsquo;t leave. There are {data.traitTotals.Companion} of them and you probably
-          know a few personally.
+          Every machine comes with a degen. There are {data.traitTotals.Companion} of them.
+          Tap a face to read their excuses. If none of them remind you of a friend,
+          we have some uncomfortable news.
         </p>
       </div>
       <div className={styles.cast}>
@@ -507,7 +504,7 @@ function Degens({ data }) {
             <b>{d.name}</b>
           </button>
         ))}
-        <div className={styles.castRest}>+ {rest} more<br />you meet by minting</div>
+        <div className={styles.castRest}>+ {rest} more<br />with a perfectly good explanation</div>
       </div>
 
       {meeting !== null && (
@@ -597,9 +594,10 @@ function Tape({ data }) {
   return (
     <section className={styles.section} id="tape">
       <div className={styles.sectionHead}>
-        <h2>The tape</h2>
+        <h2>For the spreadsheet degen.</h2>
         <p>
-          No rarity score in the metadata. Here are the real counts. Do your own homework.
+          Actual trait counts. No rarity score in the metadata. Finally, some numbers
+          you can stare at without getting liquidated.
         </p>
       </div>
 

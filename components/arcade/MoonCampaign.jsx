@@ -16,7 +16,7 @@ export default function MoonCampaign(){
   const allClear=save.completed.length===10;
   return <main className={s.menu}>
     <header className={s.header}><Link href='/os'><b>TERMINL</b><span>ARCADE</span></Link><span>SOLO CAMPAIGN / 10 LEVELS</span></header>
-    <section className={s.hero}><div><span className={s.eyebrow}>ONE SMALL STEP. TEN VERY BIG PROBLEMS.</span><h1>MOON<br/><em>MISSION</em></h1><p>Take your terminal from the city to the moon. Clear spike beds, dodge saws and cannon fire, and beat the Warden waiting at the end.</p>
+    <section className={s.hero}><div><span className={s.eyebrow}>YOUR PRICE TARGET IS UP HERE SOMEWHERE.</span><h1>MOON<br/><em>MISSION</em></h1><p>You’ve been posting rocket emojis for five years. Time to put a shift in. Double-jump past spikes, saws and cannon fire. The Warden is waiting upstairs.</p>
       <button className={s.primary} disabled={!ready} onClick={()=>start(save.current,save.checkpoint)}>{allClear?'PLAY AGAIN':save.completed.length||save.checkpoint>=0?'CONTINUE CAMPAIGN':'START CAMPAIGN'} →</button><small>{save.completed.length} / 10 LEVELS CLEARED · CHECKPOINTS SAVE AUTOMATICALLY</small></div><MoonPreview level={save.current}/></section>
     {storageError&&<p className={s.notice} role='status'>Browser storage is unavailable. Your progress will last for this visit.</p>}
     <section className={s.route} aria-label='Campaign levels'><div className={s.sectionTitle}><h2>THE ROAD TO THE MOON</h2><span>RUN · DOUBLE JUMP · STOMP</span></div><div className={s.levels}>{CAMPAIGN_WORLDS.map(world=>{

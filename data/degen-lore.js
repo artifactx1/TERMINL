@@ -13,7 +13,7 @@
  */
 export const LORE = {
   "liquidation-vulture": {
-    epithet: "perched on the thing that killed you",
+    epithet: "your stop loss rang the dinner bell",
     spec: {
       ENTRY: "the wick",
       EXIT: "twenty minutes later",
@@ -21,11 +21,11 @@ export const LORE = {
       COPE: "n/a",
     },
     story:
-      "Nobody brought it. It was already here when the exchange launched. It stands on the terminal still showing the candle that closed four hundred accounts, because the screen is warm. Does not trade. Waits for other people to stop being able to. It has outperformed everyone else in this collection and it cannot operate a keyboard.",
+      "Has never connected a wallet. Has never joined a Space. Sits on a warm terminal and waits for Max to say ‘this one’s different.’ Lunch has been on time for eleven straight months.",
   },
 
   "margin-call-max": {
-    epithet: "125x. every time. it keeps not working.",
+    epithet: "a 0.4% move ruined his whole personality",
     spec: {
       ENTRY: "125x, no stop",
       EXIT: "0.4% later",
@@ -33,7 +33,7 @@ export const LORE = {
       COPE: "“size was the problem, not direction”",
     },
     story:
-      "Bought the REKT shirt after. Bought the -99% shorts after. Has never bought a stop loss. Max calls direction correctly about half the time and has never once been solvent to find out. Liquidated on a move that does not appear on the daily. Eleven accounts, same trade. He calls this conviction.",
+      "Max’s liquidation candle is too small to see without zooming in. His thread about market manipulation is 43 posts long. He’s on his eleventh account and has finally identified the problem: the first ten were underfunded.",
   },
 
   "buy-high-brian": {
@@ -45,23 +45,23 @@ export const LORE = {
       COPE: "averaging down, going great",
     },
     story:
-      "Wears BUY HIGH across his chest. Not a joke he is in on. When Brian asks how to bridge, that is the top. When he asks which wallet, that is the top. When he says he has finally learned his lesson, that is a generational top. Two funds have alerts on his wallet. He thinks they are fans.",
+      "Brian waits for confirmation. By confirmation, he means his barber, his dentist and his mum have all bought it. Two funds have alerts on his wallet. He thinks they’re fans. Please don’t tell him; the alerts are expensive.",
   },
 
   "mev-mia": {
-    epithet: "stood between the two signs. did not read them.",
+    epithet: "the bots named a sandwich after her",
     spec: {
       ENTRY: "12% slippage, in a hurry",
       EXIT: "whatever came back",
       DAMAGE: "every trade, quietly",
-      COPE: "“the receipt is nine feet long”",
+      COPE: "“at least it went through”",
     },
     story:
-      "Set slippage to 12% because the mint was moving fast. It was moving fast because of the bots. The bots were fast because of the 12%. The receipt reaches the floor and not one line on it did what she asked. She is standing between a sign that says MEV BOT and a sign that says SANDWICH BOT and has not put it together.",
+      "The swap failed, so Mia raised slippage to 12%. Somewhere, a bot operator upgraded to business class. She got the tokens, though. All seven dollars of them.",
   },
 
   "early-mint-maya": {
-    epithet: "in at block zero, out before you found the link",
+    epithet: "loved the art for thirty-one hours",
     spec: {
       ENTRY: "block 0",
       EXIT: "day two, into your bid",
@@ -69,11 +69,11 @@ export const LORE = {
       COPE: "“I just like the art”",
     },
     story:
-      "The pass is still glowing. That means it is unclaimed. That means she has one and you do not. In at block zero, out before the floor sweeps start, gone from the Discord before the roadmap drops. Says she is in it for the art. Her record for owning art is thirty-one hours.",
+      "Maya typed ‘forever community’ with the listing tab open. She has a folder called LONG TERM; it’s sorted by hour. Still likes every project announcement. It’s polite to support the people who bought your bags.",
   },
 
   "short-squeeze-simone": {
-    epithet: "does not predict the squeeze. sets it.",
+    epithet: "thank you for your forced purchase",
     spec: {
       ENTRY: "long, where you were short",
       EXIT: "into your forced buying",
@@ -81,11 +81,11 @@ export const LORE = {
       COPE: "“I didn't liquidate you, the exchange did”",
     },
     story:
-      "Carries a bear trap. Not a metaphor, she brought it with her. Has no view on the asset and does not want one. She has the funding rate, which tells her how many of you are short, and the open interest, which tells her where each of you stops being short. Then she just buys until the engine starts buying for her. The green candle on her phone is not a forecast. It is a receipt.",
+      "Simone read your bearish thread twice. Bookmarked the bit about ‘adding to my short.’ Bought until your exchange bought for you, then sent a heart emoji. You thought she was flirting.",
   },
 
   "bridge-burn-bernie": {
-    epithet: "fixin this bridge",
+    epithet: "funds in transit. man in denial.",
     spec: {
       ENTRY: "a bridge, 4:15pm",
       EXIT: "the bridge, 4:20pm, without him",
@@ -93,11 +93,11 @@ export const LORE = {
       COPE: "“they said a snapshot is coming”",
     },
     story:
-      "Brought a wrench to a bridge exploit. Went across because the yield on the other side was, and this is a quote, “stupid.” It was. Bernie now holds funds on Ethereum, Polygon, Arbitrum, Avalanche and Solana, and access to none of them. There is a form. He has filled it in four times. It is the same form.",
+      "Crossed for an extra 2% yield. His money has now been ‘arriving shortly’ longer than he’s been married. Support asked him to clear his cache. He did. The money is still gone, but at least the website loads faster.",
   },
 
   "stablecoin-stella": {
-    epithet: "found out what the second word was doing there",
+    epithet: "has a price alert on one dollar",
     spec: {
       ENTRY: "$1.00",
       EXIT: "$0.11",
@@ -105,11 +105,11 @@ export const LORE = {
       COPE: "checks the peg forty times a day",
     },
     story:
-      "De-risked. Got out of the volatile stuff, into the sensible stuff, slept properly for the first time in a year. The sensible stuff did eleven cents on a Saturday while she was at a wedding. She now keeps a chart of one dollar open on a second monitor. It says one dollar. She does not believe it.",
+      "Moved everything into stables so she could enjoy a wedding. Checked her phone during the vows. The dollar was eleven cents. She appears in the wedding photos staring at a bread roll like it knows something.",
   },
 
   "presale-victor": {
-    epithet: "got the allocation. used it that afternoon.",
+    epithet: "your entry was his team’s runway",
     spec: {
       ENTRY: "seed, 92% off",
       EXIT: "minute four",
@@ -117,11 +117,11 @@ export const LORE = {
       COPE: "“we're still building”",
     },
     story:
-      "You are not early. Victor was early. He waved at the community, tweeted LFG, and had the entire allocation on the market before the chart finished loading. Mentions the valuation he got in at the way other men mention their children. Still in the group chat. Still calls everyone anon.",
+      "Victor’s tokens unlocked at 9:00. His heartfelt post about the community went up at 9:01. The yacht deposit cleared at 9:03. He still drops into the chat to say ‘heads down building.’ From the yacht.",
   },
 
   "rug-baron-rex": {
-    epithet: "deploys, thrives, deploys again",
+    epithet: "eleven roadmaps. zero second quarters.",
     spec: {
       ENTRY: "the deployer wallet",
       EXIT: "the liquidity",
@@ -129,35 +129,35 @@ export const LORE = {
       COPE: "“the team stepped back to reassess”",
     },
     story:
-      "The shirt says DEV. He is physically dragging a rug out from under a pile of coins while it says DEV. Eleven projects, eleven roadmaps with four quarters on them, none of which reached Q2. The wallets are one hop apart. Anyone could check. Nobody checks — that is the entire product. Hates the word rug. Prefers “wound down.”",
+      "Rex’s last project ended with ‘a difficult decision.’ His new project launches Thursday. Same website, different animal. The old community manager is the new head of security. He changed his profile picture to a wolf, so we should be fine.",
   },
 
   "cold-storage-chloe": {
-    epithet: "did nothing. correctly. for six years.",
+    epithet: "went outside. deeply suspicious.",
     spec: {
       ENTRY: "2017",
       EXIT: "has not",
       DAMAGE: "zero, three cycles running",
-      COPE: "doesn't need one, which is worse",
+      COPE: "has hobbies",
     },
     story:
-      "Everyone else here is holding a cracked phone. Chloe is holding a safe. Bought early, took it off the exchange the same week, and then went outside for six years while three platforms she had never used collapsed on people she knew. Was not on the bridge. Was not in the presale. Was not awake at 4am. When the group chat is on fire she posts one thumbs up, and it is the most violent thing that happens in there.",
+      "Bought in 2017, put it in cold storage and developed interests. During the exchange collapse she asked if anyone wanted to go hiking. The chat muted her for a week. Her portfolio remains the most offensive thing about her.",
   },
 
   "diamond-hands-pepe": {
-    epithet: "held. all of it. every time.",
+    epithet: "the screenshot was the take-profit",
     spec: {
       ENTRY: "the top",
       EXIT: "—",
       DAMAGE: "-94%, temporarily",
-      COPE: "turned out not to need one",
+      COPE: "“unrealized”",
     },
     story:
-      "Minus forty was brave. Minus eighty was stubborn. Minus ninety-four stopped being a strategy and became a medical condition. Then it came back. The fist is still diamond, the candle is green, and he has sold precisely none of it. Posts the same laser-eyes meme every anniversary. Nobody has laughed at it since March.",
+      "Rode it down 94%, then all the way back. The group chat begged him to sell. He sent a diamond emoji. His gains folder contains 600 screenshots and his bank account contains a direct debit he’s worried about.",
   },
 
   "mev-marlon": {
-    epithet: "caught your transaction in a net",
+    epithet: "‘better execution’ for him, yes",
     spec: {
       ENTRY: "one block ahead",
       EXIT: "one block behind",
@@ -165,11 +165,11 @@ export const LORE = {
       COPE: "“that's just latency, anon”",
     },
     story:
-      "Runs down the mempool with a butterfly net and enjoys it more than is appropriate. Calls himself a searcher. Calls this providing execution. Will explain, unprompted, that the slippage tolerance is a number YOU typed, ser — and the unbearable part is that he is correct. Has never met anyone he does this to. Considers that a kindness.",
+      "Marlon says he works in infrastructure. Specifically, the infrastructure between your money and his money. He’ll explain it over dinner if you ask. He’ll explain it over dinner if you don’t. You’re paying either way.",
   },
 
   "airdrop-ava": {
-    epithet: "eight months of unpaid QA. it landed.",
+    epithet: "‘organic user’ on forty-seven wallets",
     spec: {
       ENTRY: "every testnet, twice",
       EXIT: "TGE",
@@ -177,11 +177,11 @@ export const LORE = {
       COPE: "“I earned this, actually”",
     },
     story:
-      "Came down under a WAGMI canopy in a rain of coins, which is what a year of using a protocol nobody else could tolerate finally looks like. Bridged in patterns. Varied the timing. Used it like someone who genuinely needed it, across a number of wallets she will not discuss. The sybil filter caught everyone she knows and did not catch her. She has never explained this. She is already farming the next one.",
+      "Ava has forty-seven wallets, three spreadsheets and one increasingly concerned boyfriend. Swaps $4 at 3am to look organic. When asked what she does for work, she says ‘it’s hard to explain.’ Eight months later, so does her accountant.",
   },
 
   "oracle-olivia": {
-    epithet: "sees everything. calls it wrong.",
+    epithet: "called twelve of the last two pumps",
     spec: {
       ENTRY: "whenever the cards said",
       EXIT: "whenever the cards said",
@@ -189,7 +189,7 @@ export const LORE = {
       COPE: "“the timeline shifted”",
     },
     story:
-      "Crystal ball, robes, and a spread that includes a card reading THE RUG. Her patches say BUY HIGH and SELL LOW and she wears them with no discomfort whatsoever. Eleven thousand people follow her calls and eleven thousand people are down bad. When she is right it was destiny. When she is wrong the timeline shifted. Either way there is another one at nine tomorrow.",
+      "Olivia predicted the crash. Also the pump, the sideways month and a major announcement ‘soon.’ Deletes three tweets, pins the fourth. Her paid group calls this accuracy. The crystal ball is just for the lighting.",
   },
 };
 
