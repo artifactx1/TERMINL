@@ -41,6 +41,11 @@ export async function startArcadeServer(options = {}) {
   if (production && (!dataDir || !configuredOrigins?.length || configuredOrigins.includes('*'))) throw new Error('Production requires ARCADE_DATA_DIR and explicit ARCADE_ALLOWED_ORIGINS');
   const allowedOrigins = new Set(configuredOrigins || ['http://localhost:4000', 'http://127.0.0.1:4000']);
   const journal = await openJournal(dataDir || resolve('.arcade-data'));
+  const campaign = options.campaign || (process.env.CAMPAIGN_SERVICE_TOKEN
+    ? (await import('./campaign.mjs')).createCampaignService({dataDir:dataDir||resolve('.arcade-data'),
+      serviceToken:process.env.CAMPAIGN_SERVICE_TOKEN,adminToken:process.env.CAMPAIGN_ADMIN_TOKEN,
+      siteOrigin:process.env.CAMPAIGN_SITE_ORIGIN,xClientId:process.env.X_CLIENT_ID,xClientSecret:process.env.X_CLIENT_SECRET}) : null);
+  const campaignCleanup = campaign ? setInterval(()=>{try{campaign.store.cleanup();}catch{console.error('Campaign cleanup failed');}},3600000) : null;
   const rooms = new Map();
   const peers = new Set();
   const connections = new Map();
@@ -85,7 +90,11 @@ export async function startArcadeServer(options = {}) {
   const snapshot = (room) => members(room).forEach((peer) => send(peer, { type: 'snapshot', matchId: room.matchId, state: room.state, inputs: room.inputs, confirmedTick: Math.max(0, room.clock - LATE), acks: room.acks, corrections: room.corrections }));
   const publicResult = (result) => { const { participants: _participants, kind: _kind, replay: _replay, ...value } = result; return value; };
   const json = (response, status, body) => { response.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); response.end(JSON.stringify(body)); };
-  const server = http.createServer((request, response) => {
+  const server = http.createServer(async (request, response) => {
+    if(request.url?.startsWith('/campaign/')){
+      if(!campaign)return json(response,503,{error:'Campaign is not configured'});
+      await campaign.handle(request,response);return;
+    }
     if (request.method !== 'GET') return json(response, 405, { error: 'method_not_allowed' });
     let path;
     try { path = new URL(request.url, 'http://arcade.local').pathname; }
@@ -326,11 +335,11 @@ export async function startArcadeServer(options = {}) {
   try {
     await new Promise((resolveReady, reject) => { server.once('error', reject); server.listen(options.port ?? Number(process.env.ARCADE_PORT || process.env.PORT || 4010), options.host || process.env.ARCADE_HOST || '127.0.0.1', resolveReady); });
   } catch (error) {
-    clearInterval(timer); clearInterval(heartbeat); wss.close(); await journal.close(); throw error;
+    clearInterval(timer); clearInterval(heartbeat); clearInterval(campaignCleanup); campaign?.close(); wss.close(); await journal.close(); throw error;
   }
   let closing;
   const close = () => closing ||= (async () => {
-    draining = true; clearInterval(timer); clearInterval(heartbeat);
+    draining = true; clearInterval(timer); clearInterval(heartbeat); clearInterval(campaignCleanup);
     let shutdownError = null;
     for (const room of rooms.values()) {
       if (['playing', 'starting'].includes(room.phase)) {
@@ -346,6 +355,7 @@ export async function startArcadeServer(options = {}) {
     await new Promise((done) => wss.close(done)); clearTimeout(kill);
     await new Promise((done) => server.close(done));
     try { await journal.close(); } catch (error) { shutdownError ||= error; }
+    try { campaign?.close(); } catch (error) { shutdownError ||= error; }
     if (shutdownError) throw shutdownError;
   })();
   return { server, address: server.address(), close, rooms, journal };

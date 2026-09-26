@@ -7,6 +7,7 @@
 !server/arcade/package-lock.json
 !server/arcade/index.mjs
 !server/arcade/journal.mjs
+!server/arcade/campaign*.mjs
 !lib/
 !lib/arcade/
 !lib/arcade/*.mjs

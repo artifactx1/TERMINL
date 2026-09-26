@@ -7,7 +7,7 @@ COPY server/arcade/package.json server/arcade/package-lock.json ./server/arcade/
 RUN npm ci --prefix server/arcade --omit=dev --ignore-scripts --no-audit --no-fund
 
 COPY lib/arcade/ ./lib/arcade/
-COPY server/arcade/index.mjs server/arcade/journal.mjs ./server/arcade/
+COPY server/arcade/*.mjs ./server/arcade/
 
 ENV NODE_ENV=production ARCADE_HOST=0.0.0.0
 EXPOSE 4010

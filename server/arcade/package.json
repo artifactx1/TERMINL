@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22 <25" },
-  "scripts": { "start": "node index.mjs" },
-  "dependencies": { "ws": "8.21.3" }
+  "engines": {
+    "node": ">=22.13 <25"
+  },
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.8.0",
+    "ws": "8.21.3"
+  }
 }

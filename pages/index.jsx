@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
+import CampaignInvite from "../components/arcade/CampaignInvite";
 import { loreFor } from "../data/degen-lore";
 import ChainBadge from "../components/ChainBadge";
 import WalletButton from "../components/WalletButton";
@@ -250,6 +251,7 @@ function Site({ data }) {
         </div>
 
         <section className={styles.motto}>
+          <CampaignInvite />
           <p>If you&rsquo;ve ever called a loss &ldquo;tuition,&rdquo;<br />you&rsquo;re among friends.</p>
           <Link className={styles.osLaunch} href="/os">PLAY THE ARCADE <span>Something to do while your long-term hold gets longer. ↗</span></Link>
         </section>

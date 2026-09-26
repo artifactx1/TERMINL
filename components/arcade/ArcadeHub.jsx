@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import CampaignInvite from './CampaignInvite';
 import {useEffect,useRef} from 'react';
 import {drawVehicleArt,preloadVehicleArt} from '../../lib/arcade/race-exotics.js';
 import {drawCampaign} from '../../lib/moon-campaign-draw.js';
@@ -15,6 +16,7 @@ function GameArt({game}){
 export default function ArcadeHub(){return <div className={s.shell}>
   <header className={s.header}><Link className={s.brand} href='/os'><b>TERMINL</b><span>ARCADE</span></Link><nav aria-label='Arcade navigation'><a href='#games'>THE GAMES</a><Link href='/'>THE COLLECTION ↗</Link></nav></header>
   <main>
+    <CampaignInvite />
     <section className={s.intro}><div><span className={s.eyebrow}><i/> FREE TO PLAY. EVEN FOR YOU.</span><h1>Your bags<br/><em>can wait.</em></h1></div><p>The chart will still be red.<br/>{' '}Go enjoy something.<br/><span>Free games. No wallet required.</span></p></section>
     <section id='games' className={s.featured} aria-label='Flagship games'>
       <article className={`${s.card} ${s.race}`}><Link href='/os/lambo' className={s.artLink} aria-label='Play Wen Lambo'><div className={s.raceArt}><span className={s.artTag}>01 / RACING</span><GameArt game='race'/><span className={s.artCaption}>THE LAMBO IS FINALLY IN BUDGET.</span></div></Link><div className={s.cardBody}><div className={s.cardTop}><h2>WEN LAMBO</h2><span>SOLO + ONLINE</span></div><p>You said “wen Lambo” in 2021. Here. Five supercars, six California courses, and one bloke on a bike who might beat you. Race solo or bring a friend.</p><div className={s.cardBottom}><span>6 COURSES · 6 RIDES<br/>QUICK RACE / SIX-COURSE CUP</span><Link href='/os/lambo'>START YOUR ENGINE ↗</Link></div></div></article>
