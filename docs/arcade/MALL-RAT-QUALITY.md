@@ -28,6 +28,12 @@ checks alone do not establish parity with Tony Hawk's Pro Skater.
   Browser checks cover desktop and actual two-thumb release/jump/catch sequences
   in both phone orientations, including banking the line after releasing controls.
   Transfer bonuses and longest-chain records are covered by regression tests.
+- Grind variety: 50-50, boardslide, 5-0 and nosegrind share the rider/board
+  heading. Matrix checks verify foot contact and the truck/deck contact with
+  the rail. The browser style suite uses ordinary inputs from spawn and checks
+  keyboard changes, two-thumb swipe changes, and cancellation without sticking.
+  Each new style must be held before scoring; holding the change input does not
+  repeat awards. Portrait scoring sits above the rider instead of over the deck.
 
 - Camera: `mall-camera.test.mjs` projects the rider's head and deck throughout
   every gap, both routes and the full district tour at three screen ratios.

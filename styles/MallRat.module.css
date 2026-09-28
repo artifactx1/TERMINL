@@ -12,7 +12,7 @@
 @media(pointer:coarse){.rideStatus{bottom:226px}.mall [class*='combo']{bottom:251px}.trickHint{bottom:246px}.actions .ollie{height:78px;width:78px}}
 @media(pointer:coarse) and (max-height:550px){.actions{grid-template-columns:58px 72px;grid-template-rows:38px 38px 68px;gap:5px}.actions button{height:38px}.actions .ollie{height:68px;width:68px}.actions .grab{height:55px}.rideStatus{bottom:6px}.mall [class*='combo']{bottom:30px}.trickHint{bottom:85px;max-width:40%;text-align:center}}
 
-/* Fixed names and explicit choices: no changing action or hidden swipe vocabulary. */
+/* Fixed trick targets; the grind button displays its rail-only swipe hint. */
 .actions{position:relative;grid-template-columns:76px 80px;grid-template-rows:28px 52px 80px;gap:7px}.actions button{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px}.actions button b{font:inherit}.actions button small{font:6px var(--terminl-font);letter-spacing:.02em}.actions .chooseTrick{grid-column:1/-1;grid-row:1;height:28px;border-radius:8px;font-size:9px}.actions .spin{grid-row:2;grid-column:1;height:52px}.actions .link{grid-row:2;grid-column:2;height:52px}.actions .trick{grid-row:3;grid-column:1;height:76px;width:76px;border-radius:50%;border-color:#dfb8f3;background:#3a3048eb;font-size:10px}.actions .ollie{grid-row:3;grid-column:2;height:80px;width:80px;font-size:13px}.actions>small{grid-row:4;grid-column:1/-1;font-size:6px;white-space:nowrap}.trickPicker{position:absolute;bottom:100%;right:0;width:228px;display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px;margin-bottom:8px;border:1px solid #bacda2;border-radius:12px;background:#102c29f5;pointer-events:auto;box-shadow:0 8px 25px #0007}.trickPicker button{height:42px;font-size:10px;border-radius:8px}.trickPicker button[aria-pressed=true]{background:#c1dc9d;color:#13271f}.specialTouch{background:transparent;border:0;color:inherit;font:inherit;text-align:right;cursor:pointer}.specialTouch:disabled{cursor:default}.specialTouch:enabled{color:#e2f5ac}.specialTouch small{display:block}.mobilePause{display:none}
 @media(pointer:coarse){.mobilePause{display:block}.desktopPause{display:none}.rideStatus{bottom:207px}.mall [class*='combo']{bottom:238px}.trickHint{bottom:226px}}
 @media(pointer:coarse) and (max-height:550px){.actions{grid-template-columns:72px 76px;grid-template-rows:25px 43px 70px;gap:5px}.actions .chooseTrick{height:25px}.actions .spin,.actions .link{height:43px}.actions .trick{height:68px;width:68px}.actions .ollie{height:70px;width:70px}.trickPicker{width:242px;grid-template-columns:repeat(4,1fr)}.trickPicker button{height:44px;font-size:8px}.rideStatus{bottom:6px}.mall [class*='combo']{bottom:30px}.trickHint{bottom:85px}}
@@ -22,3 +22,14 @@
 @media(pointer:coarse) and (max-height:550px){.actions{grid-template-rows:44px 44px 70px}.actions .chooseTrick,.actions .spin,.actions .link{height:44px}.actions button small{font-size:7px}.rideStatus{bottom:6px}.mall [class*='combo']{bottom:30px}.trickHint{bottom:85px}}
 
 .linkWindow{width:100%;margin-top:7px}.linkWindow small{font-size:9px;letter-spacing:.06em}.linkWindow>div{height:3px;margin-top:5px;background:#263529;overflow:hidden}.linkWindow i{display:block;height:100%;background:#b3ef8b}
+
+/* Put portrait scoring above the action rather than over the rider and deck. */
+@media(pointer:coarse) and (min-height:551px){
+ .mall .skateCombo{top:112px;bottom:auto;left:12px;transform:none;text-align:left;width:calc(100% - 116px);max-width:280px}
+ .mall .skateCombo em{font-size:10px}
+ .mall .skateCombo b{font-size:27px}
+ .mall .skateCombo span{font-size:9px;line-height:1.5}
+ .mall .skateCombo .linkWindow small{font-size:8px}
+ .rideStatus{top:196px;bottom:auto;left:auto;right:12px;width:78px;transform:none;font-size:8px;line-height:1.5}
+ .balance{width:74px;margin-top:7px}
+}

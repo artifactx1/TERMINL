@@ -146,3 +146,25 @@ release expiry, same-rail scoring, stale ramp lift, resets and saved records.
 input in portrait/landscape, checking release, both transfers and banking.
 Captures are in `artifacts/mall-rails/`. All 150 arcade tests, lint and the
 isolated production build passed for this update.
+
+### Grind styles and readable phone tricks (2026-09-28)
+
+Rail tricks now cycle through 50-50, boardslide, 5-0 and nosegrind. On keyboard,
+tap J while holding L; on controller use X while holding Y. On touch, keep GRIND
+held and slide that thumb left. Return the thumb and slide again to change to
+the next style. The button shows this hint while grinding. Releasing or
+cancelling the contact still releases the rail immediately.
+
+Changes need a short settling period, and a style earns points after eighteen
+ticks held. Each style scores once per catch, so repeated taps cannot farm
+awards. The rider and deck turn together into a boardslide; 5-0s and nosegrinds
+lift the appropriate end, with contact placed at the truck. Exits blend back
+toward travel, and bails clear all grind pose state.
+
+Portrait combo text moves above the action to keep the feet and deck visible.
+`mall-grinds.test.mjs` checks a real spawn-to-rail line, score timing, held input,
+recovery, and transformed foot/truck/deck contact. Run
+`node scripts/mall-rails-browser.mjs --styles` for rendered keyboard and
+two-thumb checks; add `--small` for a 375×667 phone. Screenshots live in
+`artifacts/mall-rails/style-*.png`. The default browser suite still checks rail
+transfers and mobile pop-offs.

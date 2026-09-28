@@ -2,7 +2,7 @@ import {useRef,useState} from 'react';
 import s from '../../styles/MallRat.module.css';
 const TRICKS=[['flip','KICKFLIP'],['varial','VARIAL'],['tre','TRE FLIP'],['shuvit','SHUVIT'],['frontflip','FRONTFLIP'],['backflip','BACKFLIP'],['grab','GRAB'],['heelflip','HEELFLIP']];
 export default function MallTouchControls({game}){
- const pointer=useRef(null),[stick,setStick]=useState({x:0,y:0}),[selected,setSelected]=useState(TRICKS[0]),[picker,setPicker]=useState(false);
+ const pointer=useRef(null),grindSwipe=useRef(null),[stick,setStick]=useState({x:0,y:0}),[selected,setSelected]=useState(TRICKS[0]),[picker,setPicker]=useState(false);
  const move=e=>{
   if(pointer.current!==e.pointerId)return;
   const r=e.currentTarget.getBoundingClientRect(),radius=r.width*.34;
@@ -11,7 +11,17 @@ export default function MallTouchControls({game}){
   setStick({x,y});game.runtime.current?.input.stick({x:Math.abs(x)<.12?0:x,y});
  };
  const release=e=>{if(pointer.current!==e.pointerId)return;pointer.current=null;setStick({x:0,y:0});game.runtime.current?.input.stick(null);};
- const action=(name,label,detail,className)=> <button className={className} aria-label={label} onPointerDown={e=>{setPicker(false);game.touch(name,e);}} onPointerUp={e=>game.touch(name,e)} onPointerCancel={e=>game.touch(name,e)} onLostPointerCapture={e=>game.touch(name,e)}><b>{label}</b><small>{detail}</small></button>;
+ const changeGrind=e=>{
+  const swipe=grindSwipe.current;if(swipe?.id!==e.pointerId||!game.runtime.current?.state.player.rail)return;
+  const dx=e.clientX-swipe.x;
+  if(dx>-12)swipe.changed=false;
+  if(dx<-24&&!swipe.changed){
+   swipe.changed=true;const input=game.runtime.current.input;
+   input.touch('flip',true,'grind-swipe');input.touch('flip',false,'grind-swipe');
+  }
+ };
+ const releaseAction=(name,e)=>{if(name==='link')grindSwipe.current=null;game.touch(name,e);};
+ const action=(name,label,detail,className)=> <button className={className} aria-label={label} onPointerDown={e=>{setPicker(false);if(name==='link')grindSwipe.current={id:e.pointerId,x:e.clientX,changed:false};game.touch(name,e);}} onPointerMove={name==='link'?changeGrind:undefined} onPointerUp={e=>releaseAction(name,e)} onPointerCancel={e=>releaseAction(name,e)} onLostPointerCapture={e=>releaseAction(name,e)}><b>{label}</b><small>{detail}</small></button>;
  const p=game.view?.player,air=p&&!p.grounded&&!p.rail;
  return <div className={s.touchControls} aria-label='Touch skate controls'>
   <div className={s.stickWrap}><div className={s.stick} role='application' aria-label='Steering thumbstick. Hold to roll, drag left or right to steer, pull down to brake.' onPointerDown={e=>{if(pointer.current!==null)return;pointer.current=e.pointerId;e.currentTarget.setPointerCapture(e.pointerId);game.runtime.current?.audio.unlock();move(e);}} onPointerMove={move} onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}>
@@ -21,7 +31,7 @@ export default function MallTouchControls({game}){
    {picker&&<div className={s.trickPicker} role='group' aria-label='Choose your trick'>{TRICKS.map(trick=><button key={trick[0]} aria-pressed={selected[0]===trick[0]} onClick={()=>{setSelected(trick);setPicker(false);}}>{trick[1]}</button>)}</div>}
    <button className={s.chooseTrick} aria-expanded={picker} onClick={()=>setPicker(!picker)}>CHOOSE TRICK {picker?'▴':'▾'}</button>
    {action('spin','360','IN THE AIR',s.spin)}
-   {action('link','GRIND','HOLD / MANUAL',s.link)}
+   {action('link','GRIND',p?.rail?'SLIDE ← CHANGE':'HOLD / MANUAL',s.link)}
    {action(selected[0],selected[1],p?.airMove?'CATCHING…':air?'TAP NOW':'AFTER JUMP',s.trick)}
    {action('jump','JUMP','HOLD FOR HEIGHT',s.ollie)}
    <small>LAND + RELEASE TO BANK YOUR SCORE</small>
