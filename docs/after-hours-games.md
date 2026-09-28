@@ -221,3 +221,35 @@ and 844×390. Screenshots are in `artifacts/mall-career/`.
 This improves session continuity and discovery. It does not establish Tony
 Hawk Pro Skater parity, long-term replay appeal or physical-phone performance;
 those remain broader play-quality requirements, beyond these regression tests.
+
+### Free-skate starting spots (2026-09-28)
+
+Free skate can start in any of the seventeen districts. The menu exposes a
+starting-spot selector when Free skate is checked; the paused map also offers
+“Start free skate here” for its selected district. These are authored runups,
+not arbitrary teleports onto a ramp edge. Each has a short first-line hint.
+The rail-yard runup catches its center rail with push + grind in under two
+seconds; the mega, plaza, canal and snake starts lead into their named gaps.
+
+A session start creates a fresh free-skate run and clears the active combo,
+input, rail/manual state and score. The map says this before the action.
+Previously earned career progress remains on this device. R and the pause
+menu's “Retry this spot” reuse the selected start, renderer and assets. Timed
+runs ignore this preference and always start in the atrium; free-skate runs
+continue to stay out of timed records and ghosts. Selecting a district counts
+as visiting it for the local career, just as arriving there on the board does.
+
+`mall-spots.test.mjs` checks all starts and their first-second runups, terrain
+height, camera framing at three aspect ratios, real rail/gap approaches,
+retry/save separation and timed-start isolation. `mall-spots-browser.mjs`
+checks the full menu → rail catch → backflip → bank → retry → map session flow,
+held-input release, rooftop/basement starts, retained career progress and the
+return to a timed run at desktop, portrait phone and landscape phone sizes.
+It visits all seventeen starts on desktop and the elevated/lowered starts on
+both phone layouts. Screenshots are in `artifacts/mall-spots/`.
+
+Starting directly at a destination skips that already-satisfied arrival goal
+when picking the three session challenges. It gives no arrival trick points.
+The big-air start sits six metres off the centerline so a concourse lamp does
+not obscure the rider. Phone session hints sit clear of the riding-status
+readout and disappear as soon as a combo begins.

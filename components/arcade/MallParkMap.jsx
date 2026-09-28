@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {MALL_CHALLENGES} from '../../lib/arcade/after-hours/mall-world.mjs';
 import {parkRoute,routeCue,challengeProgress} from '../../lib/arcade/after-hours/mall-navigation.mjs';
+import {practiceStart} from '../../lib/arcade/after-hours/mall-spots.mjs';
 import MallCareer from './MallCareer';
 import s from '../../styles/MallParkMap.module.css';
 
@@ -42,9 +43,10 @@ export function ParkGuideCue({guide,onOpen}){
   <b>{zone.name}</b><small>{cue?.arrived?'YOU’RE HERE':cue?.unreachable?'OPEN MAP':`${cue?.distance||0}m`}</small>
  </button>;
 }
-export default function MallParkMap({view,progress,notice,destination,onChoose,onClear,onClose}){
- const dialog=useRef(null),[selected,setSelected]=useState(destination||'rails');
+export default function MallParkMap({view,progress,notice,destination,onChoose,onSession,onClear,onClose}){
+ const dialog=useRef(null),[selected,setSelected]=useState(destination||(view.practiceSpot!=='atrium'?view.practiceSpot:null)||'rails');
  const {world,player:{x,y,z}}=view;
+ const spot=practiceStart(world,selected);
  const route=useMemo(()=>parkRoute(world,{x,y,z},selected),[world,x,y,z,selected]);
  useEffect(()=>{const element=dialog.current;element.showModal();return()=>element.close();},[]);
  const close=()=>{dialog.current.close();onClose();};
@@ -55,6 +57,7 @@ export default function MallParkMap({view,progress,notice,destination,onChoose,o
    <div className={s.legend}><span>▲ YOU</span><span>— RAILS</span><span>▧ RAMPS</span><span>┄ SUGGESTED ROUTE</span></div>
    <p>Choose a district for directions. Follow the arrow while you skate; roof and basement routes use the access ramps.</p>
    <div className={s.pick}><label>DESTINATION<select aria-label='Choose a park district' value={selected} onChange={e=>setSelected(e.target.value)}>{view.world.zones.map(z=><option key={z.id} value={z.id}>{z.name}</option>)}</select></label><button disabled={!route.length} onClick={()=>choose(selected)}>GUIDE ME →</button></div>
+   {view.practice&&<div className={s.session}><b>SESSION {spot.name}</b><p>{spot.hint}</p><button onClick={()=>{dialog.current.close();onSession(selected);}}>START FREE SKATE HERE →</button><small>Fresh run at this spot. Earned goals stay; the current combo ends. Retry returns here.</small></div>}
    {destination&&<button className={s.clear} onClick={onClear}>CLEAR MY DESTINATION</button>}
   </section><section className={s.goals} aria-label='This run’s goals'><small>THIS RUN / {Object.keys(view.challengeTimes).length} OF 3 COMPLETE</small><h3>MAKE SECURITY EARN IT.</h3><p>Each goal pays 2,500 points. You keep skating while the paperwork piles up.</p>
    {view.challengeIds.map(id=>{const goal=MALL_CHALLENGES.find(c=>c.id===id),done=!!view.challengeTimes[id];return <article key={id} className={done?s.done:undefined}><h4>{done?'✓ ':''}{goal.name}</h4><p>{goal.hint}</p><strong>{challengeProgress(view,id)}</strong></article>;})}

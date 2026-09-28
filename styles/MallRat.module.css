@@ -47,3 +47,6 @@
 
 /* The mobile clock carries overtime; keep its announcement off the combo HUD. */
 @media(pointer:coarse){.mall .overtimeCallout{width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
+
+@media(pointer:coarse){.mall .startHint{top:140px;left:12px;transform:none;max-width:calc(100% - 122px);text-align:left}.mall .startHint b{font-size:20px}.mall .startHint span{font-size:10px;line-height:1.5}}
+@media(pointer:coarse) and (max-height:550px){.mall .startHint{top:76px;max-width:42%}}
