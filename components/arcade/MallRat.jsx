@@ -16,7 +16,7 @@ const timeLeft=ticks=>{const seconds=Math.ceil(Math.max(0,ticks)/60);return `${M
 export default function MallRat(){
  const [character,setCharacter]=useState('max'),[practice,setPractice]=useState(false),[ghost,setGhost]=useState(true),[seed,setSeed]=useState(1),[board,setBoard]=useState('classic');
  const game=useGame({kind:'mall',create:createMall,step:stepMall,options:{character,practice,ghost,seed,board}}),v=game.view;
- useEffect(()=>{const image=new window.Image();image.src=`/arcade/mall-rat/${SKATERS.find(c=>c.id===character).art}-motion-atlas-v3.webp`;},[character]);
+ useEffect(()=>{const art=SKATERS.find(c=>c.id===character).art;for(const sheet of ['motion-atlas-v3','directional-atlas-v4']){const image=new window.Image();image.src=`/arcade/mall-rat/${art}-${sheet}.webp`;}},[character]);
  const [destination,setDestination]=useState(null),[mapOpen,setMapOpen]=useState(false);
  const guide=useParkGuide(v,destination);
  useEffect(()=>{if(game.mode!=='paused')setMapOpen(false);},[game.mode]);

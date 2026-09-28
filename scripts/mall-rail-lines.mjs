@@ -3,8 +3,8 @@ import {angleDelta} from '../lib/arcade/after-hours/math.mjs';
 import {drive} from './mall-lines-pilot.mjs';
 
 /** Reproducible line from spawn, using only ordinary movement/trick inputs. */
-export function planRailLine({releaseFrames=0}={}){
- const state=createMall({practice:true,seed:123});stepMall(state);stepMall(state);
+export function planRailLine({releaseFrames=0,character='max'}={}){
+ const state=createMall({practice:true,seed:123,character});stepMall(state);stepMall(state);
  const inputs=drive(state,[[100,70],[140,70],[140,60]]),catches=[];let hops=0,lastRail=null;
  const advance=input=>{stepMall(state,input);inputs.push(input);const p=state.player;if(p.rail&&p.rail!==lastRail)catches.push({frame:inputs.length,rail:p.rail,chain:p.railChain});lastRail=p.rail;};
  for(let i=0;i<500&&(state.stats.railTransfers||0)<2;i++){

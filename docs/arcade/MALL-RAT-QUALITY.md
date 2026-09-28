@@ -82,3 +82,29 @@ checks alone do not establish parity with Tony Hawk's Pro Skater.
   human sessions remain distinct from deterministic browser verification.
 - The variety and satisfaction of the longer-term session loop must be assessed
   against the full goal, not inferred from the number of tricks or a green suite.
+
+## Directional action art
+
+The front and side views now select a pose for the current action instead of
+reusing a single standing illustration. Each of the four canonical degens has
+fifteen additional frames: left/front/right coast, crouch, air tuck, grab and
+grind. Rear push cycles and the existing somersault sheets remain in use.
+Directional actions scale against their own view's standing height so a tuck
+compresses naturally. Foot anchors are measured from the shoe region rather
+than the image midpoint, keeping asymmetric arm poses attached to the board.
+
+- Sources and exact built-in image generation prompts:
+  `docs/mall-rat-directional-prompts.json` and `docs/art/mall-rat/`.
+- Reproduce the four runtime WebP atlases and metadata with
+  `node scripts/prepare-mall-directional.mjs`.
+- `mall-directional.test.mjs` checks every frame's alpha gutters, image bounds,
+  shoe region and action scale, verifies action selection, and checks real
+  authored foot anchors against transformed Three.js board matrices.
+- `mall-directional-browser.mjs` drives each degen from spawn through fakie
+  rolling, an ollie, grab, landing, side grab and boardslide. It checks release
+  back to rolling and records rendered desktop/portrait screenshots. Rail
+  approaches account for each character's movement tuning.
+
+These are additional illustrated action poses, not a fully articulated model.
+Side/front pushing still uses the coast pose. The broader completion limits
+above continue to apply.

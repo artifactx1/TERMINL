@@ -11,6 +11,7 @@ next-env.d.ts
 /collection
 *.png
 !public/**/*.png
+!docs/art/mall-rat/*-directional-source-v*.png
 
 # local env (.env.example is committed on purpose)
 .env
