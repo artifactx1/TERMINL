@@ -34,6 +34,16 @@ checks alone do not establish parity with Tony Hawk's Pro Skater.
   keyboard changes, two-thumb swipe changes, and cancellation without sticking.
   Each new style must be held before scoring; holding the change input does not
   repeat awards. Portrait scoring sits above the rider instead of over the deck.
+- Spin landings: odd half-turns land fakie; full turns retain the original
+  stance. The catch preserves the visible heading and settles the remaining
+  wheel alignment over twelve ticks without changing travel direction. Reverts
+  rotate the stance over eighteen ticks and award one link per recent landing.
+  The mobile/controller rotate action reverts on the ground and spins in the
+  air, resolved from simulation state even before its UI label catches up.
+  `mall-heading.test.mjs` covers 180/540/720 catches, repeated inputs, ramp pitch,
+  bail cleanup and consistent standing height for all four degen view sets.
+  `mall-heading-browser.mjs` checks actual spawn-to-180-to-revert-to-360 lines,
+  board/rider alignment, two-thumb reverts, and banking on desktop and phones.
 - Retry responsiveness: identical skater/board/graphics runs reuse the loaded
   renderer, geometry, textures and shaders. A browser audit counts actual WebGL
   allocations across retries and compares the restored spawn view after smashing

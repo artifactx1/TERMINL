@@ -30,7 +30,7 @@ export default function MallTouchControls({game}){
   <div className={s.actions}>
    {picker&&<div className={s.trickPicker} role='group' aria-label='Choose your trick'>{TRICKS.map(trick=><button key={trick[0]} aria-pressed={selected[0]===trick[0]} onClick={()=>{setSelected(trick);setPicker(false);}}>{trick[1]}</button>)}</div>}
    <button className={s.chooseTrick} aria-expanded={picker} onClick={()=>setPicker(!picker)}>CHOOSE TRICK {picker?'▴':'▾'}</button>
-   {action('spin','360','IN THE AIR',s.spin)}
+   {action('spin',air||p?.rail?'360':'REVERT',air||p?.rail?'IN THE AIR':p?.fakie?'TURN OUT OF FAKIE':'PIVOT WHILE ROLLING',s.spin)}
    {action('link','GRIND',p?.rail?'SLIDE ← CHANGE':'HOLD / MANUAL',s.link)}
    {action(selected[0],selected[1],p?.airMove?'CATCHING…':air?'TAP NOW':'AFTER JUMP',s.trick)}
    {action('jump','JUMP','HOLD FOR HEIGHT',s.ollie)}
