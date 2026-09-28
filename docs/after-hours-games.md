@@ -253,3 +253,25 @@ when picking the three session challenges. It gives no arrival trick points.
 The big-air start sits six metres off the centerline so a concourse lamp does
 not obscure the rider. Phone session hints sit clear of the riding-status
 readout and disappear as soon as a combo begins.
+
+### Rail landings and board contact audio (2026-09-28)
+
+Catching a rail closes the incoming jump: airtime, distance and eligible named
+gaps count at the catch, while the combo stays alive. Holding a grind adds no
+air distance. Riding off starts a new measured fall; bailing discards its
+unfinished measurement and clears pending aerial state. This fixes rail catches
+missing jump records and exits inheriting distance from a previous jump.
+
+Wheel rumble and metallic grinding now follow actual board contact and speed.
+Airborne skating is quiet between the short pop and landing clacks. Manuals
+have a quieter rolling sound; rail catches have a brighter impact. These are
+procedural Web Audio sounds, with two reusable filtered-noise loops and bounded
+short-lived impact voices. Pause, results and disposal silence contact audio;
+the existing Sound control applies to it alongside music and other effects.
+
+`mall-contact.test.mjs` covers real rail catches/exits, gap-to-rail scoring,
+bail cleanup, career persistence and contact levels. `mall-audio-browser.mjs`
+renders the sound engine through OfflineAudioContext and checks actual amplitude
+and silence, then exercises rail contact, falling, pause/resume, mute, retry
+reuse and route-exit cleanup in desktop and mobile layouts. It writes a seven-
+second sound preview to `artifacts/mall-contact/contact-preview.wav`.
