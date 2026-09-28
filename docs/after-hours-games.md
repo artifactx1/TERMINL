@@ -190,3 +190,34 @@ start/retry; two measured retries took about 1.8 seconds each. The local reuse
 profile retained those programs and measured roughly 0.3–0.6 seconds across
 eight retries, including an eighty-millisecond test wait. These are browser
 automation measurements, not a physical-phone performance guarantee.
+
+### Skatebook and persistent career (2026-09-28)
+
+The menu and paused park map now expose eight career goals with measured
+progress, practice hints and district guide buttons. Gap Hunt names all five
+gaps and their approaches; district visits accumulate across sessions; the two
+marked routes show personal times. Deck Unlocks explains the existing tape
+and RUG.EXE rewards. Choosing a practice destination from the menu starts the
+selected timed/free-skate mode; choosing one from the map resumes the paused
+run. Guidance targets the district, with the text explaining where to skate
+inside it.
+
+Career checkpoints now include banked score/combo records, landed airtime and
+jump distance, visited districts, discoveries and route personal times.
+Previously, a free-skate line with no tape/gap/route discovery could lose its
+milestones on reload. Route improvements also save after the rolling run
+history reaches twenty entries. Free skate does not create timed leaderboard
+records or overwrite the timed ghost. Schema-v1 saves retain existing earned
+goals and use their prior best score as a starting career record. Local storage
+failure retains progress for the current visit and displays a notice.
+
+`node --test scripts/mall-career.test.mjs` covers real-input rail progression,
+cumulative discoveries, legacy saves, route history limits, unbanked/bail
+exclusion and storage failure. `node scripts/mall-career-browser.mjs` exercises
+a real rail line, persistence through reload, goal progress, menu practice
+routing, paused-map shortcut isolation and guide/resume at 1280×850, 375×667
+and 844×390. Screenshots are in `artifacts/mall-career/`.
+
+This improves session continuity and discovery. It does not establish Tony
+Hawk Pro Skater parity, long-term replay appeal or physical-phone performance;
+those remain broader play-quality requirements, beyond these regression tests.

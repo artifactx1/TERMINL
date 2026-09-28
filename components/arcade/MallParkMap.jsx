@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {MALL_CHALLENGES} from '../../lib/arcade/after-hours/mall-world.mjs';
 import {parkRoute,routeCue,challengeProgress} from '../../lib/arcade/after-hours/mall-navigation.mjs';
+import MallCareer from './MallCareer';
 import s from '../../styles/MallParkMap.module.css';
 
 export function useParkGuide(view,destination){
@@ -41,7 +42,7 @@ export function ParkGuideCue({guide,onOpen}){
   <b>{zone.name}</b><small>{cue?.arrived?'YOU’RE HERE':cue?.unreachable?'OPEN MAP':`${cue?.distance||0}m`}</small>
  </button>;
 }
-export default function MallParkMap({view,destination,onChoose,onClear,onClose}){
+export default function MallParkMap({view,progress,notice,destination,onChoose,onClear,onClose}){
  const dialog=useRef(null),[selected,setSelected]=useState(destination||'rails');
  const {world,player:{x,y,z}}=view;
  const route=useMemo(()=>parkRoute(world,{x,y,z},selected),[world,x,y,z,selected]);
@@ -57,7 +58,7 @@ export default function MallParkMap({view,destination,onChoose,onClear,onClose})
    {destination&&<button className={s.clear} onClick={onClear}>CLEAR MY DESTINATION</button>}
   </section><section className={s.goals} aria-label='This run’s goals'><small>THIS RUN / {Object.keys(view.challengeTimes).length} OF 3 COMPLETE</small><h3>MAKE SECURITY EARN IT.</h3><p>Each goal pays 2,500 points. You keep skating while the paperwork piles up.</p>
    {view.challengeIds.map(id=>{const goal=MALL_CHALLENGES.find(c=>c.id===id),done=!!view.challengeTimes[id];return <article key={id} className={done?s.done:undefined}><h4>{done?'✓ ':''}{goal.name}</h4><p>{goal.hint}</p><strong>{challengeProgress(view,id)}</strong></article>;})}
-   <p className={s.note}>The clock is paused here. Your current combo stays intact.</p><button className={s.resume} onClick={close}>BACK TO SKATING →</button>
+   <MallCareer progress={progress} view={view} onGuide={choose} notice={notice}/><p className={s.note}>The clock is paused here. Your current combo stays intact.</p><button className={s.resume} onClick={close}>BACK TO SKATING →</button>
   </section></div>
  </dialog>;
 }
