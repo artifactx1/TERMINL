@@ -127,3 +127,22 @@ height change and a one-unit camera pull-in. The new profile keeps the normal
 chase distance through the tested bowl entry. Decorative depth bands sample the
 same surface as collision and rendering. Regression checks bound the transition
 slope and verify that the coping joins the deck smoothly.
+
+### Rail transfers and mobile pop-offs (2026-09-28)
+
+The rail yard now has three 105-unit rails spaced eight units apart. Jumping
+with left/right steering launches toward the adjacent rail; holding GRIND again
+catches it on descent. Catches align position and travel heading immediately,
+and rail jumps no longer inherit lift from an earlier ramp.
+
+Releasing GRIND exits immediately, while an eight-tick jump window lets one
+thumb move from GRIND to JUMP and still pop off the rail. Different-rail catches
+award transfer points, show the chain in the HUD, and save the longest chain in
+local records. Ground landings, bails and banking break the transfer chain.
+
+`mall-rails.test.mjs` covers three catches from spawn, delayed mobile jumps,
+release expiry, same-rail scoring, stale ramp lift, resets and saved records.
+`mall-rails-browser.mjs` replays the line on desktop and uses actual two-thumb
+input in portrait/landscape, checking release, both transfers and banking.
+Captures are in `artifacts/mall-rails/`. All 150 arcade tests, lint and the
+isolated production build passed for this update.

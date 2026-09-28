@@ -22,6 +22,12 @@ checks alone do not establish parity with Tony Hawk's Pro Skater.
 - Recovery: manual release, rail alignment/cooldown and post-bail release gates
   are covered by simulation checks. Portrait and landscape browser input tests
   exercise real controls rather than changing player state directly.
+- Rail lines: the three 105-unit rail-yard rails are eight units apart, allowing
+  steered pop-offs into another grind. A spawn-to-three-catch input route passes
+  with immediate jumps and with three/seven ticks between release and jump.
+  Browser checks cover desktop and actual two-thumb release/jump/catch sequences
+  in both phone orientations, including banking the line after releasing controls.
+  Transfer bonuses and longest-chain records are covered by regression tests.
 
 - Camera: `mall-camera.test.mjs` projects the rider's head and deck throughout
   every gap, both routes and the full district tour at three screen ratios.
