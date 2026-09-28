@@ -39,6 +39,20 @@ checks alone do not establish parity with Tony Hawk's Pro Skater.
   allocations across retries and compares the restored spawn view after smashing
   scenery. It also covers configuration changes and disposal on route exit.
 
+- Wayfinding: an expandable park map shows districts, walls, ramps, rails and
+  the current heading. Selecting a district supplies an obstacle-aware route
+  and distance cue; leaving the route triggers recalculation. The map pauses
+  the simulation and exposes all three session goals with their current progress.
+  `mall-navigation.test.mjs` drives from spawn to all seventeen destinations
+  using only steering/push/brake, with no bails, and checks the route segments
+  against solid walls. Arrival checks use the destination's actual floor height.
+  `mall-map-browser.mjs` verifies desktop, 375 × 667 portrait and 844 × 390
+  landscape: goal visibility, paused clock, shortcut isolation, Escape/focus,
+  clear destination, and a real-input trip to the rail yard. Mobile checks open
+  the map with a second touch while the first holds the stick, then verify that
+  movement is released. Rendered HUD bounds keep the cue above the location label.
+  These are navigable suggestions, not automatic steering or collision immunity.
+
 - Camera: `mall-camera.test.mjs` projects the rider's head and deck throughout
   every gap, both routes and the full district tour at three screen ratios.
   The browser camera suite follows actual control inputs through the three
