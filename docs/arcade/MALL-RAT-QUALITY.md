@@ -34,6 +34,10 @@ checks alone do not establish parity with Tony Hawk's Pro Skater.
   keyboard changes, two-thumb swipe changes, and cancellation without sticking.
   Each new style must be held before scoring; holding the change input does not
   repeat awards. Portrait scoring sits above the rider instead of over the deck.
+- Retry responsiveness: identical skater/board/graphics runs reuse the loaded
+  renderer, geometry, textures and shaders. A browser audit counts actual WebGL
+  allocations across retries and compares the restored spawn view after smashing
+  scenery. It also covers configuration changes and disposal on route exit.
 
 - Camera: `mall-camera.test.mjs` projects the rider's head and deck throughout
   every gap, both routes and the full district tour at three screen ratios.

@@ -168,3 +168,25 @@ recovery, and transformed foot/truck/deck contact. Run
 two-thumb checks; add `--small` for a 375×667 phone. Screenshots live in
 `artifacts/mall-rails/style-*.png`. The default browser suite still checks rail
 transfers and mobile pop-offs.
+
+### Reuse the park between runs (2026-09-28)
+
+Starting or retrying with the same skater, board and graphics settings now
+reuses the loaded Mall Rat renderer. Each run still gets fresh simulation,
+input handlers and score/save bookkeeping. Camera smoothing, sparks, particles
+and audio beat state reset, so effects from the previous line do not carry over.
+The next draw restores props, tapes, route markers, lighting and actors from
+the new simulation. Changing render configuration replaces the scene; leaving
+the page disposes it. RUG.EXE retains its existing per-level scene lifecycle.
+
+`npm run test:after-hours:restart` audits actual WebGL context, shader and
+texture operations across eight retries, compares the spawn image after
+smashing scenery, changes skater/quality, checks route-exit disposal, and
+smoke-tests RUG.EXE firing and retry. `--baseline` profiles the old behavior
+without requiring reuse. Screenshots are under `artifacts/mall-restart/`.
+
+The pre-change production profile rebuilt thirteen shader programs on every
+start/retry; two measured retries took about 1.8 seconds each. The local reuse
+profile retained those programs and measured roughly 0.3–0.6 seconds across
+eight retries, including an eighty-millisecond test wait. These are browser
+automation measurements, not a physical-phone performance guarantee.
