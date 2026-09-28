@@ -108,3 +108,28 @@ than the image midpoint, keeping asymmetric arm poses attached to the board.
 These are additional illustrated action poses, not a fully articulated model.
 Side/front pushing still uses the coast pose. The broader completion limits
 above continue to apply.
+
+## Last-line overtime and replay
+
+At zero, an active combo keeps the run open through aerials, rails, manuals and
+the landing link window. The first bank or bail resolves overtime and ends the
+session; idle or already-bailed runs still end on time. Closing time no longer
+starts a random event. The clock displays elapsed overtime, the result shows
+what the final line banked or lost, and the saved record includes that outcome.
+The score, next medal target and retry action precede an expandable run breakdown,
+so phone players can start again without scrolling through ten statistics.
+
+Ghost recording retains the complete timed run, including overtime and the final
+frame, within the existing 2,000-sample cap. Longer runs progressively reduce
+sample density. Playback follows timestamps and interpolates position and the
+shortest heading arc, including older saves with gaps during bail recovery; the
+ghost disappears after its recorded run ends. This remains a position replay,
+not a recording of every trick animation or input.
+
+`mall-session.test.mjs` exercises a full three-minute run with a backflip across
+the buzzer, successful catch/bank, bail loss, rail/style/release, manual and
+landing links, one-time resolution, free skate, saved records, and long ghost
+sampling. `mall-session-browser.mjs` uses complete simulation time and real
+keyboard/two-touch controls on desktop, portrait and landscape. It checks
+overtime pause/resume, result persistence, visible retry controls, the stats
+expander, reset state and an ordinary idle timer finish.
