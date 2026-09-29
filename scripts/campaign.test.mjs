@@ -63,6 +63,7 @@ test('X failures identify the provider stage without exposing response secrets a
     assert.equal(calls.length,3);assert.ok(calls.at(-1).endsWith('/revoke'));
   }
   await assert.rejects(xIdentity({...args,fetchImpl:async()=>({ok:false,status:401,json:async()=>({error:'invalid_client',error_description:'secret'})})}),e=>e.oauthStage==='token'&&e.providerStatus===401&&e.providerCode==='invalid_client');
+  await assert.rejects(xIdentity({...args,fetchImpl:async()=>({ok:false,status:403,json:async()=>({errors:[{code:453,message:'Access level limits this endpoint; private-access-token'}]})})}),e=>e.providerErrorNumber===453&&e.providerReason==='app_access_level'&&!JSON.stringify(e).includes('private-access-token'));
   await assert.rejects(xIdentity({...args,fetchImpl:async()=>{throw Error('secret');}}),e=>e.oauthStage==='token'&&e.providerCode==='network_error'&&!e.message.includes('secret'));
 });
 test('persistent access, replay ownership, X uniqueness, qualified referrals and address deadlines',async()=>{

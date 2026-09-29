@@ -150,7 +150,7 @@ export function createCampaignService(options){
         const code=url.searchParams.get('code');if(!code||code.length>2048)fail('X did not return an authorization code');
         let identity;try{identity=await identify({clientId,clientSecret,redirectUri,code,verifier:record.verifier});}
         catch(error){
-          const detail={stage:error.oauthStage||'identity',status:error.providerStatus||0,code:error.providerCode||'internal'};
+          const detail={stage:error.oauthStage||'identity',status:error.providerStatus||0,code:error.providerCode||'internal',reason:error.providerReason||'unspecified',...(Number.isSafeInteger(error.providerErrorNumber)?{providerErrorNumber:error.providerErrorNumber}:{})};
           console.error(JSON.stringify({event:'x_oauth_fail',...detail}));
           store.event('x_oauth_fail',{anonId:s.anon_id,detail},now());return redirect(response,`/arcade-pass?auth=failed${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);
         }

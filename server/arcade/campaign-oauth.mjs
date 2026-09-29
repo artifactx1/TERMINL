@@ -8,7 +8,13 @@ async function requestJson(fetchImpl,stage,url,options){
   let body;try{body=await response.json();}catch{throw failure(stage,response.status||0,'invalid_response');}
   if(!response.ok){
     const code=body?.error||body?.title;
-    throw failure(stage,response.status||0,providerCodes.has(code)?code:'provider_error');
+    const error=failure(stage,response.status||0,providerCodes.has(code)?code:'provider_error');
+    // X's legacy access-tier errors use a numeric nested code rather than an OAuth error.
+    const numericCode=body?.errors?.[0]?.code;
+    if(Number.isSafeInteger(numericCode))error.providerErrorNumber=numericCode;
+    const reason=[body?.reason,body?.type,body?.detail,body?.errors?.[0]?.message].filter(v=>typeof v==='string').join(' ');
+    error.providerReason=/client-not-enrolled|not enrolled|access level|subset of.*endpoints/i.test(reason)?'app_access_level':/credit|balance|payment/i.test(reason)?'billing':/suspend/i.test(reason)?'app_suspended':/scope|permission/i.test(reason)?'permissions':'unspecified';
+    throw error;
   }
   return body;
 }
