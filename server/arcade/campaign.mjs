@@ -149,7 +149,11 @@ export function createCampaignService(options){
         if(url.searchParams.has('error'))return redirect(response,`/arcade-pass?auth=cancelled${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);
         const code=url.searchParams.get('code');if(!code||code.length>2048)fail('X did not return an authorization code');
         let identity;try{identity=await identify({clientId,clientSecret,redirectUri,code,verifier:record.verifier});}
-        catch(error){store.event('x_oauth_fail',{anonId:s.anon_id},now());return redirect(response,`/arcade-pass?auth=failed${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);}
+        catch(error){
+          const detail={stage:error.oauthStage||'identity',status:error.providerStatus||0,code:error.providerCode||'internal'};
+          console.error(JSON.stringify({event:'x_oauth_fail',...detail}));
+          store.event('x_oauth_fail',{anonId:s.anon_id,detail},now());return redirect(response,`/arcade-pass?auth=failed${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);
+        }
         const fresh=token();
         store.transaction(()=>{
           store.run(`INSERT INTO users(id,username,name,created_at,last_seen) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET username=excluded.username,name=excluded.name,last_seen=excluded.last_seen`,identity.id,identity.username,identity.name,now(),now());

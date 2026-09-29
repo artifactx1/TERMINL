@@ -46,6 +46,25 @@ test('X uses S256, read-only identity scopes and discards its token',async()=>{
   assert.equal(calls.length,3);assert.ok(calls[2].url.endsWith('/revoke'));
   assert.equal(calls[0].options.body.get('code_verifier'),'verifier');
 });
+test('X failures identify the provider stage without exposing response secrets and still revoke tokens',async()=>{
+  const args={clientId:'client',clientSecret:'secret',redirectUri:'https://terminl.test/callback',code:'code',verifier:'verifier'};
+  for(const status of [401,402,403,429]){
+    const calls=[];
+    await assert.rejects(xIdentity({...args,fetchImpl:async(url)=>{
+      calls.push(url);
+      if(url.endsWith('/token'))return {ok:true,status:200,json:async()=>({access_token:'private-access-token'})};
+      if(url.endsWith('/revoke'))return {ok:true};
+      return {ok:false,status,json:async()=>({title:status===402?'CreditsDepleted':'private-access-token',detail:'secret',access_token:'private-access-token'})};
+    }}),e=>{
+      assert.equal(e.oauthStage,'profile');assert.equal(e.providerStatus,status);
+      assert.equal(e.providerCode,status===402?'CreditsDepleted':'provider_error');
+      assert.doesNotMatch(JSON.stringify(e)+e.message,/private-access-token|secret/);return true;
+    });
+    assert.equal(calls.length,3);assert.ok(calls.at(-1).endsWith('/revoke'));
+  }
+  await assert.rejects(xIdentity({...args,fetchImpl:async()=>({ok:false,status:401,json:async()=>({error:'invalid_client',error_description:'secret'})})}),e=>e.oauthStage==='token'&&e.providerStatus===401&&e.providerCode==='invalid_client');
+  await assert.rejects(xIdentity({...args,fetchImpl:async()=>{throw Error('secret');}}),e=>e.oauthStage==='token'&&e.providerCode==='network_error'&&!e.message.includes('secret'));
+});
 test('persistent access, replay ownership, X uniqueness, qualified referrals and address deadlines',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'terminl-campaign-'));let time=1800000000000;
   const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',xClientId:'client',xClientSecret:'secret',now:()=>time,
