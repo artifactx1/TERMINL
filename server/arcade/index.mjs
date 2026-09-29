@@ -44,7 +44,8 @@ export async function startArcadeServer(options = {}) {
   const campaign = options.campaign || (process.env.CAMPAIGN_SERVICE_TOKEN
     ? (await import('./campaign.mjs')).createCampaignService({dataDir:dataDir||resolve('.arcade-data'),
       serviceToken:process.env.CAMPAIGN_SERVICE_TOKEN,adminToken:process.env.CAMPAIGN_ADMIN_TOKEN,
-      siteOrigin:process.env.CAMPAIGN_SITE_ORIGIN,xClientId:process.env.X_CLIENT_ID,xClientSecret:process.env.X_CLIENT_SECRET}) : null);
+      siteOrigin:process.env.CAMPAIGN_SITE_ORIGIN,xClientId:process.env.X_CLIENT_ID,xClientSecret:process.env.X_CLIENT_SECRET,
+      xAuthMode:process.env.X_AUTH_MODE,xApiKey:process.env.X_API_KEY,xApiSecret:process.env.X_API_KEY_SECRET}) : null);
   const campaignCleanup = campaign ? setInterval(()=>{try{campaign.store.cleanup();}catch{console.error('Campaign cleanup failed');}},3600000) : null;
   const rooms = new Map();
   const peers = new Set();

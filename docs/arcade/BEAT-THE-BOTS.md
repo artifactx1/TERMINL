@@ -11,7 +11,7 @@ play → verified win → save with X → personal challenge → referred player
   pins game version, track, rival seed, difficulty and target. The server replays
   bounded inputs and computes the result; browser-reported scores confer nothing.
 - Play anonymously. Ask for X only after a win or an explicit Arcade Pass login.
-  X OAuth uses PKCE/state, immutable user IDs and read-only identity permissions.
+  X OAuth uses session-bound, single-use authorization, immutable user IDs and read-only identity permissions.
   No posting API, follow gates, wallet signatures or wallet connection in this flow.
 - Save qualification durably before saying it is saved. Eligibility for the
   pre-mint pool is distinct from a guaranteed allocation or a minted NFT.
@@ -52,17 +52,33 @@ leave the existing free arcade usable, without fabricated authentication.
 
 ## Operations
 
+For identity-only sign-in, set Railway `X_AUTH_MODE=oauth1`, `X_API_KEY` and
+`X_API_KEY_SECRET`. The standard X OAuth 1.0a flow requests read access, signs
+requests with HMAC-SHA1, binds the temporary request token to its initiating
+session and consumes it once. X's authenticated `/oauth/access_token` response
+supplies `user_id` and `screen_name`; the app uses the handle as its display name
+without querying the separately permissioned `/2/users/me` endpoint. User access
+tokens are discarded and revocation is attempted immediately. Temporary request
+secrets expire after ten minutes. The same registered callback is used.
+See [X's authentication API reference](https://docs.x.com/fundamentals/authentication/api-reference#post-oauthaccess_token).
+
+OAuth 2.0 remains available when `X_AUTH_MODE` is unset, using the Client ID and
+Client Secret below. A 403 `app_access_level` from its profile lookup means the
+provider rejected that endpoint; do not assume adding billing will resolve it.
+Start and callback limits are separate so each completed sign-in consumes one
+start attempt rather than two.
+
 The campaign uses Node 22.13+ and SQLite on the existing `/data` volume. It must
 remain a single writer. Take volume backups before schema or hosting changes.
 Match journals and existing multiplayer are separate from `campaign.sqlite`.
 
 Vercel requires `CAMPAIGN_API_URL`, `CAMPAIGN_SERVICE_TOKEN` and
 `CAMPAIGN_SITE_ORIGIN`. The Railway service requires the same service token and
-origin, plus `CAMPAIGN_ADMIN_TOKEN`, `X_CLIENT_ID` and `X_CLIENT_SECRET`.
+origin, plus `CAMPAIGN_ADMIN_TOKEN` and the credentials for the selected X flow.
 Use the production origin `https://terminl.net`. Do not give preview deployments
 production credentials.
 
-Configure X as an OAuth 2.0 confidential Web App with callback
+For OAuth 2.0, configure X as a confidential Web App with callback
 `https://terminl.net/api/campaign/auth/callback`. The requested scopes are
 `tweet.read users.read`, as required by X identity authentication. Only `/2/users/me`
 is read. No write, follow, email, DM or offline scope is requested. The access

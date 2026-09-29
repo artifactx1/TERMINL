@@ -7,6 +7,7 @@ import {join} from 'node:path';
 import {createCampaignService} from '../server/arcade/campaign.mjs';
 import {normalizeAddress} from '../server/arcade/campaign-address.mjs';
 import {xAuthorize,xIdentity} from '../server/arcade/campaign-oauth.mjs';
+import {xOAuth1Header,xOAuth1Start,xOAuth1Identity} from '../server/arcade/campaign-oauth1.mjs';
 import {createChallengeRace,captureInput,replayChallenge,challengeSnapshot,DEFAULT_CAMPAIGN} from '../lib/arcade/bot-challenge.mjs';
 import {stepRace,raceBotInput} from '../lib/arcade/race-sim.mjs';
 
@@ -45,6 +46,71 @@ test('X uses S256, read-only identity scopes and discards its token',async()=>{
   assert.deepEqual(identity,{id:'123',username:'degen',name:'Degen'});
   assert.equal(calls.length,3);assert.ok(calls[2].url.endsWith('/revoke'));
   assert.equal(calls[0].options.body.get('code_verifier'),'verifier');
+});
+test('OAuth 1 signatures match the published OAuth example including URL parameters',()=>{
+  const header=xOAuth1Header('http://photos.example.net/photos?file=vacation.jpg&size=original',{method:'GET',apiKey:'dpf43f3p2l4k3l03',apiSecret:'kd94hf93k423kf44',token:'nnch734d00sl2jdk',tokenSecret:'pfkkdhi9sl3r4s00',nonce:'kllo9940pd9333jh',timestamp:1191242096});
+  assert.match(header,/oauth_signature="tR3%2BTy81lMeYAr%2FFid0kMTYa%2FWM%3D"/);
+});
+test('standard X sign-in requests read access and uses only the authenticated token response for identity',async()=>{
+  const credentials={apiKey:'app',apiSecret:'secret'},calls=[];
+  const pending=await xOAuth1Start({...credentials,redirectUri:'https://terminl.test/callback',fetchImpl:async(url,options)=>{
+    calls.push(url);assert.equal(options.body.get('x_auth_access_type'),'read');assert.match(options.headers.Authorization,/oauth_callback="https%3A%2F%2Fterminl.test%2Fcallback"/);
+    return {ok:true,text:async()=>new URLSearchParams({oauth_token:'request',oauth_token_secret:'request-secret',oauth_callback_confirmed:'true'}).toString()};
+  }});
+  assert.equal(new URL(pending.url).searchParams.get('oauth_token'),'request');
+  assert.ok(!pending.url.includes('request-secret'));
+  const identity=await xOAuth1Identity({...credentials,...pending,verifier:'verified',fetchImpl:async(url,options)=>{
+    calls.push(url);
+    if(url.endsWith('/access_token')){
+      assert.equal(options.body.get('oauth_verifier'),'verified');assert.match(options.headers.Authorization,/oauth_token="request"/);
+      return {ok:true,text:async()=>new URLSearchParams({oauth_token:'access',oauth_token_secret:'access-secret',user_id:'123',screen_name:'degen'}).toString()};
+    }
+    assert.ok(url.endsWith('/invalidate_token.json'));assert.match(options.headers.Authorization,/oauth_token="access"/);return {ok:true};
+  }});
+  assert.deepEqual(identity,{id:'123',username:'degen',name:'degen'});assert.equal(calls.length,3);assert.ok(calls.every(url=>!url.includes('/users/')));
+  await assert.rejects(xOAuth1Start({...credentials,redirectUri:'https://terminl.test/callback',fetchImpl:async()=>({ok:true,text:async()=> 'oauth_token=request&oauth_token_secret=secret&oauth_callback_confirmed=false'})}),e=>e.providerCode==='invalid_request_token');
+  let revoked=false;
+  await assert.rejects(xOAuth1Identity({...credentials,...pending,verifier:'verified',fetchImpl:async url=>{
+    if(url.endsWith('/invalidate_token.json')){revoked=true;return {ok:true};}
+    return {ok:true,text:async()=> 'oauth_token=access&oauth_token_secret=secret&user_id=not-an-id&screen_name=degen'};
+  }}),e=>e.providerCode==='invalid_identity');assert.equal(revoked,true);
+});
+test('OAuth 1 callback binds to its initiating session, saves a verified win and permits twelve complete sign-ins',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'terminl-oauth1-'));let time=1800000000000,issued=0,identified=0;
+  const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',xAuthMode:'oauth1',xApiKey:'app',xApiSecret:'secret',now:()=>time,
+    xOAuth1Start:async()=>({requestToken:'request-'+(++issued),tokenSecret:'secret-'+issued,url:'https://api.x.com/oauth/authorize?oauth_token=request-'+issued}),
+    xOAuth1Identity:async({requestToken,tokenSecret,verifier})=>{identified++;assert.equal(tokenSecret,requestToken.replace('request-','secret-'));assert.equal(verifier,'approved');return {id:'123',username:'degen',name:'degen'};}});
+  const server=http.createServer((req,res)=>void service.handle(req,res));await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`,owner={cookie:''},other={cookie:''};
+  async function api(client,path,body,extra={}){
+    const r=await fetch(base+path,{method:body?'POST':'GET',redirect:'manual',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json',Cookie:client.cookie,...extra},...(body?{body:JSON.stringify(body)}:{})});
+    const cookie=r.headers.get('set-cookie');if(cookie)client.cookie=cookie.split(';')[0];const text=await r.text();return {status:r.status,data:text?JSON.parse(text):null,location:r.headers.get('location')};
+  }
+  const callback=(request,more='')=>'/auth/callback?oauth_token='+request+'&oauth_verifier=approved'+more;
+  try{
+    assert.equal((await api(owner,'/admin/settings',{config:{...DEFAULT_CAMPAIGN,active:true}},{'X-Campaign-Admin':'admin'})).status,200);
+    await api(owner,'/session');await api(other,'/session');
+    const run=(await api(owner,'/runs',{})).data,driveResult=drive(run.challenge);time+=driveResult.ticks*1000/60+3000;
+    assert.equal((await api(owner,'/submit',{runId:run.id,replay:driveResult.replay})).data.result.qualified,true);
+    assert.equal((await api(owner,'/auth/start',{runId:run.id})).status,200);
+    assert.equal((await api(other,callback('request-1'))).status,403,'another session cannot consume this request token');
+    assert.equal((await api(owner,callback('request-1','&state=forged'))).status,403);
+    const oldCookie=owner.cookie,saved=await api(owner,callback('request-1','&user_id=999&screen_name=attacker'));
+    assert.equal(saved.status,303);assert.match(saved.location,/saved=/);assert.notEqual(owner.cookie,oldCookie);
+    const pass=(await api(owner,'/me')).data.pass;assert.equal(pass.username,'degen');assert.equal(pass.qualification.status,'qualified');
+    assert.equal((await api(owner,callback('request-1'))).status,403,'callbacks are single use');
+    assert.equal((await api({cookie:oldCookie},'/me')).status,401,'old session is rotated');
+    for(let i=2;i<=12;i++){
+      assert.equal((await api(owner,'/auth/start',{})).status,200,'callback must not consume start quota');
+      assert.equal((await api(owner,callback('request-'+i))).status,303);
+    }
+    assert.equal(identified,12);assert.equal((await api(owner,'/auth/start',{})).status,429);
+    time+=3600001;
+    await api(owner,'/auth/start',{});assert.match((await api(owner,'/auth/callback?denied=request-13')).location,/auth=cancelled/);
+    assert.equal((await api(owner,callback('request-13'))).status,403);assert.equal(identified,12);
+    await api(owner,'/auth/start',{});time+=600001;assert.equal((await api(owner,callback('request-14'))).status,403,'expired request cannot authenticate');
+    assert.equal(service.store.get('SELECT count(*) AS n FROM users').n,1);
+  }finally{await new Promise(r=>server.close(r));service.close();await rm(dir,{recursive:true,force:true});}
 });
 test('X failures identify the provider stage without exposing response secrets and still revoke tokens',async()=>{
   const args={clientId:'client',clientSecret:'secret',redirectUri:'https://terminl.test/callback',code:'code',verifier:'verifier'};

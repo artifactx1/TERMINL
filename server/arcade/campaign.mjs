@@ -2,6 +2,7 @@ import {randomBytes} from 'node:crypto';
 import {openCampaignStore} from './campaign-store.mjs';
 import {token,hash,equal,fingerprint,cookieValue,sessionCookie,readJson,verifyReplay} from './campaign-security.mjs';
 import {xAuthorize,xIdentity} from './campaign-oauth.mjs';
+import {xOAuth1Start,xOAuth1Identity} from './campaign-oauth1.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
 import {BARRY,campaignConfig,campaignOpen,challengeSnapshot} from '../../lib/arcade/bot-challenge.mjs';
 
@@ -16,7 +17,9 @@ export function createCampaignService(options){
   const origin=new URL(options.siteOrigin||'https://terminl.net').origin;
   const secure=origin.startsWith('https:'),redirectUri=origin+'/api/campaign/auth/callback';
   const clientId=options.xClientId,clientSecret=options.xClientSecret;
-  const oauthReady=!!(clientId&&clientSecret);
+  const oauth1=options.xAuthMode==='oauth1',apiKey=options.xApiKey,apiSecret=options.xApiSecret;
+  const oauthReady=oauth1?!!(apiKey&&apiSecret):!!(clientId&&clientSecret);
+  const startOAuth1=options.xOAuth1Start||xOAuth1Start,identifyOAuth1=options.xOAuth1Identity||xOAuth1Identity;
   const verify=options.verifyReplay||verifyReplay;
   const identify=options.xIdentity||xIdentity;
   const config=()=>store.config();
@@ -142,13 +145,18 @@ export function createCampaignService(options){
       if(path==='/session'&&request.method==='GET')return json(response,200,{pass:pass(s)});
       if(path==='/me'&&request.method==='GET')return json(response,200,{pass:pass(s)});
       if(path==='/auth/callback'&&request.method==='GET'){
-        rate('oauth:'+s.anon_id,12,3600000);
-        const state=url.searchParams.get('state'),record=state&&store.get('SELECT * FROM oauth_states WHERE state_hash=?',hash(state));
+        rate('oauth-callback:'+s.anon_id,24,3600000);
+        const state=url.searchParams.get('state'),requestToken=url.searchParams.get('oauth_token')||url.searchParams.get('denied');
+        if(state&&requestToken)fail('Invalid sign-in callback.',403);
+        const lookup=requestToken?'oauth1:'+requestToken:state;
+        const record=lookup&&lookup.length<=512&&store.get('SELECT * FROM oauth_states WHERE state_hash=?',hash(lookup));
         if(!record||record.session_hash!==s.token_hash||record.expires_at<now())fail('Sign-in expired. Return to your run and try again.',403);
         store.run('DELETE FROM oauth_states WHERE state_hash=?',record.state_hash);
-        if(url.searchParams.has('error'))return redirect(response,`/arcade-pass?auth=cancelled${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);
-        const code=url.searchParams.get('code');if(!code||code.length>2048)fail('X did not return an authorization code');
-        let identity;try{identity=await identify({clientId,clientSecret,redirectUri,code,verifier:record.verifier});}
+        if(url.searchParams.has('error')||url.searchParams.has('denied'))return redirect(response,`/arcade-pass?auth=cancelled${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);
+        const code=url.searchParams.get(requestToken?'oauth_verifier':'code');if(!code||code.length>2048)fail('X did not return an authorization code');
+        let identity;try{identity=requestToken
+          ?await identifyOAuth1({apiKey,apiSecret,requestToken,tokenSecret:record.verifier,verifier:code})
+          :await identify({clientId,clientSecret,redirectUri,code,verifier:record.verifier});}
         catch(error){
           const detail={stage:error.oauthStage||'identity',status:error.providerStatus||0,code:error.providerCode||'internal',reason:error.providerReason||'unspecified',...(Number.isSafeInteger(error.providerErrorNumber)?{providerErrorNumber:error.providerErrorNumber}:{})};
           console.error(JSON.stringify({event:'x_oauth_fail',...detail}));
@@ -204,13 +212,17 @@ export function createCampaignService(options){
         });return json(response,200,{id:row.id,result,verified:true});
       }
       if(path==='/auth/start'){
-        rate('oauth:'+s.anon_id,12,3600000);if(!oauthReady)fail('X sign-in is not available yet.',503);
+        rate('oauth-start:'+s.anon_id,12,3600000);if(!oauthReady)fail('X sign-in is not available yet.',503);
         if(body.runId!==undefined&&(typeof body.runId!=='string'||!/^[a-f0-9]{32}$/.test(body.runId)))fail('Invalid run');
         if(body.runId){const r=store.get('SELECT * FROM runs WHERE id=?',body.runId);if(!r||r.anon_id!==s.anon_id||!parse(r.result)?.qualified)fail('Win a verified challenge before saving access.',403);}
-        const state=token(),verifier=token();
+        let state=token(),verifier=token(),authorizeUrl;
+        if(oauth1){
+          try{const pending=await startOAuth1({apiKey,apiSecret,redirectUri});state='oauth1:'+pending.requestToken;verifier=pending.tokenSecret;authorizeUrl=pending.url;}
+          catch(error){console.error(JSON.stringify({event:'x_oauth_fail',stage:error.oauthStage||'request_token',status:error.providerStatus||0,code:error.providerCode||'internal'}));fail('X sign-in is temporarily unavailable. Your run is still saved.',503);}
+        }else authorizeUrl=xAuthorize({clientId,redirectUri,state,verifier});
         store.run('INSERT INTO oauth_states(state_hash,session_hash,run_id,verifier,public_profile,expires_at) VALUES(?,?,?,?,?,?)',hash(state),s.token_hash,body.runId||null,verifier,body.publicProfile===true?1:0,now()+10*60000);
         store.event('x_oauth_start',{anonId:s.anon_id,runId:body.runId||null},now());
-        return json(response,200,{url:xAuthorize({clientId,redirectUri,state,verifier})});
+        return json(response,200,{url:authorizeUrl});
       }
       if(path==='/claim'){
         rate('claim:'+s.anon_id,12,600000);const result=claim(s,body.runId,body.publicProfile===true);return json(response,200,{...result,pass:pass(s)});

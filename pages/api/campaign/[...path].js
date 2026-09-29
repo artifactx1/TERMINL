@@ -14,7 +14,7 @@ export default async function handler(req,res){
     return res.status(503).json({error:'Official challenges are not open yet. The free arcade is still playable.'});
   }
   const query=new URLSearchParams();
-  for(const key of path==='/auth/callback'?['code','state','error']:path==='/leaderboard'?['period']:[]){if(typeof req.query[key]==='string')query.set(key,req.query[key]);}
+  for(const key of path==='/auth/callback'?['code','state','error','oauth_token','oauth_verifier','denied']:path==='/leaderboard'?['period']:[]){if(typeof req.query[key]==='string')query.set(key,req.query[key]);}
   // Forward only the campaign cookie; never wallet sessions or unrelated credentials.
   const cookie=(req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>/^btb_session=[A-Za-z0-9_-]+$/.test(v));
   try{
