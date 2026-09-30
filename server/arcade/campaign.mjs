@@ -3,6 +3,8 @@ import {openCampaignStore} from './campaign-store.mjs';
 import {token,hash,equal,fingerprint,cookieValue,sessionCookie,readJson,verifyReplay} from './campaign-security.mjs';
 import {xAuthorize,xIdentity} from './campaign-oauth.mjs';
 import {xOAuth1Start,xOAuth1Identity} from './campaign-oauth1.mjs';
+import {discordAuthorize,discordIdentity} from './campaign-discord.mjs';
+import {farcasterIdentity} from './campaign-farcaster.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
 import {BARRY,campaignConfig,campaignOpen,challengeSnapshot} from '../../lib/arcade/bot-challenge.mjs';
 
@@ -18,8 +20,13 @@ export function createCampaignService(options){
   const secure=origin.startsWith('https:'),redirectUri=origin+'/api/campaign/auth/callback';
   const clientId=options.xClientId,clientSecret=options.xClientSecret;
   const oauth1=options.xAuthMode==='oauth1',apiKey=options.xApiKey,apiSecret=options.xApiSecret;
-  const oauthReady=oauth1?!!(apiKey&&apiSecret):!!(clientId&&clientSecret);
+  const xReady=oauth1?!!(apiKey&&apiSecret):!!(clientId&&clientSecret);
+  const discordClientId=options.discordClientId,discordClientSecret=options.discordClientSecret;
+  const discordReady=!!(discordClientId&&discordClientSecret),farcasterReady=options.farcasterEnabled!==false;
+  const authReady=xReady||discordReady||farcasterReady;
+  const providers={x:xReady,discord:discordReady,farcaster:farcasterReady};
   const startOAuth1=options.xOAuth1Start||xOAuth1Start,identifyOAuth1=options.xOAuth1Identity||xOAuth1Identity;
+  const identifyDiscord=options.discordIdentity||discordIdentity,identifyFarcaster=options.farcasterIdentity||farcasterIdentity;
   const verify=options.verifyReplay||verifyReplay;
   const identify=options.xIdentity||xIdentity;
   const config=()=>store.config();
@@ -34,18 +41,20 @@ export function createCampaignService(options){
     return s||null;
   }
   const user=s=>s?.user_id?store.get('SELECT * FROM users WHERE id=?',s.user_id):null;
+  const accountId=(provider,id)=>provider==='x'?String(id):provider+':'+id;
+  const publicIdentity=row=>(row.provider||'x')==='farcaster'?'FID #'+row.username.replace(/^fid/,''):'@'+row.username;
   const rate=(key,limit,windowMs)=>{if(!store.rate(key,limit,windowMs,now()))fail('Too many attempts. Please try again shortly.',429);};
   function publicRun(code){
-    const row=store.get(`SELECT r.*,u.username,u.public_profile,u.status AS user_status,q.status AS access_status
+    const row=store.get(`SELECT r.*,u.provider,u.username,u.public_profile,u.status AS user_status,q.status AS access_status
       FROM runs r JOIN users u ON u.id=r.user_id JOIN qualifications q ON q.user_id=u.id WHERE r.code=?`,code);
     if(!row||row.invalidated||row.user_status!=='active'||row.access_status!=='qualified')return null;
-    return {code:row.code,player:row.public_profile?'@'+row.username:'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
+    return {code:row.code,player:row.public_profile?publicIdentity(row):'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
   }
   function pass(s){
     const u=user(s);if(!u)return null;
     const q=store.get('SELECT * FROM qualifications WHERE user_id=?',u.id),wallet=store.get('SELECT * FROM wallets WHERE user_id=?',u.id);
     const runs=store.all('SELECT id,code,result,completed_at,challenge,invalidated FROM runs WHERE user_id=? AND result IS NOT NULL ORDER BY completed_at DESC LIMIT 20',u.id);
-    return {username:u.username,name:u.name,publicProfile:!!u.public_profile,status:u.status,qualification:q?{status:q.status,at:q.created_at}:null,
+    return {provider:u.provider||'x',username:u.username,name:u.name,publicProfile:!!u.public_profile,status:u.status,qualification:q?{status:q.status,at:q.created_at}:null,
       runs:runs.map(r=>({id:r.id,code:r.code,result:parse(r.result),challenge:parse(r.challenge),at:r.completed_at,invalidated:!!r.invalidated})),
       referrals:store.get('SELECT count(*) AS n FROM referrals WHERE referrer_id=?',u.id).n,
       wallet:wallet?{address:wallet.address,chainId:wallet.chain_id,updatedAt:wallet.updated_at}:null};
@@ -76,6 +85,16 @@ export function createCampaignService(options){
       return {status:q.status,code:r.code};
     });
   }
+  function signedInSession(s,provider,identity){
+    const id=accountId(provider,identity.id),fresh=token();
+    store.transaction(()=>{
+      store.run(`INSERT INTO users(id,username,name,provider,created_at,last_seen) VALUES(?,?,?,?,?,?)
+        ON CONFLICT(id) DO UPDATE SET username=excluded.username,name=excluded.name,provider=excluded.provider,last_seen=excluded.last_seen`,id,identity.username,identity.name,provider,now(),now());
+      store.run('INSERT INTO sessions(token_hash,anon_id,user_id,ref_code,created_at,expires_at) VALUES(?,?,?,?,?,?)',hash(fresh),s.anon_id,id,s.ref_code,now(),now()+30*DAY);
+      store.run('DELETE FROM sessions WHERE token_hash=?',s.token_hash);
+    });
+    return {fresh,session:{...s,user_id:id,token_hash:hash(fresh)},userId:id};
+  }
   async function handle(request,response){
     const url=new URL(request.url,'http://arcade.internal'),path=url.pathname.replace(/^\/campaign/,'');
     if(!url.pathname.startsWith('/campaign/'))return false;
@@ -99,13 +118,13 @@ export function createCampaignService(options){
         }
         if(path==='/admin'&&request.method==='GET'){
           const funnel=store.all('SELECT name,count(*) AS total,count(DISTINCT anon_id) AS players FROM events WHERE at>=? GROUP BY name',now()-30*DAY);
-          return json(response,200,{config:config(),oauthReady,funnel,
-            users:store.all(`SELECT u.id,u.username,u.status,q.status AS qualification_status,q.created_at,w.address FROM users u LEFT JOIN qualifications q ON q.user_id=u.id LEFT JOIN wallets w ON w.user_id=u.id ORDER BY u.created_at DESC LIMIT 100`),
+          return json(response,200,{config:config(),oauthReady:xReady,authReady,providers,funnel,
+            users:store.all(`SELECT u.id,u.provider,u.username,u.status,q.status AS qualification_status,q.created_at,w.address FROM users u LEFT JOIN qualifications q ON q.user_id=u.id LEFT JOIN wallets w ON w.user_id=u.id ORDER BY u.created_at DESC LIMIT 100`),
             audit:store.all('SELECT * FROM audit ORDER BY id DESC LIMIT 60')});
         }
         const body=await readJson(request,16000);
         if(path==='/admin/settings'&&request.method==='POST'){
-          const next=campaignConfig(body.config);if(next.active&&!oauthReady)fail('Configure the X OAuth app before opening qualification.',409);
+          const next=campaignConfig(body.config);if(next.active&&!authReady)fail('Configure at least one sign-in provider before opening qualification.',409);
           store.transaction(()=>{const previous=config();store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify(next));store.audit('admin','settings',{previous,next},now());});
           return json(response,200,{config:next});
         }
@@ -123,7 +142,7 @@ export function createCampaignService(options){
         fail('Not found',404);
       }
       if(path==='/config'&&request.method==='GET'){
-        const c=config();return json(response,200,{config:c,open:campaignOpen(c,now())&&oauthReady,oauthReady,bot:BARRY,serverTime:now(),qualified:store.get("SELECT count(*) AS n FROM qualifications WHERE status='qualified'").n});
+        const c=config();return json(response,200,{config:c,open:campaignOpen(c,now())&&authReady,oauthReady:xReady,authReady,providers,bot:BARRY,serverTime:now(),qualified:store.get("SELECT count(*) AS n FROM qualifications WHERE status='qualified'").n});
       }
       if(path.startsWith('/results/')&&request.method==='GET'){
         const code=path.slice(9);if(!validCode(code))fail('Challenge not found',404);
@@ -131,13 +150,13 @@ export function createCampaignService(options){
       }
       if(path==='/leaderboard'&&request.method==='GET'){
         const since=url.searchParams.get('period')==='day'?Math.floor(now()/DAY)*DAY:0;
-        const rows=store.all(`SELECT * FROM (SELECT r.code,r.result,r.completed_at,u.username,u.public_profile,
+        const rows=store.all(`SELECT * FROM (SELECT r.code,r.result,r.completed_at,u.provider,u.username,u.public_profile,
           row_number() OVER(PARTITION BY r.user_id ORDER BY json_extract(r.result,'$.playerTicks') ASC) AS personal_rank
           FROM runs r JOIN users u ON u.id=r.user_id JOIN qualifications q ON q.user_id=u.id
           WHERE r.invalidated=0 AND q.status='qualified' AND u.status='active' AND r.completed_at>=? AND json_extract(r.result,'$.qualified')=1
           AND json_extract(r.challenge,'$.track')=? AND json_extract(r.challenge,'$.vehicle')=? AND json_extract(r.challenge,'$.version')=1
           ) WHERE personal_rank=1 ORDER BY json_extract(result,'$.playerTicks') ASC LIMIT 20`,since,config().track,config().vehicle);
-        const entries=rows.map((row,index)=>({rank:index+1,code:row.code,player:row.public_profile?'@'+row.username:'ANON',result:parse(row.result)}));
+        const entries=rows.map((row,index)=>({rank:index+1,code:row.code,player:row.public_profile?publicIdentity(row):'ANON',result:parse(row.result)}));
         return json(response,200,{entries,period:since?'day':'all',track:config().track,vehicle:config().vehicle});
       }
       let s=session(request,response,path==='/session');
@@ -151,27 +170,27 @@ export function createCampaignService(options){
         const lookup=requestToken?'oauth1:'+requestToken:state;
         const record=lookup&&lookup.length<=512&&store.get('SELECT * FROM oauth_states WHERE state_hash=?',hash(lookup));
         if(!record||record.session_hash!==s.token_hash||record.expires_at<now())fail('Sign-in expired. Return to your run and try again.',403);
+        const provider=record.provider||'x';
+        if(requestToken&&provider!=='x')fail('Invalid sign-in callback.',403);
         store.run('DELETE FROM oauth_states WHERE state_hash=?',record.state_hash);
-        if(url.searchParams.has('error')||url.searchParams.has('denied'))return redirect(response,`/arcade-pass?auth=cancelled${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);
-        const code=url.searchParams.get(requestToken?'oauth_verifier':'code');if(!code||code.length>2048)fail('X did not return an authorization code');
-        let identity;try{identity=requestToken
-          ?await identifyOAuth1({apiKey,apiSecret,requestToken,tokenSecret:record.verifier,verifier:code})
-          :await identify({clientId,clientSecret,redirectUri,code,verifier:record.verifier});}
+        const returnQuery=`&provider=${encodeURIComponent(provider)}${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`;
+        if(url.searchParams.has('error')||url.searchParams.has('denied'))return redirect(response,`/arcade-pass?auth=cancelled${returnQuery}`);
+        const code=url.searchParams.get(requestToken?'oauth_verifier':'code');if(!code||code.length>2048)fail('The identity provider did not return an authorization code');
+        let identity;try{
+          if(provider==='discord')identity=await identifyDiscord({clientId:discordClientId,clientSecret:discordClientSecret,redirectUri,code});
+          else identity=requestToken
+            ?await identifyOAuth1({apiKey,apiSecret,requestToken,tokenSecret:record.verifier,verifier:code})
+            :await identify({clientId,clientSecret,redirectUri,code,verifier:record.verifier});
+        }
         catch(error){
           const detail={stage:error.oauthStage||'identity',status:error.providerStatus||0,code:error.providerCode||'internal',reason:error.providerReason||'unspecified',...(Number.isSafeInteger(error.providerErrorNumber)?{providerErrorNumber:error.providerErrorNumber}:{})};
-          console.error(JSON.stringify({event:'x_oauth_fail',...detail}));
-          store.event('x_oauth_fail',{anonId:s.anon_id,detail},now());return redirect(response,`/arcade-pass?auth=failed${record.run_id?'&run='+encodeURIComponent(record.run_id):''}`);
+          console.error(JSON.stringify({event:provider+'_oauth_fail',...detail}));
+          store.event(provider+'_oauth_fail',{anonId:s.anon_id,detail},now());return redirect(response,`/arcade-pass?auth=failed${returnQuery}`);
         }
-        const fresh=token();
-        store.transaction(()=>{
-          store.run(`INSERT INTO users(id,username,name,created_at,last_seen) VALUES(?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET username=excluded.username,name=excluded.name,last_seen=excluded.last_seen`,identity.id,identity.username,identity.name,now(),now());
-          store.run('INSERT INTO sessions(token_hash,anon_id,user_id,ref_code,created_at,expires_at) VALUES(?,?,?,?,?,?)',hash(fresh),s.anon_id,identity.id,s.ref_code,now(),now()+30*DAY);
-          store.run('DELETE FROM sessions WHERE token_hash=?',s.token_hash);
-        });
-        s={...s,user_id:identity.id,token_hash:hash(fresh)};
-        let saved=null;try{if(record.run_id)saved=claim(s,record.run_id,!!record.public_profile);}catch(error){store.event('claim_failed',{anonId:s.anon_id,userId:identity.id,runId:record.run_id},now());}
-        store.event('x_oauth_success',{anonId:s.anon_id,userId:identity.id},now());
-        return redirect(response,`/arcade-pass${saved?'?saved='+encodeURIComponent(saved.code):record.run_id?'?run='+encodeURIComponent(record.run_id):''}`,sessionCookie(fresh,secure));
+        const login=signedInSession(s,provider,identity);s=login.session;
+        let saved=null;try{if(record.run_id)saved=claim(s,record.run_id,!!record.public_profile);}catch(error){store.event('claim_failed',{anonId:s.anon_id,userId:login.userId,runId:record.run_id},now());}
+        store.event(provider+'_oauth_success',{anonId:s.anon_id,userId:login.userId},now());
+        return redirect(response,`/arcade-pass${saved?'?saved='+encodeURIComponent(saved.code):record.run_id?'?run='+encodeURIComponent(record.run_id):''}`,sessionCookie(login.fresh,secure));
       }
       if(path.startsWith('/runs/')&&request.method==='GET'){
         const row=store.get('SELECT * FROM runs WHERE id=?',path.slice(6));if(!row||row.anon_id!==s.anon_id&&(!s.user_id||row.user_id!==s.user_id))fail('Run not found',404);
@@ -181,7 +200,7 @@ export function createCampaignService(options){
       const body=await readJson(request);
       if(path==='/runs'){
         rate('start:'+s.anon_id,12,600000);rate('start-net:'+network,45,600000);
-        if(!campaignOpen(config(),now())||!oauthReady)fail('Official challenges are not open. The free arcade is still playable.',409);
+        if(!campaignOpen(config(),now())||!authReady)fail('Official challenges are not open. The free arcade is still playable.',409);
         if(user(s)?.status==='banned')fail('This account cannot enter official challenges.',403);
         let ref=s.ref_code;
         if(!ref&&validCode(body.ref)&&publicRun(body.ref)){ref=body.ref;store.run('UPDATE sessions SET ref_code=? WHERE token_hash=?',ref,s.token_hash);}
@@ -212,23 +231,50 @@ export function createCampaignService(options){
         });return json(response,200,{id:row.id,result,verified:true});
       }
       if(path==='/auth/start'){
-        rate('oauth-start:'+s.anon_id,12,3600000);if(!oauthReady)fail('X sign-in is not available yet.',503);
+        const provider=body.provider===undefined?'x':body.provider;
+        if(!['x','discord','farcaster'].includes(provider))fail('Unknown sign-in provider');
+        rate((provider==='farcaster'?'farcaster-start:':'oauth-start:')+s.anon_id,provider==='farcaster'?30:12,3600000);
+        if(!providers[provider])fail(provider[0].toUpperCase()+provider.slice(1)+' sign-in is not available yet.',503);
         if(body.runId!==undefined&&(typeof body.runId!=='string'||!/^[a-f0-9]{32}$/.test(body.runId)))fail('Invalid run');
         if(body.runId){const r=store.get('SELECT * FROM runs WHERE id=?',body.runId);if(!r||r.anon_id!==s.anon_id||!parse(r.result)?.qualified)fail('Win a verified challenge before saving access.',403);}
+        if(provider==='farcaster'){
+          const nonce=randomBytes(16).toString('hex');
+          store.run('INSERT INTO oauth_states(state_hash,session_hash,run_id,verifier,provider,public_profile,expires_at) VALUES(?,?,?,?,?,?,?)',hash(nonce),s.token_hash,body.runId||null,'',provider,body.publicProfile===true?1:0,now()+10*60000);
+          store.event('farcaster_auth_start',{anonId:s.anon_id,runId:body.runId||null},now());
+          return json(response,200,{provider,nonce,expiresAt:now()+10*60000});
+        }
         let state=token(),verifier=token(),authorizeUrl;
-        if(oauth1){
+        if(provider==='discord')authorizeUrl=discordAuthorize({clientId:discordClientId,redirectUri,state});
+        else if(oauth1){
           try{const pending=await startOAuth1({apiKey,apiSecret,redirectUri});state='oauth1:'+pending.requestToken;verifier=pending.tokenSecret;authorizeUrl=pending.url;}
           catch(error){console.error(JSON.stringify({event:'x_oauth_fail',stage:error.oauthStage||'request_token',status:error.providerStatus||0,code:error.providerCode||'internal'}));fail('X sign-in is temporarily unavailable. Your run is still saved.',503);}
         }else authorizeUrl=xAuthorize({clientId,redirectUri,state,verifier});
-        store.run('INSERT INTO oauth_states(state_hash,session_hash,run_id,verifier,public_profile,expires_at) VALUES(?,?,?,?,?,?)',hash(state),s.token_hash,body.runId||null,verifier,body.publicProfile===true?1:0,now()+10*60000);
-        store.event('x_oauth_start',{anonId:s.anon_id,runId:body.runId||null},now());
-        return json(response,200,{url:authorizeUrl});
+        store.run('INSERT INTO oauth_states(state_hash,session_hash,run_id,verifier,provider,public_profile,expires_at) VALUES(?,?,?,?,?,?,?)',hash(state),s.token_hash,body.runId||null,verifier,provider,body.publicProfile===true?1:0,now()+10*60000);
+        store.event(provider+'_oauth_start',{anonId:s.anon_id,runId:body.runId||null},now());
+        return json(response,200,{provider,url:authorizeUrl});
+      }
+      if(path==='/auth/complete'){
+        rate('farcaster-complete:'+s.anon_id,12,3600000);
+        if(body.provider!=='farcaster'||typeof body.nonce!=='string'||body.nonce.length>128)fail('Invalid Farcaster sign-in');
+        const record=store.get('SELECT * FROM oauth_states WHERE state_hash=?',hash(body.nonce));
+        if(!record||record.provider!=='farcaster'||record.session_hash!==s.token_hash||record.expires_at<now())fail('Sign-in expired. Return to your run and try again.',403);
+        store.run('DELETE FROM oauth_states WHERE state_hash=?',record.state_hash);
+        let identity;try{identity=await identifyFarcaster({nonce:body.nonce,domain:new URL(origin).host,uri:origin+'/arcade-pass',message:body.message,signature:body.signature,rpcUrl:options.farcasterRpcUrl});}
+        catch(error){
+          const detail={stage:error.oauthStage||'signature',status:error.providerStatus||0,code:error.providerCode||'invalid_signature'};
+          console.error(JSON.stringify({event:'farcaster_auth_fail',...detail}));store.event('farcaster_auth_fail',{anonId:s.anon_id,detail},now());
+          fail('Farcaster sign-in could not be verified. Your run is still saved.',403);
+        }
+        const login=signedInSession(s,'farcaster',identity);s=login.session;
+        let saved=null;try{if(record.run_id)saved=claim(s,record.run_id,!!record.public_profile);}catch{store.event('claim_failed',{anonId:s.anon_id,userId:login.userId,runId:record.run_id},now());}
+        store.event('farcaster_auth_success',{anonId:s.anon_id,userId:login.userId},now());
+        return json(response,200,{saved:saved?.code||null,runId:record.run_id||null,pass:pass(s)},{'Set-Cookie':sessionCookie(login.fresh,secure)});
       }
       if(path==='/claim'){
         rate('claim:'+s.anon_id,12,600000);const result=claim(s,body.runId,body.publicProfile===true);return json(response,200,{...result,pass:pass(s)});
       }
       if(path==='/profile'){
-        const u=user(s);if(!u)fail('Sign in with X to update your profile.',401);
+        const u=user(s);if(!u)fail('Sign in to update your profile.',401);
         store.run('UPDATE users SET public_profile=? WHERE id=?',body.publicProfile===true?1:0,u.id);return json(response,200,{pass:pass(s)});
       }
       if(path==='/wallet'){
@@ -261,5 +307,5 @@ export function createCampaignService(options){
     }
     return true;
   }
-  return {handle,store,close:()=>store.close(),configured:!!serviceToken&&oauthReady};
+  return {handle,store,close:()=>store.close(),configured:!!serviceToken&&authReady};
 }

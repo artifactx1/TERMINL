@@ -8,6 +8,7 @@ import {createCampaignService} from '../server/arcade/campaign.mjs';
 import {normalizeAddress} from '../server/arcade/campaign-address.mjs';
 import {xAuthorize,xIdentity} from '../server/arcade/campaign-oauth.mjs';
 import {xOAuth1Header,xOAuth1Start,xOAuth1Identity} from '../server/arcade/campaign-oauth1.mjs';
+import {discordAuthorize,discordIdentity} from '../server/arcade/campaign-discord.mjs';
 import {createChallengeRace,captureInput,replayChallenge,challengeSnapshot,DEFAULT_CAMPAIGN} from '../lib/arcade/bot-challenge.mjs';
 import {stepRace,raceBotInput} from '../lib/arcade/race-sim.mjs';
 
@@ -75,6 +76,21 @@ test('standard X sign-in requests read access and uses only the authenticated to
     return {ok:true,text:async()=> 'oauth_token=access&oauth_token_secret=secret&user_id=not-an-id&screen_name=degen'};
   }}),e=>e.providerCode==='invalid_identity');assert.equal(revoked,true);
 });
+test('Discord requests identity only, reads the authenticated profile and revokes its token',async()=>{
+  const redirectUri='https://terminl.test/api/campaign/auth/callback';
+  const authorize=new URL(discordAuthorize({clientId:'123456789012345678',redirectUri,state:'csrf'}));
+  assert.equal(authorize.origin,'https://discord.com');assert.equal(authorize.searchParams.get('scope'),'identify');assert.equal(authorize.searchParams.get('state'),'csrf');assert.equal(authorize.searchParams.has('email'),false);
+  const calls=[];
+  const identity=await discordIdentity({clientId:'123456789012345678',clientSecret:'secret',redirectUri,code:'code',fetchImpl:async(url,options)=>{
+    calls.push({url,options});
+    if(url.endsWith('/oauth2/token'))return {ok:true,json:async()=>({access_token:'private-discord-token'})};
+    if(url.endsWith('/users/@me'))return {ok:true,json:async()=>({id:'987654321098765432',username:'anon.degen',global_name:'Anon Degen'})};
+    assert.ok(url.endsWith('/oauth2/token/revoke'));return {ok:true,json:async()=>({})};
+  }});
+  assert.deepEqual(identity,{id:'987654321098765432',username:'anon.degen',name:'Anon Degen'});assert.equal(calls.length,3);
+  assert.equal(calls[0].options.body.get('grant_type'),'authorization_code');assert.equal(calls[2].options.body.get('token'),'private-discord-token');
+  assert.ok(calls[0].options.headers.Authorization.startsWith('Basic '));assert.equal(calls[1].options.headers.Authorization,'Bearer private-discord-token');
+});
 test('OAuth 1 callback binds to its initiating session, saves a verified win and permits twelve complete sign-ins',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'terminl-oauth1-'));let time=1800000000000,issued=0,identified=0;
   const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',xAuthMode:'oauth1',xApiKey:'app',xApiSecret:'secret',now:()=>time,
@@ -110,6 +126,34 @@ test('OAuth 1 callback binds to its initiating session, saves a verified win and
     assert.equal((await api(owner,callback('request-13'))).status,403);assert.equal(identified,12);
     await api(owner,'/auth/start',{});time+=600001;assert.equal((await api(owner,callback('request-14'))).status,403,'expired request cannot authenticate');
     assert.equal(service.store.get('SELECT count(*) AS n FROM users').n,1);
+  }finally{await new Promise(r=>server.close(r));service.close();await rm(dir,{recursive:true,force:true});}
+});
+test('Farcaster and Discord create namespaced identities without requiring X',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'terminl-social-auth-'));let time=1800000000000;
+  const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',now:()=>time,
+    discordClientId:'123456789012345678',discordClientSecret:'secret',
+    discordIdentity:async()=>({id:'987654321098765432',username:'discorddegen',name:'Discord Degen'}),
+    farcasterIdentity:async({nonce,domain,uri,message,signature})=>{assert.match(nonce,/^[a-f0-9]{32}$/);assert.equal(domain,'terminl.test');assert.equal(uri,'https://terminl.test/arcade-pass');assert.equal(message,'signed message');assert.equal(signature,'0xsigned');return {id:'42',username:'fid42',name:'Farcaster #42'};}});
+  const server=http.createServer((req,res)=>void service.handle(req,res));await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`,guest=()=>({cookie:'',network:Math.random().toString()});
+  async function api(client,path,body,extra={}){
+    const response=await fetch(base+path,{method:body?'POST':'GET',redirect:'manual',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json',Cookie:client.cookie,'X-Campaign-Client':client.network,...extra},...(body?{body:JSON.stringify(body)}:{})});
+    const cookie=response.headers.get('set-cookie');if(cookie)client.cookie=cookie.split(';')[0];const text=await response.text();return {status:response.status,data:text?JSON.parse(text):null,location:response.headers.get('location')};
+  }
+  try{
+    const admin=guest();assert.equal((await api(admin,'/admin/settings',{config:{...DEFAULT_CAMPAIGN,active:true}},{'X-Campaign-Admin':'admin'})).status,200);
+    const owner=guest(),attacker=guest();await api(owner,'/session');await api(attacker,'/session');
+    const run=(await api(owner,'/runs',{})).data,driven=drive(run.challenge);time+=driven.ticks*1000/60+3000;
+    assert.equal((await api(owner,'/submit',{runId:run.id,replay:driven.replay})).data.result.qualified,true);
+    const start=await api(owner,'/auth/start',{provider:'farcaster',runId:run.id,publicProfile:false});assert.equal(start.status,200);assert.match(start.data.nonce,/^[a-f0-9]{32}$/);
+    assert.equal((await api(attacker,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'})).status,403,'nonce is bound to its initiating session');
+    const oldCookie=owner.cookie,complete=await api(owner,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'});
+    assert.equal(complete.status,200);assert.notEqual(owner.cookie,oldCookie);assert.ok(complete.data.saved);assert.equal(complete.data.pass.provider,'farcaster');assert.equal(complete.data.pass.qualification.status,'qualified');
+    assert.equal((await api(owner,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'})).status,403,'nonce is single use');
+    const discord=guest();await api(discord,'/session');const discordStart=await api(discord,'/auth/start',{provider:'discord'});assert.equal(discordStart.status,200);
+    const state=new URL(discordStart.data.url).searchParams.get('state'),discordCallback=await api(discord,'/auth/callback?state='+state+'&code=approved');assert.equal(discordCallback.status,303);
+    assert.equal((await api(discord,'/me')).data.pass.provider,'discord');
+    assert.ok(service.store.get('SELECT id FROM users WHERE id=?','farcaster:42'));assert.ok(service.store.get('SELECT id FROM users WHERE id=?','discord:987654321098765432'));
   }finally{await new Promise(r=>server.close(r));service.close();await rm(dir,{recursive:true,force:true});}
 });
 test('X failures identify the provider stage without exposing response secrets and still revoke tokens',async()=>{

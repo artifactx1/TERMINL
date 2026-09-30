@@ -10,6 +10,7 @@
     "start": "node index.mjs"
   },
   "dependencies": {
+    "@farcaster/auth-client": "^0.7.1",
     "@noble/hashes": "^1.8.0",
     "ws": "8.21.3"
   }

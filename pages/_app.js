@@ -1,4 +1,5 @@
 import "../styles/globals.css";
+import "@farcaster/auth-kit/styles.css";
 import WalletProviders from "../components/WalletProviders";
 
 export default function App({ Component, pageProps }) {

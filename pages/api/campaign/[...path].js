@@ -1,6 +1,6 @@
 import {campaignConfigured,campaignFetch,campaignOrigin} from '../../../lib/server/campaign';
 
-const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|submit|auth\/(?:start|callback)|claim|profile|wallet|events|logout|admin(?:\/(?:settings|review|addresses))?)$/;
+const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|admin(?:\/(?:settings|review|addresses))?)$/;
 export const maxDuration=30;
 export const config={api:{bodyParser:{sizeLimit:'400kb'}}};
 export default async function handler(req,res){
@@ -10,7 +10,7 @@ export default async function handler(req,res){
   if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return res.status(405).end();}
   if(req.method==='POST'&&(req.headers.origin!==campaignOrigin()||!/^application\/json(?:;|$)/i.test(req.headers['content-type']||'')))return res.status(403).json({error:'Request origin rejected'});
   if(!campaignConfigured()){
-    if(path==='/config')return res.status(200).json({open:false,oauthReady:false,configured:false});
+    if(path==='/config')return res.status(200).json({open:false,oauthReady:false,authReady:false,providers:{x:false,discord:false,farcaster:false},configured:false});
     return res.status(503).json({error:'Official challenges are not open yet. The free arcade is still playable.'});
   }
   const query=new URLSearchParams();

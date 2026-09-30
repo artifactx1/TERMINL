@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useRef} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {BARRY,raceTime} from '../../lib/arcade/bot-challenge.mjs';
@@ -17,7 +17,7 @@ export function BotChallengePanel({official,onStart}){
   </section>;
 }
 export function BotVictory({official,onRetry,onLeave}){
-  const [publicProfile,setPublicProfile]=useState(false),{result,status,error}=official;
+  const {result,status,error}=official;
   const dialog=useRef(null);
   useEffect(()=>{const node=dialog.current;node.showModal();return ()=>node.close();},[]);
   const checking=['verifying','racing'].includes(status),won=result?.qualified;
@@ -27,9 +27,8 @@ export function BotVictory({official,onRetry,onLeave}){
     {checking?<p>Your race is being verified. Hang on to the victory speech.</p>:result&&<>
       <p>{won?BARRY.beaten:BARRY.won}</p>
       <div className={s.resultTimes}><div><small>YOU</small><strong>{raceTime(result.playerTicks)}</strong></div><div><small>BARRYBOT</small><strong>{raceTime(result.botTicks)}</strong></div></div>
-      {won?<><h3>YOU QUALIFIED FOR THE PRE-MINT POOL.</h3><p>Save the win to your X account. No wallet connection. No post on your behalf.</p>
-        <label className={s.check}><input type='checkbox' checked={publicProfile} onChange={e=>setPublicProfile(e.target.checked)}/>Show my X handle on my public card and leaderboard entry</label>
-        <button className={s.primary} disabled={status==='saving'} onClick={()=>official.save(publicProfile)}>{status==='saving'?'SAVING…':'SAVE ACCESS WITH X →'}</button>
+      {won?<><h3>YOU QUALIFIED FOR THE PRE-MINT POOL.</h3><p>Save with X, Farcaster or Discord. No wallet connection and no post on your behalf.</p>
+        <button className={s.primary} disabled={status==='saving'} onClick={official.save}>{status==='saving'?'SAVING…':'CHOOSE HOW TO SAVE →'}</button>
         <small className={s.fine}>Pool eligibility, subject to capacity and run review. This does not reserve an NFT or guarantee a mint allocation.</small>
       </>:<p>{result.playerTicks===null?'Finish all three laps next time.':result.winner===0?'You won the race but missed the time target. Trim a few corners.':'Brake before the corner. Boost out. Barry isn’t getting any younger.'}</p>}
     </>}

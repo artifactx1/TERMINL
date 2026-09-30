@@ -24,11 +24,11 @@ export function useBotChallenge(){
     catch(e){if(run.current?.id!==r.id)return;r.submitted=false;setError(e.message);setStatus('retry');}
   };
   const finish=state=>{if(run.current&&!run.current.finished&&state.phase==='finished'){run.current.finished=true;void submit();}};
-  const save=async publicProfile=>{
+  const save=async()=>{
     if(!result?.qualified||!attempt)return;setStatus('saving');setError('');campaignEvent('save_access_click');
     try{
-      if(identity.current){const saved=await campaignRequest('/claim',{runId:attempt.id,publicProfile});location.assign('/arcade-pass?saved='+encodeURIComponent(saved.code));}
-      else {const auth=await campaignRequest('/auth/start',{runId:attempt.id,publicProfile});location.assign(auth.url);}
+      if(identity.current){const saved=await campaignRequest('/claim',{runId:attempt.id,publicProfile:!!identity.current.publicProfile});location.assign('/arcade-pass?saved='+encodeURIComponent(saved.code));}
+      else location.assign('/arcade-pass?run='+encodeURIComponent(attempt.id));
     }catch(e){setError(e.message);setStatus('verified');}
   };
   const cancel=()=>{run.current=null;setAttempt(null);setResult(null);setStatus('idle');setError('');};

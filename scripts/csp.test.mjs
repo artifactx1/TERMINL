@@ -25,6 +25,8 @@ test('policy is report-only, uses same-origin reporting, and retains the existin
   assert.equal(headers.find(h => h.key === 'Reporting-Endpoints').value, 'csp="/api/csp-report"');
   assert.ok(!policy.includes('unsafe-eval'));
   assert.ok(!policy.includes('localhost'));
+  assert.ok(policy.includes('https://relay.farcaster.xyz'));
+  assert.ok(policy.includes('https://mainnet.optimism.io'));
   const config = createRequire(import.meta.url)('../next.config.js');
   const actual = (await config.headers())[0].headers;
   assert.equal(actual.find(h => h.key === 'X-Frame-Options').value, 'DENY');

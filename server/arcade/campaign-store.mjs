@@ -11,6 +11,7 @@ export function openCampaignStore(directory){
     CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY CHECK(id=1),value TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY, username TEXT NOT NULL, name TEXT NOT NULL,
+      provider TEXT NOT NULL DEFAULT 'x',
       public_profile INTEGER NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'active',
       created_at INTEGER NOT NULL, last_seen INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (
@@ -34,7 +35,8 @@ export function openCampaignStore(directory){
       CHECK(referred_id<>referrer_id));
     CREATE TABLE IF NOT EXISTS oauth_states (
       state_hash TEXT PRIMARY KEY, session_hash TEXT NOT NULL, run_id TEXT,
-      verifier TEXT NOT NULL, public_profile INTEGER NOT NULL DEFAULT 0, expires_at INTEGER NOT NULL);
+      verifier TEXT NOT NULL, provider TEXT NOT NULL DEFAULT 'x',
+      public_profile INTEGER NOT NULL DEFAULT 0, expires_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS wallets (
       user_id TEXT PRIMARY KEY REFERENCES users(id), address TEXT UNIQUE NOT NULL,
       chain_id INTEGER NOT NULL, updated_at INTEGER NOT NULL);
@@ -50,6 +52,11 @@ export function openCampaignStore(directory){
     CREATE TABLE IF NOT EXISTS rate_limits (
       key TEXT PRIMARY KEY, count INTEGER NOT NULL, reset_at INTEGER NOT NULL);
   `);
+  // SQLite's CREATE TABLE IF NOT EXISTS does not add columns to campaign databases
+  // already on disk, so keep these additive migrations idempotent.
+  const columns=table=>new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(column=>column.name));
+  if(!columns('users').has('provider'))db.exec("ALTER TABLE users ADD COLUMN provider TEXT NOT NULL DEFAULT 'x'");
+  if(!columns('oauth_states').has('provider'))db.exec("ALTER TABLE oauth_states ADD COLUMN provider TEXT NOT NULL DEFAULT 'x'");
   db.prepare('INSERT OR IGNORE INTO settings(id,value) VALUES(1,?)').run(JSON.stringify(DEFAULT_CAMPAIGN));
   const get=(sql,...args)=>db.prepare(sql).get(...args);
   const all=(sql,...args)=>db.prepare(sql).all(...args);

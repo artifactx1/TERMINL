@@ -45,8 +45,9 @@ try{
     const url=new URL(route.request().url()),callback=new URL(url.searchParams.get('redirect_uri'));callback.searchParams.set('state',url.searchParams.get('state'));callback.searchParams.set('code','9991001');
     await route.fulfill({status:302,headers:{location:callback.href},body:''});
   });
-  await page.getByLabel('Show my X handle on my public card and leaderboard entry').check();
-  await page.getByRole('button',{name:'SAVE ACCESS WITH X →'}).click();
+  await page.getByRole('button',{name:'CHOOSE HOW TO SAVE →'}).click();await page.waitForURL('**/arcade-pass?run=*');
+  await page.getByLabel('Show my handle or account ID on public cards and leaderboards').check();
+  await page.getByRole('button',{name:'CONTINUE WITH X →'}).click();
   await page.waitForURL('**/arcade-pass?*');await page.getByText('ARCADE QUALIFIED',{exact:true}).waitFor();
   await page.getByLabel('PUBLIC WALLET ADDRESS').fill('0x52908400098527886E0F7030069857D2E4169EE7');
   await page.getByLabel('I control this address and want to use it to mint on Robinhood Chain mainnet.').check();
@@ -60,5 +61,5 @@ try{
   assert.match(await page.locator('meta[property="og:image"]').getAttribute('content'),/api\/challenge-card/);
   await page.getByRole('link',{name:'ACCEPT CHALLENGE →'}).click();await page.waitForURL('**/os/lambo?*');assert.match(page.url(),/ref=/);await page.getByRole('button',{name:'PROVE HIM WRONG →'}).waitFor();
   await page.goto(base+'/admin/campaign');await page.getByLabel('CAMPAIGN ADMIN TOKEN').fill('local-admin-test');await page.getByRole('button',{name:'OPEN DASHBOARD'}).click();await page.getByRole('heading',{name:'Campaign and target'}).waitFor();await page.screenshot({path:'artifacts/campaign/mobile-admin.png',fullPage:true});
-  assert.deepEqual(errors,[]);console.log('PASS official input-driven race, verified win, X callback fixture, pass, address, public challenge, OG card and admin');
+  assert.deepEqual(errors,[]);console.log('PASS official input-driven race, provider chooser, X callback fixture, pass, address, public challenge, OG card and admin');
 }catch(error){await page.screenshot({path:'artifacts/campaign/failure.png'}).catch(()=>{});console.error((await page.locator('body').innerText()).slice(-3500));throw error;}finally{await browser.close();}
