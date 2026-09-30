@@ -49,9 +49,10 @@ try{
   await page.getByLabel('Show my handle or account ID on public cards and leaderboards').check();
   await page.getByRole('button',{name:'CONTINUE WITH X →'}).click();
   await page.waitForURL('**/arcade-pass?*');await page.getByText('ARCADE QUALIFIED',{exact:true}).waitFor();
-  await page.getByLabel('PUBLIC WALLET ADDRESS').fill('0x52908400098527886E0F7030069857D2E4169EE7');
+  await page.getByText('FINAL STEP / WL SETUP',{exact:true}).waitFor();
+  await page.getByLabel('ROBINHOOD CHAIN WALLET ADDRESS').fill('0x52908400098527886E0F7030069857D2E4169EE7');
   await page.getByLabel('I control this address and want to use it to mint on Robinhood Chain mainnet.').check();
-  await page.getByRole('button',{name:'SAVE ADDRESS',exact:true}).click();await page.getByText('Mint address saved.',{exact:false}).waitFor();
+  await page.getByRole('button',{name:'FINISH WL SETUP',exact:true}).click();await page.getByText('Your WL setup is complete.',{exact:false}).waitFor();
   await page.screenshot({path:'artifacts/campaign/mobile-pass.png',fullPage:true});
   const share=page.getByRole('link',{name:'OPEN YOUR CARD →'});const url=await share.getAttribute('href');await share.click();
   await page.getByRole('heading',{name:/@testdegen beat Barry/}).waitFor();

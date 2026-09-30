@@ -9,7 +9,7 @@ import {normalizeAddress} from '../server/arcade/campaign-address.mjs';
 import {xAuthorize,xIdentity} from '../server/arcade/campaign-oauth.mjs';
 import {xOAuth1Header,xOAuth1Start,xOAuth1Identity} from '../server/arcade/campaign-oauth1.mjs';
 import {discordAuthorize,discordIdentity} from '../server/arcade/campaign-discord.mjs';
-import {createChallengeRace,captureInput,replayChallenge,challengeSnapshot,DEFAULT_CAMPAIGN} from '../lib/arcade/bot-challenge.mjs';
+import {addressWindow,canonicalReplay,createChallengeRace,captureInput,replayChallenge,challengeSnapshot,DEFAULT_CAMPAIGN} from '../lib/arcade/bot-challenge.mjs';
 import {stepRace,raceBotInput} from '../lib/arcade/race-sim.mjs';
 
 function drive(challenge,lose=false){
@@ -22,7 +22,10 @@ function drive(challenge,lose=false){
 }
 test('official race is replayed, not scored by a browser claim',()=>{
   const challenge=challengeSnapshot(DEFAULT_CAMPAIGN,42),win=drive(challenge),loss=drive(challenge,true);
-  assert.equal(replayChallenge(challenge,win.replay).qualified,true);
+  const verified=replayChallenge(challenge,win.replay);assert.equal(verified.qualified,true);
+  const trailing=[...win.replay.map(frame=>[...frame]),[12,127]];
+  assert.deepEqual(replayChallenge(challenge,trailing),verified,'post-finish mobile frames do not erase a verified win');
+  assert.deepEqual(canonicalReplay(trailing,verified.ticks),win.replay,'duplicate fingerprints discard post-finish frames');
   assert.equal(replayChallenge(challenge,loss.replay).qualified,false);
   assert.throws(()=>replayChallenge(challenge,[[1,999999]]),/Invalid/);
   assert.throws(()=>replayChallenge(challenge,[[18001,4]]),/too long/);
@@ -35,6 +38,12 @@ test('wallet checksum, zero address and non-address inputs',()=>{
   assert.throws(()=>normalizeAddress('0x5aEda56215b167893e80B4fE645BA6d5Bab767DE'),/checksum/);
   assert.throws(()=>normalizeAddress('0x'+'0'.repeat(40)),/valid/);
   assert.throws(()=>normalizeAddress('seed words should never go here'),/valid/);
+});
+test('blank address dates collect immediately while explicit boundaries schedule and freeze',()=>{
+  assert.deepEqual(addressWindow(DEFAULT_CAMPAIGN,1000),{open:true,frozen:false,scheduled:false});
+  assert.equal(addressWindow({...DEFAULT_CAMPAIGN,addressStartsAt:2000},1000).open,false);
+  assert.equal(addressWindow({...DEFAULT_CAMPAIGN,addressStartsAt:500,addressEndsAt:2000},1000).open,true);
+  assert.deepEqual(addressWindow({...DEFAULT_CAMPAIGN,addressEndsAt:500},1000),{open:false,frozen:true,scheduled:true});
 });
 test('X uses S256, read-only identity scopes and discards its token',async()=>{
   const url=new URL(xAuthorize({clientId:'client',redirectUri:'https://terminl.test/callback',state:'state',verifier:'verifier'}));
@@ -225,7 +234,9 @@ test('persistent access, replay ownership, X uniqueness, qualified referrals and
     assert.equal((await api(a,'/me')).data.pass.referrals,1,'self referral rejected');
     assert.equal(service.store.get('SELECT count(*) AS n FROM qualifications').n,2,'X identity is unique');
     const address='0x52908400098527886E0F7030069857D2E4169EE7';
-    assert.equal((await api(a,'/wallet',{address,chainId:4663,confirmed:true})).status,409,'closed address window');
+    assert.equal((await api(a,'/wallet',{address:'0x'+'1'.repeat(40),chainId:4663,confirmed:true})).status,200,'blank address window opens immediately');
+    await settings({...DEFAULT_CAMPAIGN,active:true,capacity:3,addressStartsAt:Math.floor(time)+60000,addressEndsAt:Math.floor(time)+120000});
+    assert.equal((await api(a,'/wallet',{address,chainId:4663,confirmed:true})).status,409,'future address window stays closed');
     await settings({...DEFAULT_CAMPAIGN,active:true,capacity:3,addressStartsAt:Math.floor(time)-1000,addressEndsAt:Math.floor(time)+60000});
     assert.equal((await api(a,'/wallet',{address,chainId:1,confirmed:true})).status,400);
     assert.equal((await api(a,'/wallet',{address,chainId:4663,confirmed:true})).status,200);

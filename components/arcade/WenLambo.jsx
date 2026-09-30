@@ -79,7 +79,7 @@ export default function WenLambo(){
       if(controller&&!o.settings&&!(o.mode==='practice'&&o.paused)){const down=i=>controller.buttons[i]?.pressed,x=controller.axes[0]||0;padAxis.current=Math.abs(x)>.18?Math.sign(x)*Math.pow((Math.min(1,Math.abs(x))-.18)/.82,1.5):0;pad.current=(down(14)?1:0)|(down(15)?2:0)|(down(7)||down(0)?4:0)|(down(6)||down(1)?8:0)|(down(2)?16:0)|(down(5)?32:0)|(down(3)?64:0);applyInput();}
       else if(pad.current||padAxis.current){pad.current=0;padAxis.current=0;applyInput();}
       let state;
-      if(o.mode==='practice'&&game.current){if(!o.paused){accumulator+=elapsed;while(accumulator>=FRAME){applyInput();o.official.record(input.current);game.current=stepRace(game.current,[input.current,raceBotInput(game.current,1,bot.current)]);o.official.finish(game.current);accumulator-=FRAME;}}state=game.current;}
+      if(o.mode==='practice'&&game.current){if(!o.paused){accumulator+=elapsed;while(accumulator>=FRAME){applyInput();o.official.record(input.current);game.current=stepRace(game.current,[input.current,raceBotInput(game.current,1,bot.current)]);o.official.finish(game.current);accumulator-=FRAME;if(game.current.phase==='finished'){accumulator=0;break;}}}state=game.current;}
       else {applyInput();state=client.current?.predictedState();}
       const el=canvas.current;if(state&&el){
         const showMap=!compact.current||o.mapOpen;

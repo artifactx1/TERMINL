@@ -6,7 +6,7 @@ import {xOAuth1Start,xOAuth1Identity} from './campaign-oauth1.mjs';
 import {discordAuthorize,discordIdentity} from './campaign-discord.mjs';
 import {farcasterIdentity} from './campaign-farcaster.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
-import {BARRY,campaignConfig,campaignOpen,challengeSnapshot} from '../../lib/arcade/bot-challenge.mjs';
+import {BARRY,addressWindow,canonicalReplay,campaignConfig,campaignOpen,challengeSnapshot} from '../../lib/arcade/bot-challenge.mjs';
 
 const DAY=86400000;
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
@@ -221,7 +221,7 @@ export function createCampaignService(options){
         if(!Array.isArray(body.replay)||body.replay.length>18000)fail('Invalid replay',422);
         const result=await verify(parse(row.challenge),body.replay);
         if(now()-row.started_at<result.ticks*1000/60-2000)fail('The run finished faster than real time allows.',422);
-        const replayHash=hash(JSON.stringify(body.replay));
+        const replayHash=hash(JSON.stringify(canonicalReplay(body.replay,result.ticks)));
         const duplicate=store.get('SELECT id FROM runs WHERE replay_hash=? AND anon_id<>? LIMIT 1',replayHash,s.anon_id);
         store.transaction(()=>{
           if(store.get('SELECT completed_at FROM runs WHERE id=?',row.id).completed_at)return;
@@ -281,7 +281,7 @@ export function createCampaignService(options){
         const u=user(s),q=u&&store.get('SELECT status FROM qualifications WHERE user_id=?',u.id),c=config();
         if(!u||u.status!=='active'||q?.status!=='qualified')fail('A saved qualification is required.',403);
         rate('address:'+u.id,8,3600000);
-        if(!c.addressStartsAt||!c.addressEndsAt||now()<c.addressStartsAt||now()>=c.addressEndsAt)fail('Address submission is closed.',409);
+        if(!addressWindow(c,now()).open)fail('Address submission is closed.',409);
         if(body.chainId!==c.chainId||body.confirmed!==true)fail('Confirm this address is for Robinhood Chain mainnet.');
         const address=normalizeAddress(body.address);
         store.transaction(()=>{

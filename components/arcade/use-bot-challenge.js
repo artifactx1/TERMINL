@@ -20,7 +20,8 @@ export function useBotChallenge(){
   const record=input=>{const r=run.current;if(!r||r.finished)return;if(r.frames>=MAX_CHALLENGE_TICKS)return;captureInput(r.replay,input);r.frames++;};
   const submit=async()=>{
     const r=run.current;if(!r||r.submitted)return;r.submitted=true;setStatus('verifying');setError('');
-    try{const value=await campaignRequest('/submit',{runId:r.id,replay:r.replay});if(run.current?.id!==r.id)return;setResult(value.result);setStatus('verified');}
+    const replay=r.replay.map(frame=>[...frame]);
+    try{const value=await campaignRequest('/submit',{runId:r.id,replay});if(run.current?.id!==r.id)return;setResult(value.result);setStatus('verified');}
     catch(e){if(run.current?.id!==r.id)return;r.submitted=false;setError(e.message);setStatus('retry');}
   };
   const finish=state=>{if(run.current&&!run.current.finished&&state.phase==='finished'){run.current.finished=true;void submit();}};

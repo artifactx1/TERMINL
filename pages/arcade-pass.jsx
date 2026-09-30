@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import {useEffect,useState} from 'react';
 import CampaignShell from '../components/arcade/CampaignShell';
 import {campaignRequest,campaignEvent} from '../lib/arcade/campaign-client';
-import {raceTime} from '../lib/arcade/bot-challenge.mjs';
+import {addressWindow,raceTime} from '../lib/arcade/bot-challenge.mjs';
 import s from '../styles/Campaign.module.css';
 
 const FarcasterSignIn=dynamic(()=>import('../components/arcade/FarcasterSignIn'),{ssr:false,loading:()=>null});
@@ -20,6 +20,30 @@ function SignInChoices({campaign,runId,publicProfile,busy,onSignIn,onError}){
   </div>;
 }
 
+function PassProgress({status,hasAddress}){
+  const qualified=status==='qualified';
+  return <ol className={s.passProgress} aria-label='WL setup progress'>
+    <li className={s.progressDone}><b>1</b><span>WIN VERIFIED</span><strong>DONE</strong></li>
+    <li className={s.progressDone}><b>2</b><span>IDENTITY SAVED</span><strong>DONE</strong></li>
+    <li className={hasAddress?s.progressDone:qualified?s.progressCurrent:''}><b>3</b><span>{qualified?'MINT ADDRESS':'ADDRESS AFTER APPROVAL'}</span><strong>{hasAddress?'DONE':qualified?'NEXT':'LOCKED'}</strong></li>
+  </ol>;
+}
+
+function AddressStep({pass,status,config,serverNow,address,setAddress,confirmed,setConfirmed,busy,onSubmit}){
+  const {open,frozen,scheduled}=addressWindow(config||{},serverNow),qualified=status==='qualified',saved=!!pass.wallet;
+  const windowCopy=[config?.addressStartsAt?`Opens ${new Date(config.addressStartsAt).toLocaleString()}`:'',config?.addressEndsAt?`Closes ${new Date(config.addressEndsAt).toLocaleString()}`:''].filter(Boolean).join(' · ');
+  const blocked=status==='review'?'Your win is saved and under review. The address step unlocks after approval.':status==='waitlist'?'Your win is saved, but the current WL pool is full. No address is needed unless a spot opens.':status==='banned'?'Address submission is unavailable for this pass.':'Beat BarryBot and save the win before adding an address.';
+  return <section id='mint-address' className={`${s.card} ${qualified&&!saved?s.nextStep:''}`}>
+    <span className={s.eyebrow}>{qualified&&!saved?'FINAL STEP / WL SETUP':'MINT ADDRESS / ROBINHOOD CHAIN MAINNET'}</span>
+    <h2>{!qualified?'Address comes after qualification.':frozen?'Address locked for mint.':saved?'Mint address saved.':open?'Finish your WL setup.':'Address submission opens later.'}</h2>
+    {qualified&&open&&!saved&&<p>Your verified win and identity are saved. Paste the public address you plan to mint with to finish.</p>}
+    {saved&&<p className={s.address}>{pass.wallet.address}</p>}
+    {scheduled&&windowCopy&&<p className={s.fine}>{windowCopy}</p>}
+    {qualified&&open?<form onSubmit={onSubmit}><label>ROBINHOOD CHAIN WALLET ADDRESS<input name='wallet' value={address} onChange={e=>setAddress(e.target.value)} placeholder='0x…' autoComplete='off' spellCheck={false} maxLength={42} required/></label><label className={s.check}><input type='checkbox' checked={confirmed} onChange={e=>setConfirmed(e.target.checked)} required/>I control this address and want to use it to mint on Robinhood Chain mainnet.</label><button className={s.primary} disabled={busy||!confirmed}>{saved?'UPDATE MINT ADDRESS':'FINISH WL SETUP'}</button></form>:<p>{qualified?(frozen?'The editing deadline has passed. Your recorded address is shown above.':'Your qualification is saved. Return here when address submission opens.'):blocked}</p>}
+    <p className={s.fine}>Paste a public address only. No wallet connection, signature or transaction. Never enter a seed phrase or private key. Saving an address does not mint anything.</p>
+  </section>;
+}
+
 export default function ArcadePass(){
   const [pass,setPass]=useState(null),[campaign,setCampaign]=useState(null),[loaded,setLoaded]=useState(false),[pending,setPending]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[publicProfile,setPublicProfile]=useState(false),[address,setAddress]=useState(''),[confirmed,setConfirmed]=useState(false),[notice,setNotice]=useState('');
   const [clock,setClock]=useState(Date.now);
@@ -32,21 +56,23 @@ export default function ArcadePass(){
       const authProvider=providerName(query.get('provider'));
       if(query.get('auth')==='cancelled')setNotice(authProvider+' sign-in was cancelled. Your verified run is still here.');
       if(query.get('auth')==='failed')setError(authProvider+' sign-in did not finish. Your verified run is still here. Try again.');
+      if(query.get('saved')&&session.pass?.qualification?.status==='qualified'){
+        setNotice('Your WL spot is saved. Add your mint address below to finish setup.');
+        try{sessionStorage.removeItem('terminl:official-run');}catch{}
+      }
       if(runId&&/^[a-f0-9]{32}$/.test(runId)){const run=await campaignRequest('/runs/'+runId).catch(()=>null);if(alive&&run?.result?.qualified&&!run.saved)setPending(run);}
     }catch(e){if(alive)setError(e.message);}finally{if(alive)setLoaded(true);}})();return()=>{alive=false;};
   },[]);
   const signIn=async provider=>{setBusy(true);setError('');try{
-    if(pass&&pending){const result=await campaignRequest('/claim',{runId:pending.id,publicProfile});setPass(result.pass);setPending(null);setNotice('Your win is saved.');}
+    if(pass&&pending){const result=await campaignRequest('/claim',{runId:pending.id,publicProfile});setPass(result.pass);setPending(null);setNotice('Your WL spot is saved. Add your mint address below to finish setup.');}
     else {const auth=await campaignRequest('/auth/start',{provider,...(pending?{runId:pending.id}:{}),publicProfile});location.assign(auth.url);}
   }catch(e){setError(e.message);}finally{setBusy(false);}};
-  const saveAddress=async e=>{e.preventDefault();setBusy(true);setError('');try{const result=await campaignRequest('/wallet',{address,chainId:4663,confirmed});setPass(result.pass);setNotice('Mint address saved. You can edit it until the displayed deadline.');setConfirmed(false);}catch(e){setError(e.message);}finally{setBusy(false);}};
+  const saveAddress=async e=>{e.preventDefault();setBusy(true);setError('');try{const result=await campaignRequest('/wallet',{address,chainId:4663,confirmed});setPass(result.pass);setNotice('Mint address saved. Your WL setup is complete.');setConfirmed(false);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const privacy=async value=>{setBusy(true);try{const result=await campaignRequest('/profile',{publicProfile:value});setPass(result.pass);setPublicProfile(value);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const share=run=>{const url=location.origin+'/challenge/'+run.code;const text=`I beat BarryBot in Wen Lambo. ${raceTime(run.result.playerTicks)}.\nBarry would like a recount.\n\nYour turn:`;campaignEvent('share_click',run.code);window.open('https://x.com/intent/post?'+new URLSearchParams({text,url}),'_blank','noopener,noreferrer');};
   const copy=async run=>{try{await navigator.clipboard.writeText(location.origin+'/challenge/'+run.code);setNotice('Challenge link copied. Send it to your loudest friend.');}catch{setNotice('Open your challenge page and copy its address.');}};
   const c=campaign?.config,status=pass?.qualification?.status;
   const serverNow=clock+(campaign?.clockSkew||0);
-  const open=c?.addressStartsAt&&c?.addressEndsAt&&serverNow>=c.addressStartsAt&&serverNow<c.addressEndsAt;
-  const frozen=c?.addressEndsAt&&serverNow>=c.addressEndsAt;
   return <CampaignShell><Head><title>Your Arcade Pass — TERMINL</title><meta name='robots' content='noindex'/></Head>
     <span className={s.eyebrow}>TERMINL ARCADE PASS</span><h1 className={s.title}>{pass?identityName(pass):'Save the win.'}</h1>
     {!loaded&&<p>Finding your pass…</p>}{error&&<p role='alert' className={s.error}>{error}</p>}{notice&&<p role='status' className={s.notice}>{notice}</p>}
@@ -55,14 +81,10 @@ export default function ArcadePass(){
     {pass&&<>
       <span className={s.badge}>{status==='qualified'?'ARCADE QUALIFIED':status==='review'?'WIN SAVED / UNDER REVIEW':status==='waitlist'?'WIN SAVED / POOL FULL':status==='banned'?'ACCESS SUSPENDED':'PASS CREATED / RACE TO QUALIFY'}</span>
       <p className={s.fine}>{status==='qualified'?'You are eligible for the pre-mint pool. This is not a guaranteed allocation, free NFT or completed mint.':status==='review'?'Your result needs a review before access is awarded. Your win remains saved.':status==='waitlist'?'The current pool is full. Your win is saved; no allocation has been reserved.':'Your saved status appears here.'}</p>
+      {status&&<PassProgress status={status} hasAddress={!!pass.wallet}/>}
+      <AddressStep pass={pass} status={status} config={c} serverNow={serverNow} address={address} setAddress={setAddress} confirmed={confirmed} setConfirmed={setConfirmed} busy={busy} onSubmit={saveAddress}/>
       <div className={s.grid}><section className={s.card}><h2>{pass.runs.filter(r=>r.result.qualified&&!r.invalidated).length}</h2><p>SAVED BOT WINS</p></section><section className={s.card}><h2>{pass.referrals}</h2><p>FRIENDS WHO QUALIFIED</p><small>Only verified wins saved by distinct identities count. Clicks earn nothing.</small></section><section className={s.card}><h2>YOUR DISPLAY</h2><label className={s.check}><input type='checkbox' checked={publicProfile} disabled={busy} onChange={e=>privacy(e.target.checked)}/>Show my {pass.provider==='farcaster'?'account ID':'handle'} publicly</label><small>Off means ANON on cards and leaderboards.</small></section></div>
       {status==='qualified'&&pass.runs.filter(r=>r.result.qualified&&!r.invalidated).slice(0,1).map(run=><section className={s.card} key={run.id}><span className={s.eyebrow}>YOUR GROUP CHAT NEEDS THIS</span><h2>Barry lost in {raceTime(run.result.playerTicks)}.</h2><div className={s.actions}><button className={s.primary} onClick={()=>share(run)}>CHALLENGE X ↗</button><button className={s.secondary} onClick={()=>copy(run)}>COPY CHALLENGE LINK</button><Link className={s.secondary} href={'/challenge/'+run.code}>OPEN YOUR CARD →</Link></div><p className={s.fine}>Opens a composer. You decide whether to post.</p></section>)}
-      <section className={s.card} style={{marginTop:24}}><span className={s.eyebrow}>MINT ADDRESS / ROBINHOOD CHAIN MAINNET</span><h2>{frozen?'ADDRESS LOCKED FOR MINT':open?'Tell us where you want to mint.':'Address submission opens later.'}</h2>
-        {pass.wallet&&<p className={s.address}>{pass.wallet.address}</p>}
-        {c?.addressStartsAt>0&&<p className={s.fine}>Opens {new Date(c.addressStartsAt).toLocaleString()} · Closes {new Date(c.addressEndsAt).toLocaleString()}</p>}
-        {open&&status==='qualified'?<form onSubmit={saveAddress}><label>PUBLIC WALLET ADDRESS<input name='wallet' value={address} onChange={e=>setAddress(e.target.value)} placeholder='0x…' autoComplete='off' spellCheck={false} maxLength={42} required/></label><label className={s.check}><input type='checkbox' checked={confirmed} onChange={e=>setConfirmed(e.target.checked)} required/>I control this address and want to use it to mint on Robinhood Chain mainnet.</label><button className={s.primary} disabled={busy||!confirmed}>SAVE ADDRESS</button></form>:<p>{frozen?'The editing deadline has passed. Your recorded address is shown above.':'Your saved qualification stays on your Arcade Pass. Return here when the address window opens.'}</p>}
-        <p className={s.fine}>Paste a public address only. No wallet connection, signature or transaction. Never enter a seed phrase or private key. Saving an address does not mint anything.</p>
-      </section>
       {c?.announcementUrl&&<p><a className={s.secondary} href={c.announcementUrl} target='_blank' rel='noreferrer'>MINT ANNOUNCEMENTS ↗</a></p>}
       <div className={s.actions} style={{marginTop:25}}><Link className={s.primary} href='/os/lambo?challenge=barrybot'>RACE AGAIN →</Link><button className={s.textButton} onClick={async()=>{try{await campaignRequest('/logout',{});setPass(null);setPending(null);}catch(e){setError(e.message);}}}>SIGN OUT</button></div>
     </>}

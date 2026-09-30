@@ -19,8 +19,10 @@ play → verified win → save with X, Farcaster or Discord → personal challen
   clear rematch, and a basic leaderboard are launch features.
 - Referrals count only after a new, distinct provider identity saves a verified win.
   Suspect claims enter review; clicks and registrations alone earn nothing.
-- Arcade Pass includes saved result and a later manual public-address form.
+- Arcade Pass leads a qualified player directly from saved identity to a manual public-address form.
   Campaign dates, threshold, capacity and address window are admin-controlled.
+  When no address dates are configured, qualified players may submit immediately;
+  setting either boundary schedules or freezes the form explicitly.
 - Admin changes and address edits are audited. Funnel counters use real events.
   No invented player counts, percentiles, urgency, rankings or guarantees.
 - Defer XP economies, invite tiers, daily chores, creator campaigns and additional
