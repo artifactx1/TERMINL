@@ -1,8 +1,8 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import {useEffect,useState} from 'react';
 import CampaignShell from '../components/arcade/CampaignShell';
+import ArcadeMeta from '../components/arcade/ArcadeMeta';
 import {campaignRequest,campaignEvent} from '../lib/arcade/campaign-client';
 import {addressWindow,raceTime} from '../lib/arcade/bot-challenge.mjs';
 import s from '../styles/Campaign.module.css';
@@ -73,7 +73,7 @@ export default function ArcadePass(){
   const copy=async run=>{try{await navigator.clipboard.writeText(location.origin+'/challenge/'+run.code);setNotice('Challenge link copied. Send it to your loudest friend.');}catch{setNotice('Open your challenge page and copy its address.');}};
   const c=campaign?.config,status=pass?.qualification?.status;
   const serverNow=clock+(campaign?.clockSkew||0);
-  return <CampaignShell><Head><title>Your Arcade Pass — TERMINL</title><meta name='robots' content='noindex'/></Head>
+  return <CampaignShell><ArcadeMeta card='arcade-pass' noindex/>
     <span className={s.eyebrow}>TERMINL ARCADE PASS</span><h1 className={s.title}>{pass?identityName(pass):'Save the win.'}</h1>
     {!loaded&&<p>Finding your pass…</p>}{error&&<p role='alert' className={s.error}>{error}</p>}{notice&&<p role='status' className={s.notice}>{notice}</p>}
     {pending&&<section className={s.card}><span className={s.badge}>BARRYBOT DEFEATED</span><h2>{raceTime(pending.result.playerTicks)}</h2><p>Your race is verified. Save it with the identity you prefer to register for the pre-mint pool.</p><label className={s.check}><input type='checkbox' checked={publicProfile} onChange={e=>setPublicProfile(e.target.checked)}/>Show my handle or account ID on public cards and leaderboards</label>{pass?<button className={s.primary} disabled={busy} onClick={()=>signIn()}>SAVE TO MY ARCADE PASS →</button>:<SignInChoices campaign={campaign} runId={pending.id} publicProfile={publicProfile} busy={busy} onSignIn={signIn} onError={setError}/>}<p className={s.fine}>We request identity only. No wallet connection and nothing is posted on your behalf.</p></section>}

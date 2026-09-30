@@ -1,8 +1,8 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
 import {useEffect,useState} from 'react';
 import CampaignShell from '../components/arcade/CampaignShell';
+import ArcadeMeta from '../components/arcade/ArcadeMeta';
 import {campaignRequest,campaignEvent} from '../lib/arcade/campaign-client';
 import {BARRY,raceTime} from '../lib/arcade/bot-challenge.mjs';
 import {TRACKS,VEHICLES} from '../lib/arcade/race-sim.mjs';
@@ -13,7 +13,7 @@ export default function BeatTheBots(){
   useEffect(()=>{let alive=true;campaignRequest('/config').then(c=>{if(alive)setCampaign(c);}).catch(e=>{if(alive)setError(e.message);});campaignRequest('/session').then(()=>campaignEvent('challenge_view')).catch(()=>{});return()=>{alive=false;};},[]);
   useEffect(()=>{if(!campaign?.open)return;let alive=true;campaignRequest('/leaderboard?period='+period).then(b=>{if(alive)setBoard(b.entries);}).catch(e=>{if(alive)setError(e.message);});campaignEvent('leaderboard_view');return()=>{alive=false;};},[campaign,period]);
   const c=campaign?.config;
-  return <CampaignShell><Head><title>Beat the Bots — TERMINL</title><meta name='description' content='The bots usually take your allocation. Make one lose a race for a change. Play first. Save your verified win with X. No wallet connection.'/></Head>
+  return <CampaignShell><ArcadeMeta card='beat-the-bots'/>
     <section className={s.hero}><div><span className={s.eyebrow}>TERMINL VS. THE BOTS</span><h1>He bought the top.<br/><em>Beat him to the finish.</em></h1>
       <p>Barry thinks three laps in a borrowed supercar make him a racing driver. Please make this man log off.</p>
       {campaign?.open?<><Link className={s.primary} href='/os/lambo?challenge=barrybot'>RACE BARRYBOT →</Link><p>Beat the official challenge to qualify for the pre-mint pool. Save your win with X afterwards.</p></>:<><p className={s.notice}>{campaign?'Official qualification isn’t open yet. The arcade is.':'Checking the starting grid…'}</p><Link className={s.primary} href='/os/lambo'>PRACTISE IN WEN LAMBO →</Link></>}

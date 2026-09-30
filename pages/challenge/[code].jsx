@@ -1,7 +1,7 @@
-import Head from 'next/head';
 import Link from 'next/link';
 import {useEffect} from 'react';
 import CampaignShell from '../../components/arcade/CampaignShell';
+import ArcadeMeta from '../../components/arcade/ArcadeMeta';
 import {publicChallenge,campaignOrigin} from '../../lib/server/campaign';
 import {campaignRequest,campaignEvent} from '../../lib/arcade/campaign-client';
 import {raceTime} from '../../lib/arcade/bot-challenge.mjs';
@@ -11,7 +11,7 @@ export default function Challenge({run,origin,unavailable}){
   useEffect(()=>{if(run)campaignRequest('/session').then(()=>campaignEvent('challenge_link_opened',run.code)).catch(()=>{});},[run]);
   if(unavailable)return <CampaignShell><h1 className={s.title}>The timing desk is offline.</h1><p>Try this challenge link again shortly. Saved results have not changed.</p><Link className={s.primary} href='/os'>PLAY THE ARCADE →</Link></CampaignShell>;
   const title=`${run.player} beat BarryBot in ${raceTime(run.result.playerTicks)}. Your turn.`,url=`${origin}/challenge/${run.code}`;
-  return <CampaignShell><Head><title>{title} — TERMINL</title><meta name='description' content='One verified Wen Lambo win. One friend who thinks they can do better. No wallet required.'/><meta property='og:title' content={title}/><meta property='og:description' content='Barry would like a recount. You get a rematch.'/><meta property='og:url' content={url}/><meta property='og:type' content='website'/><meta property='og:image' content={`${origin}/api/challenge-card/${run.code}`}/><meta property='og:image:width' content='1200'/><meta property='og:image:height' content='630'/><meta name='twitter:card' content='summary_large_image'/><link rel='canonical' href={url}/></Head>
+  return <CampaignShell><ArcadeMeta card='beat-the-bots' title={`${title} — TERMINL`} description='Barry would like a recount. You get a rematch. No wallet required.' path={`/challenge/${run.code}`} image={`${origin}/api/challenge-card/${run.code}`} alt={title}/>
     <span className={s.eyebrow}>WEN LAMBO / SERVER-VERIFIED RUN</span><h1 className={s.title}>{run.player} beat Barry.<br/>Now beat {run.player==='ANON'?'that':'them'}.</h1>
     <div className={s.resultTimes}><div><small>THE TIME TO BEAT</small><strong>{raceTime(run.result.playerTicks)}</strong></div><div><small>BARRYBOT</small><strong>{raceTime(run.result.botTicks)}</strong></div></div>
     <p>{TRACKS[run.challenge.track].name} · {VEHICLES[run.challenge.vehicle].name} · Three laps.</p>
