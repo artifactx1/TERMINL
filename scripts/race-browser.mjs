@@ -14,7 +14,10 @@ const v3URL=dataModule((await readFile(new URL('../lib/arcade/race-sim-v3.mjs',i
 const inputURL=dataModule(await readFile(new URL('../lib/arcade/race-input.mjs',import.meta.url),'utf8'));
 const v4URL=dataModule((await readFile(new URL('../lib/arcade/race-sim-v4.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL).replace('./race-sim-v3.mjs',v3URL).replace('./race-input.mjs',inputURL));
 const v5URL=dataModule((await readFile(new URL('../lib/arcade/race-sim-v5.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL).replace('./race-sim-v3.mjs',v3URL).replace('./race-input.mjs',inputURL).replace('./race-sim-v4.mjs',v4URL));
-const moduleURL=dataModule((await readFile(new URL('../lib/arcade/race-sim.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL).replace('./race-sim-v3.mjs',v3URL).replace('./race-input.mjs',inputURL).replace('./race-sim-v4.mjs',v4URL).replace('./race-sim-v5.mjs',v5URL));
+const detURL=dataModule(await readFile(new URL('../lib/arcade/det-math.mjs',import.meta.url),'utf8'));
+const v6URL=dataModule((await readFile(new URL('../lib/arcade/race-sim-v6.mjs',import.meta.url),'utf8')).replace('./race-sim-v1.mjs',legacyURL).replace('./race-sim-v2.mjs',v2URL).replace('./race-progress.mjs',progressURL).replace('./race-sim-v3.mjs',v3URL).replace('./race-input.mjs',inputURL).replace('./race-sim-v4.mjs',v4URL).replace('./race-sim-v5.mjs',v5URL));
+// v7 (current) builds on the archived v6 sim and deterministic math.
+const moduleURL=dataModule((await readFile(new URL('../lib/arcade/race-sim.mjs',import.meta.url),'utf8')).replace('./race-sim-v6.mjs',v6URL).replace('./race-progress.mjs',progressURL).replace('./race-input.mjs',inputURL).replace('./det-math.mjs',detURL));
 const output='artifacts/arcade';await mkdir(output,{recursive:true});const contexts=[],pages=[],errors=[];
 const click=(p,name)=>p.getByRole('button',{name,exact:true}).click();
 async function guest(name){

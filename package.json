@@ -42,7 +42,8 @@
     "test:after-hours:restart": "node scripts/mall-restart-browser.mjs",
     "test:after-hours:routes": "node scripts/after-hours-pilot.mjs --output=/tmp/terminl-rug-plans.json",
     "test:after-hours:browser": "npm run test:after-hours:routes && node scripts/after-hours-browser.mjs",
-    "test:after-hours:touch": "node scripts/mall-park-browser.mjs && node scripts/rug-touch-browser.mjs"
+    "test:after-hours:touch": "node scripts/mall-park-browser.mjs && node scripts/rug-touch-browser.mjs",
+    "test:race:engines": "node --test scripts/race-engines.test.mjs"
   },
   "dependencies": {
     "@base-org/account": "^2.5.8",

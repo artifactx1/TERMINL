@@ -281,6 +281,9 @@ export function createCampaignService(options){
       }
       if(path==='/submit'){
         rate('submit:'+s.anon_id,40,600000);
+        // The next race starts the moment this one ends, while this one is still being verified,
+        // so real time for the next segment is measured from when this request arrived.
+        const received=now();
         const row=store.get('SELECT * FROM runs WHERE id=?',typeof body.runId==='string'?body.runId:'');
         if(!row||row.anon_id!==s.anon_id||row.kind==='sprint')fail('Run not found',404);
         const accepted=r=>({id:r.id,kind:r.kind,segments:r.segments,points:r.points,progress:progressSummary(r),result:parse(r.result),verified:true});
@@ -292,7 +295,7 @@ export function createCampaignService(options){
         if(row.expires_at<now())fail('This attempt expired. Start another run.',410);
         if(!Array.isArray(body.replay)||body.replay.length>SEGMENT_TICKS[row.kind])fail('Invalid replay',422);
         const challenge=parse(row.challenge),out=await verify(challenge,row.progress?deserialize(row.progress):null,body.replay);
-        if(now()-row.last_segment_at<out.ticks*1000/60-2000)fail('The run finished faster than real time allows.',422);
+        if(received-row.last_segment_at<out.ticks*1000/60-2000)fail('The run finished faster than real time allows.',422);
         // Winning inputs shared between browsers are flagged; idle losses are naturally identical.
         const replayHash=hash(JSON.stringify([row.kind,canonicalReplay(body.replay,out.ticks)]));
         const duplicate=out.segment.won&&store.get('SELECT 1 FROM replay_hashes WHERE hash=? AND anon_id<>? LIMIT 1',replayHash,s.anon_id);
@@ -302,7 +305,7 @@ export function createCampaignService(options){
           const flags=parse(current.flags);if(duplicate&&!flags.includes('repeated_inputs'))flags.push('repeated_inputs');
           const at=now(),done=!!out.result;
           store.run(`UPDATE runs SET progress=?,segments=segments+1,points=points+?,last_segment_at=?,expires_at=?,flags=?,
-            completed_at=?,result=?,replay_hash=? WHERE id=?`,serialize(out.state),out.points,at,Math.min(at+RUN_IDLE,current.started_at+RUN_LIMIT),JSON.stringify(flags),
+            completed_at=?,result=?,replay_hash=? WHERE id=?`,serialize(out.state),out.points,received,Math.min(at+RUN_IDLE,current.started_at+RUN_LIMIT),JSON.stringify(flags),
             done?at:null,done?JSON.stringify(out.result):null,replayHash,row.id);
           if(out.segment.won)store.run('INSERT OR IGNORE INTO replay_hashes(hash,anon_id,run_id) VALUES(?,?,?)',replayHash,s.anon_id,row.id);
           store.event(row.kind==='cup'?'cup_race_complete':'rumble_fight_complete',{anonId:s.anon_id,userId:current.user_id,runId:row.id,detail:{won:out.segment.won}},at);

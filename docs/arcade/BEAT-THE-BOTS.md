@@ -19,6 +19,11 @@ play → verified Barry Cup or Rekt Rumble circuit → save an FCFS WL spot with
   limit (shared by both routes, 0 = none) waitlists saves beyond it. The original
   2048 default was the collection size and is reset to unlimited on upgrade.
 - Spots from the retired single-race challenge became honored `sprint` spots.
+- Replays must give bit-identical results in every browser engine and on the server.
+  Wen Lambo v7 uses `lib/arcade/det-math.mjs` instead of `Math.sin/cos/atan2/hypot`,
+  which V8 and JavaScriptCore compute differently (v6 runs from iPhones failed to verify).
+  Rekt Rumble uses only exact arithmetic. `npm run test:race:engines` compares a full
+  cup in V8 and macOS's JavaScriptCore; run it after any race-sim change.
 - Official Rekt Rumble fights use a dedicated rival (`lib/arcade/rumble-rival.mjs`)
   that guards the right height, punishes recovery and breaks throws, tightening
   over the six fights. Spam that cleared the practice bot loses every fight.
