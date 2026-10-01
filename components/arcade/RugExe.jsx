@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import RugTouchControls from './RugTouchControls';
 import {useGyro} from '../../lib/arcade/after-hours/gyro-aim';
+import {nextWaypoint} from '../../lib/arcade/after-hours/rug-navigation.mjs';
 import r from '../../styles/RugExe.module.css';
 import {useEffect,useState} from 'react';
 import {useGame} from '../../lib/arcade/after-hours/use-game';
@@ -9,13 +10,20 @@ import {createRug,stepRug,WEAPONS} from '../../lib/arcade/after-hours/rug-sim.mj
 import {RUG_LEVELS} from '../../lib/arcade/after-hours/rug-world.mjs';
 import s from '../../styles/AfterHours.module.css';
 const amount=n=>Math.round(n||0).toLocaleString('en-US');
-/** Where to go next: the nearest unused wallet terminal, then the exit once it opens. */
+/** Where to go next: the nearest unused wallet terminal, then enemies until the kill
+ * quota opens the exit (the same rule as the sim), then the exit. */
 function objective(v){
-  const p=v.player,switches=v.world.switches.filter(a=>!a.used);
+  const p=v.player,switches=v.world.switches.filter(a=>!a.used),killsLeft=Math.ceil(v.initialEnemies*.6)-v.kills;
   const near=list=>list.reduce((best,t)=>!best||Math.hypot(t.x-p.x,t.z-p.z)<Math.hypot(best.x-p.x,best.z-p.z)?t:best,null);
-  const target=switches.length?near(switches):v.exitOpen?v.world.exit:null;if(!target)return null;
-  const heading=Math.atan2(-(target.x-p.x),-(target.z-p.z)),turn=Math.atan2(Math.sin(heading-p.yaw),Math.cos(heading-p.yaw));
-  return {label:switches.length?'TERMINAL':'EXIT',turn,distance:Math.round(Math.hypot(target.x-p.x,target.z-p.z)),close:Math.hypot(target.x-p.x,target.z-p.z)<4};
+  const hunt=!switches.length&&!v.exitOpen&&killsLeft>0?near(v.enemies.filter(e=>e.hp>0)):null;
+  const target=switches.length?near(switches):v.exitOpen?v.world.exit:hunt;if(!target)return null;
+  if(hunt)return {...bearing(v,target),label:`${killsLeft} MORE ${killsLeft===1?'KILL':'KILLS'}`,close:false};
+  return {...bearing(v,target),label:switches.length?'TERMINAL':'EXIT',close:Math.hypot(target.x-p.x,target.z-p.z)<4};
+}
+/** The arrow follows the walkable route around walls; the distance is to the objective. */
+function bearing(v,target){
+  const p=v.player,step=nextWaypoint(v.world,p,target),heading=Math.atan2(-(step.x-p.x),-(step.z-p.z));
+  return {turn:Math.atan2(Math.sin(heading-p.yaw),Math.cos(heading-p.yaw)),distance:Math.round(Math.hypot(target.x-p.x,target.z-p.z))};
 }
 export default function RugExe(){
  const [level,setLevel]=useState(0),[allTapes,setAllTapes]=useState(false),[ending,setEnding]=useState(2);

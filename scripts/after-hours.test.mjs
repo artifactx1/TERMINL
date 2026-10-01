@@ -12,6 +12,7 @@ test('touch rail assistance never redirects a skater rolling past a rail',()=>{
 test('repeat tricks diminish, bank is safe, bail destroys only unbanked score',()=>{const s=createMall();trick(s,'FLIP',100);const first=s.combo.base;trick(s,'FLIP',100);assert.ok(s.combo.base-first<100);trick(s,'GRAB',200);const score=comboValue(s);bank(s);assert.equal(s.score,score);trick(s,'SPECIAL',2000);bail(s);assert.equal(s.score,score);assert.equal(s.combo.count,0);assert.ok(s.stats.biggestBail>0);});
 test('three minute runs end, seeded challenges repeat, saves survive malformed data',()=>{const s=createMall({seed:17});assert.deepEqual(s.challengeIds,createMall({seed:17}).challengeIds);s.tick=MALL_TUNING.duration-1;stepMall(s);assert.equal(s.phase,'finished');const storage={getItem:()=>'{',setItem(){throw Error('quota');}};const result=recordRun(readProgress(storage),s,storage);assert.equal(result.saved,false);assert.equal(result.progress.mall.records.length,1);});
 import {createRug,stepRug} from '../lib/arcade/after-hours/rug-sim.mjs';
+import {nextWaypoint} from '../lib/arcade/after-hours/rug-navigation.mjs';
 import {fireWeapon,damageEnemy,hurtPlayer,stepEnemies} from '../lib/arcade/after-hours/rug-combat.mjs';
 import {spawnEnemy} from '../lib/arcade/after-hours/rug-world.mjs';
 test('shooter strafe speed is normalized; dash, slide-jump and walls preserve control',()=>{const a=createRug({level:1}),b=createRug({level:1});a.enemies=[];b.enemies=[];for(let i=0;i<25;i++){stepRug(a,{forward:true});stepRug(b,{forward:true,right:true});}assert.ok(Math.abs(Math.hypot(a.player.vx,a.player.vz)-Math.hypot(b.player.vx,b.player.vz))<.01);stepRug(a,{dash:true,forward:true});assert.ok(Math.hypot(a.player.vx,a.player.vz)>25);stepRug(a,{crouch:true,jump:true});assert.ok(a.player.vy>9);Object.assign(a.player,{x:33.4,z:27,y:0,vx:20,vz:0});stepRug(a,{right:true});assert.ok(a.player.x<34);});
@@ -168,4 +169,18 @@ test('touch play auto-fires only on a hittable target, and aim slows over enemie
   assert.ok(Math.abs(slowed.player.yaw-yaw)<Math.abs(free.player.yaw-yaw),'aim friction over a target');
   const mouse=createRug({level:1});mouse.enemies=[spawnEnemy('whale',0,23,0)];stepRug(mouse,{lookX:20});
   assert.equal(mouse.player.yaw,free.player.yaw,'mouse aim is never assisted');
+});
+test('following only the objective guidance finishes every level',()=>{
+  for(let level=0;level<8;level++){
+    const s=createRug({level});
+    for(let tick=0;tick<4000&&s.phase==='playing';tick++){
+      // Combat is covered elsewhere; this walks the route the HUD arrow shows.
+      s.enemies=[];s.hazards=[];s.player.hp=100;s.kills=99;
+      const left=s.world.switches.filter(a=>!a.used).sort((a,b)=>Math.hypot(a.x-s.player.x,a.z-s.player.z)-Math.hypot(b.x-s.player.x,b.z-s.player.z));
+      const goal=left[0]||s.world.exit,step=nextWaypoint(s.world,s.player,goal),near=Math.hypot(goal.x-s.player.x,goal.z-s.player.z)<2.5;
+      s.player.yaw=Math.atan2(-(step.x-s.player.x),-(step.z-s.player.z));
+      stepRug(s,{forward:!near||goal===s.world.exit,interact:near&&tick%2===0});
+    }
+    assert.equal(s.phase,'complete',`level ${level} is finishable by following the arrow`);
+  }
 });
