@@ -10,11 +10,11 @@ export default async function handler(req,res){
   if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return res.status(405).end();}
   if(req.method==='POST'&&(req.headers.origin!==campaignOrigin()||!/^application\/json(?:;|$)/i.test(req.headers['content-type']||'')))return res.status(403).json({error:'Request origin rejected'});
   if(!campaignConfigured()){
-    if(path==='/config')return res.status(200).json({open:false,oauthReady:false,authReady:false,providers:{x:false,discord:false,farcaster:false},configured:false});
+    if(path==='/config')return res.status(200).json({open:false,routes:{cup:false,rumble:false},authReady:false,providers:{x:false,discord:false,farcaster:false},configured:false});
     return res.status(503).json({error:'Official challenges are not open yet. The free arcade is still playable.'});
   }
   const query=new URLSearchParams();
-  for(const key of path==='/auth/callback'?['code','state','error','oauth_token','oauth_verifier','denied']:path==='/leaderboard'?['period']:[]){if(typeof req.query[key]==='string')query.set(key,req.query[key]);}
+  for(const key of path==='/auth/callback'?['code','state','error','oauth_token','oauth_verifier','denied']:[]){if(typeof req.query[key]==='string')query.set(key,req.query[key]);}
   // Forward only the campaign cookie; never wallet sessions or unrelated credentials.
   const cookie=(req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>/^btb_session=[A-Za-z0-9_-]+$/.test(v));
   try{

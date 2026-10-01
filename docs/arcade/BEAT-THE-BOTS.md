@@ -1,32 +1,45 @@
 # Beat the Bots: launch scope
 
 Source: the user-provided TERMINL pre-mint growth specification. Build the complete
-play → verified win → save with X, Farcaster or Discord → personal challenge → referred player loop.
+play → verified Barry Cup or Rekt Rumble circuit → save an FCFS WL spot with X, Farcaster or Discord → personal challenge → referred player loop.
 
 ## Product decisions
 
-- Start with Wen Lambo and one named official rival on Pacific Coast Run. Fixed
-  achievable qualification; leaderboard positions confer prestige, not allocation.
-- Reuse the actual race simulation, renderer and controls. A server-issued run
-  pins game version, track, rival seed, difficulty and target. The server replays
-  bounded inputs and computes the result; browser-reported scores confer nothing.
-- Play anonymously. Ask for an identity only after a win or an explicit Arcade Pass login.
+- Two routes, each worth one **FCFS WL spot** per identity:
+  - **Barry Cup** (Wen Lambo): beat BarryBot on points across all six courses.
+    One race win is not enough. 1st scores 10, 2nd 6, ties on points go to the
+    lower combined time (the cup's own rules).
+  - **Rekt Rumble circuit**: win all six circuit fights in one official run,
+    mirror finale included. A lost fight is retried; the circuit keeps progress
+    while fights keep arriving (30 minutes idle, 3 hours total).
+- FCFS, not GTD: a spot lets the holder mint during the WL phase while supply
+  lasts and never reserves an NFT. Spots are confirmed in save order while the
+  admin-set capacity (shared by both routes) has room; later saves are waitlisted.
+- Spots from the retired single-race challenge became honored `sprint` spots.
+- Reuse the actual simulations, renderers and controls. A server-issued run pins
+  game version, route, bot seed and settings. The browser submits each finished
+  race or fight as one segment, in order; the server replays it from the stored
+  state of the previous segment. Browser-reported scores confer nothing.
+  Rumble attempts each get a bot timing seed derived from the run seed, so
+  winning inputs cannot be replayed against another fight.
+- Arcade points rank the public leaderboard and never change WL spots: 10 per
+  race win, +50 for the cup, 10 per fight win, +50 for clearing the circuit,
+  10 for a legacy sprint win. Points accrue to signed-in accounts; official runs
+  played before sign-in on the same browser are added when the player signs in.
+  Runs flagged for repeated winning inputs score nothing.
+- Play anonymously. Ask for an identity only after a completed route or an explicit Arcade Pass login.
   X and Discord OAuth use session-bound, single-use authorization, immutable user IDs and read-only identity permissions. Farcaster uses a session-bound nonce and server-verified SIWF message.
   No posting API, follow gates, wallet signatures or wallet connection in this flow.
-- Save qualification durably before saying it is saved. Eligibility for the
-  pre-mint pool is distinct from a guaranteed allocation or a minted NFT.
-- Personal result pages, individual social cards, user-initiated X composer,
-  clear rematch, and a basic leaderboard are launch features.
-- Referrals count only after a new, distinct provider identity saves a verified win.
-  Suspect claims enter review; clicks and registrations alone earn nothing.
-- Arcade Pass leads a qualified player directly from saved identity to a manual public-address form.
-  Campaign dates, threshold, capacity and address window are admin-controlled.
-  When no address dates are configured, qualified players may submit immediately;
-  setting either boundary schedules or freezes the form explicitly.
+- The Arcade Pass is the account page: status, held spots per route, points,
+  leaderboard rank, recent official runs and the mint address (one address covers
+  every spot). `/leaderboard` is public; names appear only for players who opt in.
+- Referrals count only after a new, distinct provider identity saves its first
+  confirmed spot. Suspect claims enter review; clicks and registrations earn nothing.
+- Campaign dates, enabled routes, capacity and address window are admin-controlled.
+  When no address dates are configured, players with a confirmed spot may submit
+  immediately; setting either boundary schedules or freezes the form explicitly.
 - Admin changes and address edits are audited. Funnel counters use real events.
-  No invented player counts, percentiles, urgency, rankings or guarantees.
-- Defer XP economies, invite tiers, daily chores, creator campaigns and additional
-  games until actual replay, qualification, save and referral rates justify them.
+  No invented player counts, percentiles, urgency or guarantees.
 
 ## Infrastructure
 
@@ -100,13 +113,13 @@ token is revoked after lookup and is never stored. Implementation reference:
 [X OAuth/PKCE](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code).
 
 `/admin/campaign` accepts the separate admin token, kept only in page memory.
-Set campaign dates, difficulty, capacity and address window there. Activation
+Set campaign dates, enabled routes, Barry's car and pace, spot capacity and address window there. Activation
 is refused only when no sign-in provider is available. The default is closed. Changes apply
 to new attempts; issued attempts keep their recorded rules and expire after
-twenty minutes. Qualification remains claimable after a completed verified win.
+twenty minutes. A completed route remains claimable after the campaign closes. A review decision applies to every spot an account holds.
 
-`/beat-the-bots`, `/arcade-pass`, `/challenge/[code]` and the race victory screen
-make up the public flow. The homepage and arcade invitation only appear while
+`/beat-the-bots`, `/leaderboard`, `/arcade-pass`, `/challenge/[code]` and the
+Wen Lambo and Rekt Rumble result screens make up the public flow. The homepage and arcade invitation only appear while
 the campaign is open. Public identity labels require opt-in. Public cards omit private
 identities and suspended/reviewed results.
 
@@ -121,8 +134,8 @@ service with simulated X and Discord identity. It never posts to either service.
 must also be checked after the app is configured; fixture success is not evidence
 that the external app settings are correct.
 
-The admin dashboard exports a CSV of addresses belonging to active, qualified,
-valid runs. Export is audited and labeled draft until the submission window
+The admin dashboard exports a CSV of addresses with confirmed spots (with spot count
+and routes) from active accounts and valid runs. Export is audited and labeled draft until the submission window
 freezes. Publishing a contract allowlist remains a separate mint operation.
 
 For a reproducible isolated browser check, use three terminals:
@@ -139,12 +152,21 @@ CAMPAIGN_API_URL=http://127.0.0.1:4025 CAMPAIGN_SERVICE_TOKEN=local-campaign-tes
 node scripts/campaign-browser.mjs
 ```
 
-The test fixture binds to localhost, creates a temporary database, and uses a
-simulated identity provider. Never deploy it. The browser test drives the real
-game through controller inputs, tests real-time replay verification, and checks
-the mobile result, pass, address form, challenge card and admin dashboard.
+The test fixture binds to localhost, creates a temporary database, uses a
+simulated identity provider and runs its clock 20x fast so a whole cup passes
+the real-time check in seconds. Never deploy it. Restart it between runs. The
+browser test drives a full Barry Cup and a full Rekt Rumble circuit through
+controller inputs, saves both spots, and checks the pass, address form,
+challenge card, leaderboard and admin dashboard.
 
-Status: multi-provider implementation verified locally. Campaign/security tests
-and the production Next.js build pass, including the complete browser fixture.
-Discord remains hidden until its two Railway credentials are present. Real-provider
-smoke tests are still required after deployment.
+Deploying this change migrates `campaign.sqlite` in place on first start: new
+run columns, a `spots` table (existing qualifications copied in as `sprint`) and
+legacy points. It is additive; the old `qualifications` table is left unused.
+Back up the volume first. Deploy the Railway service and Vercel together: the
+new pages need the new endpoints, and the old race-only client cannot start
+runs on the new service.
+
+Status: Barry Cup and Rekt Rumble routes verified locally: campaign tests
+(including real replay verification through the service), arcade regression
+tests, the production build and the complete browser fixture pass.
+Real-provider smoke tests are still required after deployment.

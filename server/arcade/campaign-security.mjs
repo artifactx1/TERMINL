@@ -18,11 +18,13 @@ export function readJson(request,maxBytes=400000){return new Promise((resolve,re
   request.on('error',reject);
 });}
 let verifying=0;
-export function verifyReplay(challenge,replay){
+/** Replays one segment of an official run in a bounded worker. `progress` is the
+ * verified state after the previous segment, or null for the first. */
+export function verifyReplay(challenge,progress,replay){
   if(verifying>=2)return Promise.reject(Object.assign(new Error('Verification is busy. Your run is kept; try again.'),{status:503}));
   verifying++;
   return new Promise((resolve,reject)=>{
-    const worker=new Worker(new URL('./campaign-replay.mjs',import.meta.url),{workerData:{challenge,replay},resourceLimits:{maxOldGenerationSizeMb:96}});
+    const worker=new Worker(new URL('./campaign-replay.mjs',import.meta.url),{workerData:{challenge,progress,replay},resourceLimits:{maxOldGenerationSizeMb:96}});
     let settled=false;
     const finish=(error,result)=>{if(settled)return;settled=true;clearTimeout(timer);verifying--;void worker.terminate();if(error)reject(error);else resolve(result);};
     const timer=setTimeout(()=>finish(Object.assign(new Error('Replay verification timed out'),{status:422})),12000);

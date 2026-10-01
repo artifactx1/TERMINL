@@ -12,6 +12,9 @@ import { RUMBLE_ROSTER as ROSTER } from "../../lib/arcade/rumble-roster.mjs";
 import TouchControls from './TouchControls';
 import {DEFAULT_KEYS,ACTIONS,CONTROL_VERSION,savedRumbleKeys,keyLabel,keyboardIdentity} from '../../lib/arcade/rumble-controls.mjs';
 import {CIRCUIT_KEY,newCircuit,readCircuit,circuitOpponent,circuitStage,circuitInput,advanceCircuit} from '../../lib/arcade/rumble-circuit.mjs';
+import {circuitFight} from '../../lib/arcade/rumble-challenge.mjs';
+import {useOfficialRun} from './use-official-run';
+import {OfficialPanel,OfficialResult} from './OfficialChallenge';
 import s from "../../styles/Rumble.module.css";
 
 const LEVELS=[{id:"dead-mall",name:"Dead Mall Exchange",sub:"Room to breathe. Nowhere to cash out.",rule:"Wide arena · Spacing and corner pressure",image:"/arcade/dead-mall-v1.webp"},{id:"laundromat",name:"Liquidation Laundromat",sub:"Your portfolio is on the spin cycle.",rule:"Telegraphed steam boundaries · Watch your space",image:"/arcade/laundromat-v1.webp"}];
@@ -21,6 +24,7 @@ function safePrefs(){try{return JSON.parse(localStorage.getItem("terminl:rumble-
 function initialEndpoint(){return process.env.NEXT_PUBLIC_ARCADE_WS_URL||(["localhost","127.0.0.1"].includes(window.location.hostname)?"ws://localhost:4010":"");}
 
 export default function Rumble({assetLabEnabled=false}){
+  const official=useOfficialRun('rumble');
   const [mode,setMode]=useState("menu"),[character,setCharacter]=useState("max"),[opponent,setOpponent]=useState("diamond"),[stage,setStage]=useState("dead-mall");
   const [name,setName]=useState("ANON"),[invite,setInvite]=useState(""),[connection,setConnection]=useState("offline");
   const [room,setRoom]=useState(null),[view,setView]=useState(null),[joined,setJoined]=useState(null),[result,setResult]=useState(null);
@@ -33,7 +37,7 @@ export default function Rumble({assetLabEnabled=false}){
   const [prefsReady,setPrefsReady]=useState(false);
   const [rtt,setRtt]=useState(0),[assetError,setAssetError]=useState(false),[resume,setResume]=useState(null);
   const canvas=useRef(null),arena=useRef(null),images=useRef({}),audio=useRef(null),client=useRef(null),game=useRef(null);
-  const state=useRef({mode,paused,training,lesson,prefs});state.current={mode,paused,training,lesson,prefs,circuit,settings,movesOpen};
+  const state=useRef({mode,paused,training,lesson,prefs});state.current={mode,paused,training,lesson,prefs,circuit,settings,movesOpen,official};
   const finisherPulse=useRef(0);
   const input=useRef(0),keyboard=useRef(0),touch=useRef(0),pad=useRef(0),keys=useRef(new Map());
   const metrics=useRef({frames:0,totalMs:0,maxMs:0}),lastUI=useRef(0),lessonStart=useRef(0),matchId=useRef(null);
@@ -96,7 +100,12 @@ export default function Rumble({assetLabEnabled=false}){
       if(finisherPulse.current>0){fightInput=finisherPulse.current>=10||finisherPulse.current<=2?0:INPUT.SUPER;finisherPulse.current--;client.current?.setInput(fightInput);if(!finisherPulse.current)client.current?.setInput(input.current);}
       let draw;
       if(current.mode==="practice"&&game.current){
-        if(!current.paused){accumulator+=elapsed;while(accumulator>=FRAME){game.current=stepFight(game.current,[fightInput,current.training&&current.lesson<2?0:current.circuit?circuitInput(game.current,current.circuit):botInput(game.current,1)]);accumulator-=FRAME;}}
+        if(!current.paused){accumulator+=elapsed;while(accumulator>=FRAME){
+          const wasFinished=game.current.phase==="finished",officialFight=current.circuit?.official;
+          if(officialFight&&!wasFinished)current.official.record(fightInput);
+          game.current=stepFight(game.current,[fightInput,current.training&&current.lesson<2?0:current.circuit?circuitInput(game.current,current.circuit,current.circuit.seed||0):botInput(game.current,1)]);
+          if(officialFight&&!wasFinished&&game.current.phase==="finished")current.official.cut({hold:true});
+          accumulator-=FRAME;}}
         draw=game.current;
         if(current.training&&draw.phase==="fight"){
           if(current.lesson===0&&Math.abs(draw.players[0].x-lessonStart.current)>90)setLesson(1);
@@ -122,15 +131,26 @@ export default function Rumble({assetLabEnabled=false}){
     raf=requestAnimationFrame(frame);return ()=>cancelAnimationFrame(raf);
   },[mode]);
   const saveCircuit=next=>{setCircuitSave(next);try{localStorage.setItem(CIRCUIT_KEY,JSON.stringify(next));}catch{setNotice('Circuit progress will last for this visit.');}};
-  useEffect(()=>{if(mode==='practice'&&circuit&&view?.phase==='finished'&&!circuitFinished.current){circuitFinished.current=true;saveCircuit(advanceCircuit(circuit,view.winner));}},[mode,circuit,view?.phase,view?.winner]);
-  const practice=(teach=false,challenge=null)=>{
+  useEffect(()=>{if(mode==='practice'&&circuit&&!circuit.official&&view?.phase==='finished'&&!circuitFinished.current){circuitFinished.current=true;saveCircuit(advanceCircuit(circuit,view.winner));}},[mode,circuit,view?.phase,view?.winner]);
+  const begin=(fight,teach=false)=>{
     setNotice("");
     client.current?.dispose();client.current=null;resetInput();setResult(null);setRoom(null);setJoined(null);setTraining(teach);setLesson(0);setPaused(false);
+    game.current=fight;lessonStart.current=fight.players[0].x;
+    setView(fight);setMode("practice");audio.current?.seen.clear();audio.current?.setVolumes(prefs);audio.current?.setPaused(false);audio.current?.unlock();
+  };
+  const practice=(teach=false,challenge=null)=>{
     setCircuit(challenge);circuitFinished.current=false;
     if(challenge){setCharacter(challenge.character);saveCircuit(challenge);}
-    game.current=createFight({characters:[challenge?.character||character,challenge?circuitOpponent(challenge):opponent],stage:challenge?circuitStage(challenge):stage});lessonStart.current=game.current.players[0].x;
-    setView(game.current);setMode("practice");audio.current?.seen.clear();audio.current?.setVolumes(prefs);audio.current?.setPaused(false);audio.current?.unlock();
+    begin(createFight({characters:[challenge?.character||character,challenge?circuitOpponent(challenge):opponent],stage:challenge?circuitStage(challenge):stage}),teach);
   };
+  /** The next official fight. Its bot seed depends on how many fights the server has been sent. */
+  const officialFight=(challenge,index)=>{
+    const {circuit:next,seed,state:fight}=circuitFight(challenge,{index,attempts:official.segments()});
+    official.restartSegment();setCircuit({...next,official:true,seed});setCharacter(challenge.character);circuitFinished.current=false;begin(fight);
+  };
+  const startOfficial=async()=>{const run=await official.start({character});if(run)officialFight(run.challenge,0);};
+  const continueOfficial=()=>officialFight(official.attempt.challenge,official.progress?.index||0);
+  useEffect(()=>{void official.resume();},[]);// eslint-disable-line react-hooks/exhaustive-deps
   const receive=message=>{
     if(message.type==="connection")setConnection(message.status);
     if(message.type==="joined"){setJoined(message);setResume(null);}
@@ -154,7 +174,7 @@ export default function Rumble({assetLabEnabled=false}){
     if(action)action={...action,game:"rekt-rumble",rulesVersion:RUMBLE_RULES_VERSION};
     const next=new RumbleClient(url,receive);client.current=next;if(kind==="resume")next.session=resume;next.connect(action);audio.current?.unlock();
   };
-  const leave=()=>{client.current?.dispose();client.current=null;resetInput();game.current=null;setMode("menu");setRoom(null);setView(null);setJoined(null);setResult(null);setPaused(false);audio.current?.setVolumes({music:0,sfx:prefs.sfx});};
+  const leave=()=>{if(official.result)official.cancel();client.current?.dispose();client.current=null;resetInput();game.current=null;setMode("menu");setRoom(null);setView(null);setJoined(null);setResult(null);setPaused(false);audio.current?.setVolumes({music:0,sfx:prefs.sfx});};
   const share=async()=>{if(!joined)return;const url=`${window.location.origin}/os/rumble#room=${joined.code}&token=${joined.token}`;setInvite(url);try{await navigator.clipboard.writeText(url);setNotice("Invitation copied. The other player needs the same running game server.");}catch{setNotice("Copy the invitation from the field below.");}};
   const fullscreen=()=>{const el=document.querySelector(`.${s.shell}`);if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});else el?.requestFullscreen?.().catch(()=>setNotice("Fullscreen is unavailable in this browser."));};
   const finished=mode==="practice"?view?.phase==="finished":!!result||room?.phase==="finished";
@@ -171,13 +191,19 @@ export default function Rumble({assetLabEnabled=false}){
     <header className={s.header}><Link href="/os"><b>TERMINL</b><span>ARCADE</span></Link><span className={s.buildTag}>REKT RUMBLE / SOLO + ONLINE</span><div>{mode!=="menu"&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{resetInput();setSettings(true);if(mode==="practice")setPaused(true);}}>SETTINGS</button><button onClick={fullscreen} aria-label="Toggle fullscreen">⛶</button></div></header>
     {notice&&<div className={s.notice} role="status">{notice}<button aria-label="Dismiss notice" onClick={()=>setNotice("")}>×</button></div>}
     {mode==="menu"?<main className={s.menu}>
+      <OfficialPanel official={official} portrait={roster.portrait} eyebrow='OFFICIAL / REKT RUMBLE CIRCUIT / FCFS WL'
+        title='Six fights. One WL spot.' startLabel={`START AS ${roster.name.toUpperCase()} →`} onStart={startOfficial}
+        action={official.attempt&&!official.result?<button className={s.primary} onClick={continueOfficial}>CONTINUE · FIGHT {(official.progress?.index||0)+1}/6 →</button>:null}>
+        <p>Win all six circuit fights in one official run. Lose a fight and you retry that fight; the circuit keeps your progress for 30 minutes between fights.</p>
+        <small>Pick your fighter below first. The finale is a mirror match.</small>
+      </OfficialPanel>
       <div className={s.titleRow}><div><span className={s.eyebrow}>THE GROUP CHAT HAS COME TO BLOWS.</span><h1>REKT <em>RUMBLE</em><sup>01</sup></h1><p>He said “trust me, bro.”<br />You brought a health bar.</p></div><div className={s.rulesStamp}>{ROSTER.length} FIGHTERS<br />2 STAGES<br /><b>NO PAY TO WIN.</b></div></div>
       <section className={s.selectLayout} aria-label="Character selection"><div><div className={s.sectionLabel}><span>01 / PICK YOUR PROBLEM</span><span>ALL FIGHTERS ARE FREE</span></div><div className={s.roster}>{ROSTER.map((r,i)=><button key={r.id} aria-pressed={character===r.id} className={character===r.id?s.chosen:""} onClick={()=>setCharacter(r.id)}><span className={s.fighterIndex}>{String(i+1).padStart(2,"0")}</span><Image src={`/degens/${r.portrait}.webp`} alt={r.name} width={340} height={560} sizes="(max-width: 600px) 45vw, (max-width: 900px) 30vw, 230px" priority={i===0} /><div><small>{r.style}</small><h2>{r.name}</h2><p>{r.line}</p></div><span className={s.selectionMark}>{character===r.id?"SELECTED ↗":"SELECT +"}</span></button>)}</div><p className={s.characterTip}>{roster.tip}</p></div>
       <aside className={s.playPanel}><span className={s.eyebrow}>HE STILL THINKS IT WAS A GOOD CALL</span><h2>Let&apos;s settle<br />this properly.</h2><p>First to two rounds wins. 60 seconds per round. Same health. Different bad habits.</p><button className={s.primary} onClick={()=>practice(false,newCircuit(character))}>START SOLO CIRCUIT →</button>{circuitSave&&!circuitSave.complete&&<button className={s.secondary} onClick={()=>practice(false,circuitSave)}>CONTINUE CIRCUIT · {circuitSave.index+1}/6 →</button>}<p>Six fights. Increasing pressure. A mirror-match finale. Progress saves between fights.</p><button className={s.secondary} onClick={()=>practice(true)}>LEARN BY FIGHTING <span>↗</span></button><label>PRACTICE OPPONENT<select value={opponent} onChange={e=>setOpponent(e.target.value)}>{ROSTER.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><button className={s.secondary} onClick={()=>practice(false)}>PRACTICE VS. BOT <span>→</span></button><div className={s.onlineDivider}>REAL ONLINE PvP / PRIVATE ROOMS</div><label>YOUR CALLSIGN<input value={name} maxLength={20} onChange={e=>setName(e.target.value.replace(/[^a-zA-Z0-9 _-]/g,""))} /></label><button className={s.primary} onClick={()=>online("create")}>CREATE A ROOM <span>+</span></button><label>FRIEND INVITATION<input placeholder="Paste the complete invitation link" value={invite} onChange={e=>setInvite(e.target.value)} /></label><div className={s.twoButtons}><button className={s.secondary} onClick={()=>online("join")}>JOIN FIGHT →</button><button className={s.secondary} onClick={()=>online("watch")}>SPECTATE</button></div>{resume&&<button className={s.textButton} onClick={()=>online("resume")}>↳ RECONNECT TO {resume.code}</button>}<small>Invite a friend to a private fight. Solo opponents are labeled bots.</small></aside></section>
       <section><div className={s.sectionLabel}><span>02 / CHOOSE THE SCENE</span><span>NEW ROUND. DIFFERENT BAD IDEA.</span></div><div className={s.stages}>{LEVELS.map(l=><button key={l.id} aria-pressed={stage===l.id} onClick={()=>setStage(l.id)} className={stage===l.id?s.activeStage:""}><Image src={l.image} alt={l.name} width={800} height={450} /><div><small>{l.rule}</small><h3>{l.name}</h3><p>{l.sub}</p></div><span>{stage===l.id?"✓":"+"}</span></button>)}</div></section>
       <footer className={s.menuFooter}><p>Six free fighters. Solo circuit, practice, and online fights.</p>{assetLabEnabled&&<Link href="/os/asset-lab">OPEN ASSET / ANIMATION LAB ↗</Link>}<Link href="/os">BACK TO THE ARCADE ↗</Link></footer>
     </main>:<main className={s.gameMain}>
-      <div className={s.connectionBar}><b>{mode==="practice"?circuit?`SOLO CIRCUIT · FIGHT ${circuit.index+1}/6 · BOT`:training?"INTERACTIVE TRAINING · BOT":"PRACTICE · BOT OPPONENT":joined?.slot===-1?"LIVE SPECTATOR":"ONLINE · SERVER AUTHORITATIVE"}</b><span>{mode==="online"?`${connection.toUpperCase()} / ${rtt}ms / ${room?.region||"LOCAL"}`:circuit?"SIX-FIGHT SOLO RUN":"SOLO PLAY"}</span><button onClick={()=>{resetInput();setMovesOpen(true);if(mode==="practice")setPaused(true);}}>MOVE LIST / HELP</button></div>
+      <div className={s.connectionBar}><b>{mode==="practice"?circuit?`${circuit.official?"OFFICIAL":"SOLO"} CIRCUIT · FIGHT ${circuit.index+1}/6 · BOT`:training?"INTERACTIVE TRAINING · BOT":"PRACTICE · BOT OPPONENT":joined?.slot===-1?"LIVE SPECTATOR":"ONLINE · SERVER AUTHORITATIVE"}</b><span>{mode==="online"?`${connection.toUpperCase()} / ${rtt}ms / ${room?.region||"LOCAL"}`:circuit?.official?"SERVER-VERIFIED · FCFS WL":circuit?"SIX-FIGHT SOLO RUN":"SOLO PLAY"}</span><button onClick={()=>{resetInput();setMovesOpen(true);if(mode==="practice")setPaused(true);}}>MOVE LIST / HELP</button></div>
       {!playing?<div className={s.lobby}>
         <span className={s.eyebrow}>PRIVATE FIGHT CLUB</span><h1>{room?"Your corner is ready.":connection==="unavailable"||connection==="disconnected"?"The room server is offline.":"Connecting to the arcade…"}</h1>
         {!room?<><p>Connecting to your fight. If the server is unavailable, you can play the solo circuit or practice.</p><button className={s.secondary} onClick={leave}>BACK TO FIGHTER SELECT</button></>:<><div className={s.roomCode}><span>ROOM</span><b>{room.code}</b><button onClick={share}>COPY INVITE ↗</button></div><input aria-label="Room invitation" readOnly value={joined?`${window.location.origin}/os/rumble#room=${joined.code}&token=${joined.token}`:""} onFocus={e=>e.target.select()} /><div className={s.lobbyPlayers}>{[0,1].map(i=>{const p=room.players[i];return <article key={i}>{p?<><Image src={`/degens/${ROSTER.find(r=>r.id===p.character)?.portrait||"margin-call-max"}.webp`} width={170} height={280} alt="" /><b>{p.name}</b><span>{p.connected===false?"RECONNECTING":p.ready?"READY ✓":"NOT READY"}</span></>:<><span className={s.emptyPlayer}>?</span><b>Waiting for a real player</b><span>No disguised bots. Invite a friend.</span></>}</article>;})}</div><p>{LEVELS.find(l=>l.id===room.stage)?.name} · {room.spectators||0} spectators</p>{joined?.slot>=0&&<button className={s.primary} onClick={()=>client.current?.send({type:"ready",ready:!room.players[joined.slot]?.ready})}>{room.players[joined.slot]?.ready?"CANCEL READY":"I'M READY →"}</button>}<small>Both players choose Ready. Disconnect grace: 15 seconds. You can decline by leaving.</small></>}
@@ -191,7 +217,8 @@ export default function Rumble({assetLabEnabled=false}){
           {paused&&mode==="practice"&&!settings&&!movesOpen&&<div className={s.gameOverlay}><h2>TAKE A BREATHER.</h2><p>Practice is paused. Online matches never pause for one player.</p><button className={s.primary} onClick={()=>{setPaused(false);audio.current?.unlock();}}>BACK TO IT →</button></div>}
           {mode==="online"&&connection!=="connected"&&<div className={s.reconnect}>{canReconnect?<>CONNECTION LOST · <button onClick={()=>client.current?.reconnect()}>RECONNECT NOW</button> · Match clock continues.</>:'CONNECTION LOST · Reconnecting. Match clock continues.'}</div>}
           {finishWindow&&!paused&&!settings&&!movesOpen&&<div className={s.finisherPrompt} role="status"><b>FINISH IT</b><span>{finisher.name.toUpperCase()} · {Math.ceil(Math.max(0,FINISH_WINDOW_TICKS-view.phaseTick)/60)}s</span>{canFinish?<><button className={s.primary} disabled={mode==='online'&&connection!=='connected'} onClick={()=>{audio.current?.unlock();finisherPulse.current=12;}}>FINISH THEM →</button><small>Press SUPER ({bind(INPUT.SUPER)}) · No meter required</small></>:<small>{ROSTER.find(r=>r.id===view.finisher.character)?.name} can deliver the final blow.</small>}</div>}
-          {finished&&<div className={s.gameOverlay}><span className={s.eyebrow}>{mode==="online"?"SERVER-CONFIRMED RESULT":circuit?circuit.index===5&&winner===0?"CIRCUIT COMPLETE":"SOLO CIRCUIT":"PRACTICE COMPLETE"}</span><h2>{winner===null||winner===-1?"MUTUAL COPING.":slot===-1?`${room?.players[winner]?.name||"FIGHTER"} WINS`:winner===slot?"BAG SECURED.":"LIQUIDATED."}</h2><p>{(outcome?.wins||view?.wins)?.join(" — ")} · {mode==="online"?"Recorded by the room server. No cash or NFT rewards.":circuit?winner===0?circuit.index===5?"All six opponents defeated.":"Next opponent unlocked.":"Retry this fight to continue your circuit.":"Ready for another round?"}</p><button className={s.primary} onClick={()=>mode==="practice"?practice(false,circuit?(winner===0?(circuit.index===5?newCircuit(circuit.character):advanceCircuit(circuit,0)):circuit):null):client.current?.send({type:"rematch"})}>{mode==="practice"?circuit?winner===0?circuit.index===5?"PLAY CIRCUIT AGAIN →":"NEXT OPPONENT →":"RETRY FIGHT →":"RUN IT BACK →":room?.players[joined?.slot]?.rematch?"WAITING FOR OPPONENT…":"VOTE REMATCH →"}</button><button className={s.textButton} onClick={leave}>BACK TO FIGHTER SELECT</button></div>}
+          {finished&&circuit?.official&&winner===0&&circuit.index===5&&<OfficialResult official={official} retryLabel='START A NEW CIRCUIT →' onRetry={startOfficial} onLeave={leave}/>}
+          {finished&&!(circuit?.official&&winner===0&&circuit.index===5)&&<div className={s.gameOverlay}><span className={s.eyebrow}>{mode==="online"?"SERVER-CONFIRMED RESULT":circuit?.official?"OFFICIAL CIRCUIT · EACH FIGHT IS SERVER-CHECKED":circuit?circuit.index===5&&winner===0?"CIRCUIT COMPLETE":"SOLO CIRCUIT":"PRACTICE COMPLETE"}</span><h2>{winner===null||winner===-1?"MUTUAL COPING.":slot===-1?`${room?.players[winner]?.name||"FIGHTER"} WINS`:winner===slot?"BAG SECURED.":"LIQUIDATED."}</h2><p>{(outcome?.wins||view?.wins)?.join(" — ")} · {mode==="online"?"Recorded by the room server. No cash or NFT rewards.":circuit?winner===0?circuit.index===5?"All six opponents defeated.":"Next opponent unlocked.":"Retry this fight to continue your circuit.":"Ready for another round?"}</p><button className={s.primary} onClick={()=>mode!=="practice"?client.current?.send({type:"rematch"}):circuit?.official?officialFight(official.attempt.challenge,advanceCircuit(circuit,winner).index):practice(false,circuit?(winner===0?(circuit.index===5?newCircuit(circuit.character):advanceCircuit(circuit,0)):circuit):null)}>{mode==="practice"?circuit?winner===0?circuit.index===5?"PLAY CIRCUIT AGAIN →":"NEXT OPPONENT →":"RETRY FIGHT →":"RUN IT BACK →":room?.players[joined?.slot]?.rematch?"WAITING FOR OPPONENT…":"VOTE REMATCH →"}</button>{circuit?.official&&official.error&&<p role="alert">{official.error}</p>}{circuit?.official&&official.status==="retry"&&<button className={s.secondary} onClick={official.retry}>RETRY VERIFICATION</button>}<button className={s.textButton} onClick={leave}>BACK TO FIGHTER SELECT</button></div>}
         </div>
         <div className={s.fightFooter}><p><b>{bind(1)} / {bind(2)} MOVE · {bind(4)} JUMP · {bind(8)} CROUCH</b><span className={s.combatKeys}>{bind(16)} PUNCH · {bind(32)} KICK · {bind(64)} SPECIAL</span><span className={s.combatKeys}>{bind(256)} DASH · {bind(512)} GRAB · {bind(1024)} SUPER · {bind(128)} BLOCK</span></p><span>{view?.events?.at(-1)?.text||"Missed specials are punishable. Grabs beat blocks."}</span></div>
         {slot!==-1&&<TouchControls resetKey={touchReset} meter={canFinish?1000:view?.players[slot||0]?.meter||0} feedback={view?.players[slot||0]?.action?MOVES[view.players[slot||0].character][view.players[slot||0].action.id]?.name:touch.current&1024&&(view?.players[slot||0]?.meter||0)<1000?'SUPER needs 100% meter · earn it by fighting':''} disabled={paused||settings||movesOpen||finished||view?.phase==='finisher'||finishWindow&&!canFinish||mode==='online'&&connection!=='connected'} onChange={value=>{touch.current=value;updateInputRef.current();}}/>}

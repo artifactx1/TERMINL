@@ -1,7 +1,7 @@
 import {DatabaseSync} from 'node:sqlite';
 import {mkdirSync} from 'node:fs';
 import {join} from 'node:path';
-import {DEFAULT_CAMPAIGN} from '../../lib/arcade/bot-challenge.mjs';
+import {DEFAULT_CAMPAIGN,POINTS} from '../../lib/arcade/campaign-rules.mjs';
 
 /** One transactional database on the existing single-writer Railway volume. */
 export function openCampaignStore(directory){
@@ -22,13 +22,19 @@ export function openCampaignStore(directory){
       started_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, completed_at INTEGER,
       result TEXT, replay_hash TEXT, flags TEXT NOT NULL DEFAULT '[]',
       code TEXT UNIQUE NOT NULL, ref_code TEXT, user_id TEXT REFERENCES users(id),
-      invalidated INTEGER NOT NULL DEFAULT 0);
+      invalidated INTEGER NOT NULL DEFAULT 0, kind TEXT NOT NULL DEFAULT 'sprint',
+      progress BLOB, segments INTEGER NOT NULL DEFAULT 0, points INTEGER NOT NULL DEFAULT 0,
+      last_segment_at INTEGER);
     CREATE INDEX IF NOT EXISTS runs_anon ON runs(anon_id,started_at);
     CREATE INDEX IF NOT EXISTS runs_replay ON runs(replay_hash);
     CREATE INDEX IF NOT EXISTS runs_user ON runs(user_id,completed_at);
-    CREATE TABLE IF NOT EXISTS qualifications (
-      user_id TEXT PRIMARY KEY REFERENCES users(id), run_id TEXT UNIQUE NOT NULL REFERENCES runs(id),
-      status TEXT NOT NULL, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS spots (
+      user_id TEXT NOT NULL REFERENCES users(id), route TEXT NOT NULL,
+      run_id TEXT UNIQUE NOT NULL REFERENCES runs(id), status TEXT NOT NULL, created_at INTEGER NOT NULL,
+      PRIMARY KEY(user_id,route));
+    CREATE INDEX IF NOT EXISTS spots_status ON spots(status,created_at);
+    CREATE TABLE IF NOT EXISTS replay_hashes (
+      hash TEXT NOT NULL, anon_id TEXT NOT NULL, run_id TEXT NOT NULL, PRIMARY KEY(hash,anon_id));
     CREATE TABLE IF NOT EXISTS referrals (
       referred_id TEXT PRIMARY KEY REFERENCES users(id), referrer_id TEXT NOT NULL REFERENCES users(id),
       run_id TEXT NOT NULL REFERENCES runs(id), created_at INTEGER NOT NULL,
@@ -57,6 +63,19 @@ export function openCampaignStore(directory){
   const columns=table=>new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(column=>column.name));
   if(!columns('users').has('provider'))db.exec("ALTER TABLE users ADD COLUMN provider TEXT NOT NULL DEFAULT 'x'");
   if(!columns('oauth_states').has('provider'))db.exec("ALTER TABLE oauth_states ADD COLUMN provider TEXT NOT NULL DEFAULT 'x'");
+  const runColumns=columns('runs');
+  if(!runColumns.has('kind'))db.exec("ALTER TABLE runs ADD COLUMN kind TEXT NOT NULL DEFAULT 'sprint'");
+  if(!runColumns.has('progress'))db.exec('ALTER TABLE runs ADD COLUMN progress BLOB');
+  if(!runColumns.has('segments'))db.exec('ALTER TABLE runs ADD COLUMN segments INTEGER NOT NULL DEFAULT 0');
+  if(!runColumns.has('last_segment_at'))db.exec('ALTER TABLE runs ADD COLUMN last_segment_at INTEGER');
+  if(!runColumns.has('points')){
+    db.exec('ALTER TABLE runs ADD COLUMN points INTEGER NOT NULL DEFAULT 0');
+    db.prepare("UPDATE runs SET points=?,last_segment_at=completed_at WHERE kind='sprint' AND json_extract(result,'$.qualified')=1").run(POINTS.legacySprint);
+  }
+  // The retired single-race campaign kept one qualification per account. Those
+  // remain honored as `sprint` spots; the old table is left in place, unused.
+  if(db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='qualifications'").get())
+    db.exec("INSERT OR IGNORE INTO spots(user_id,route,run_id,status,created_at) SELECT user_id,'sprint',run_id,status,created_at FROM qualifications");
   db.prepare('INSERT OR IGNORE INTO settings(id,value) VALUES(1,?)').run(JSON.stringify(DEFAULT_CAMPAIGN));
   const get=(sql,...args)=>db.prepare(sql).get(...args);
   const all=(sql,...args)=>db.prepare(sql).all(...args);
@@ -78,6 +97,7 @@ export function openCampaignStore(directory){
     run('DELETE FROM sessions WHERE expires_at<?',now);
     run('DELETE FROM rate_limits WHERE reset_at<?',now);
     // Aggregate metrics are retained; only unused anonymous attempts expire.
+    run('DELETE FROM replay_hashes WHERE run_id IN (SELECT id FROM runs WHERE user_id IS NULL AND completed_at IS NULL AND expires_at<?)',now-7*86400000);
     run('DELETE FROM runs WHERE user_id IS NULL AND completed_at IS NULL AND expires_at<?',now-7*86400000);
   });
   return {db,get,all,run,transaction,event,rate,audit,cleanup,config:()=>JSON.parse(get('SELECT value FROM settings WHERE id=1').value),close:()=>db.close()};

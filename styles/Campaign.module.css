@@ -13,3 +13,10 @@
 @media(max-height:500px) and (orientation:landscape){.victory{align-items:flex-start}.victory>section{max-width:760px}.victory h2{font-size:26px}.victory .resultTimes{padding:8px 0}.victory .check{margin:8px 0}}
 
 .victory::backdrop{background:#050b06}.victory button.primary,.raceChallenge button.primary{background:#b3ef8b;color:#0b1507;border-color:#8bce67;font-weight:700}.victory button.secondary{background:#101a10;color:#efffea}.victory:not([open]){display:none}
+.lede{max-width:720px;font-size:15px;line-height:1.8;margin:0 0 28px}.lede b{color:#eefceb}
+.routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:10px 0 28px}.routes .card{display:flex;flex-direction:column;align-items:flex-start;gap:4px}.routes .primary{margin-top:auto}
+.spotGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin:10px 0 8px}.spotGrid .card{display:flex;flex-direction:column;align-items:flex-start;gap:10px}.spotGrid .card h2{margin:0}.spotEarned{border-color:#7caa57;background:linear-gradient(135deg,#132113,#0d140d)}
+.rules{padding-left:20px;line-height:2;font-size:13px}.rules b{color:#eefceb}.points{color:#b3ef8b;font-size:12px;letter-spacing:.08em}
+.resultTimes>p{grid-column:1/-1;margin:0;font-size:13px}.card a:not(.primary):not(.secondary):not(.textButton){color:#d1fabb}
+@media(max-width:700px){.routes{grid-template-columns:1fr}}
+.card+.card,.tableWrap+.card,.spotGrid+.fine+.card{margin-top:20px}

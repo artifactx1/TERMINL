@@ -3,28 +3,41 @@ import Image from 'next/image';
 import {useEffect,useState} from 'react';
 import CampaignShell from '../components/arcade/CampaignShell';
 import ArcadeMeta from '../components/arcade/ArcadeMeta';
+import Leaderboard from '../components/arcade/Leaderboard';
 import {campaignRequest,campaignEvent} from '../lib/arcade/campaign-client';
-import {BARRY,raceTime} from '../lib/arcade/bot-challenge.mjs';
-import {TRACKS,VEHICLES} from '../lib/arcade/race-sim.mjs';
+import {BARRY,FCFS_NOTE,POINTS,ROUTES} from '../lib/arcade/campaign-rules.mjs';
 import s from '../styles/Campaign.module.css';
 
+function Route({route,open,children}){
+  const r=ROUTES[route];
+  return <section className={s.card}><span className={s.eyebrow}>{r.game.toUpperCase()} / ONE FCFS WL SPOT</span><h2>{r.name}</h2>{children}
+    {open?<Link className={s.primary} href={r.href}>PLAY {r.name.toUpperCase()} →</Link>:<p className={s.fine}>Not open for WL right now. The game is free to practise.</p>}
+  </section>;
+}
+
 export default function BeatTheBots(){
-  const [campaign,setCampaign]=useState(null),[board,setBoard]=useState([]),[period,setPeriod]=useState('day'),[error,setError]=useState('');
+  const [campaign,setCampaign]=useState(null),[error,setError]=useState('');
   useEffect(()=>{let alive=true;campaignRequest('/config').then(c=>{if(alive)setCampaign(c);}).catch(e=>{if(alive)setError(e.message);});campaignRequest('/session').then(()=>campaignEvent('challenge_view')).catch(()=>{});return()=>{alive=false;};},[]);
-  useEffect(()=>{if(!campaign?.open)return;let alive=true;campaignRequest('/leaderboard?period='+period).then(b=>{if(alive)setBoard(b.entries);}).catch(e=>{if(alive)setError(e.message);});campaignEvent('leaderboard_view');return()=>{alive=false;};},[campaign,period]);
-  const c=campaign?.config;
+  const routes=campaign?.routes||{};
   return <CampaignShell><ArcadeMeta card='beat-the-bots'/>
-    <section className={s.hero}><div><span className={s.eyebrow}>TERMINL VS. THE BOTS</span><h1>He bought the top.<br/><em>Beat him to the finish.</em></h1>
-      <p>Barry thinks three laps in a borrowed supercar make him a racing driver. Please make this man log off.</p>
-      {campaign?.open?<><Link className={s.primary} href='/os/lambo?challenge=barrybot'>RACE BARRYBOT →</Link><p>Beat the official challenge to qualify for the pre-mint pool. Save your win with X afterwards.</p></>:<><p className={s.notice}>{campaign?'Official qualification isn’t open yet. The arcade is.':'Checking the starting grid…'}</p><Link className={s.primary} href='/os/lambo'>PRACTISE IN WEN LAMBO →</Link></>}
-      <small className={s.fine}>No wallet connection, signature, follow or repost required. Qualification is eligibility to register, not a guaranteed mint allocation.</small>
+    <section className={s.hero}><div><span className={s.eyebrow}>TERMINL VS. THE BOTS / FCFS WL</span><h1>The bots take your allocation.<br/><em>Take it back.</em></h1>
+      <p>Two ways in. Beat BarryBot across a full six-race cup, or fight your way through all six opponents in the Rekt Rumble circuit. Each one earns its own FCFS WL spot.</p>
+      {!campaign?<p className={s.notice}>Checking the starting grid…</p>:!campaign.open&&<p className={s.notice}>WL challenges aren’t open right now. The arcade is, and practice is free.</p>}
+      {campaign?.open&&<p className={s.fine}>{campaign.claimed} of {campaign.capacity} FCFS WL spots saved so far.</p>}
+      <small className={s.fine}>No wallet connection, signature, follow or repost required. {FCFS_NOTE}</small>
     </div><div className={s.portrait}><Image src={`/degens/${BARRY.portrait}.webp`} alt='BarryBot, represented by Diamond Hands Pepe' width={340} height={560} priority/><span>“{BARRY.taunt}”</span></div></section>
     {error&&<p role='alert' className={s.error}>{error}</p>}
-    <div className={s.grid}><section className={s.card}><span className={s.eyebrow}>01 / THE RACE</span><h2>One bot. Three laps.</h2><p>{c?`${TRACKS[c.track].name}. Everyone drives the ${VEHICLES[c.vehicle].name}. Finish ahead of Barry in under ${c.targetSeconds} seconds.`:'The official track and target will appear here when qualification opens.'}</p></section>
-      <section className={s.card}><span className={s.eyebrow}>02 / THE WIN</span><h2>Save it after you earn it.</h2><p>We verify the race. You save the win with X. Your Arcade Pass keeps your qualification and opens address submission when that window begins.</p></section>
-      <section className={s.card}><span className={s.eyebrow}>03 / THE GROUP CHAT</span><h2>Send someone worse.</h2><p>Your time gets its own challenge page. Send it to the friend who blames the controller. They can play immediately.</p></section></div>
-    {campaign?.open&&<section><div className={s.sectionHeading}><h2>THE PEOPLE BARRY IS MUTING</h2><div className={s.tabs}><button aria-pressed={period==='day'} onClick={()=>setPeriod('day')}>TODAY / UTC</button><button aria-pressed={period==='all'} onClick={()=>setPeriod('all')}>ALL TIME</button></div></div>
-      {board.length?<div className={s.tableWrap}><table className={s.table}><thead><tr><th>RANK</th><th>PLAYER</th><th>TIME</th><th>CHALLENGE</th></tr></thead><tbody>{board.map(r=><tr key={r.code}><td>#{r.rank}</td><td>{r.player}</td><td>{raceTime(r.result.playerTicks)}</td><td><Link href={'/challenge/'+r.code}>BEAT THIS →</Link></td></tr>)}</tbody></table></div>:<p className={s.empty}>No verified, saved wins yet. Barry is unbearable about it.</p>}
-      <p className={s.fine}>Best verified time per player on the current track and car. A leaderboard place does not change your mint allocation.</p></section>}
+    <div className={s.routes}>
+      <Route route='cup' open={routes.cup}><p>Six courses, three laps each, one BarryBot. 1st place scores 10, 2nd scores 6. Finish the cup with more points than Barry. Winning a single race isn’t enough.</p><small>Everyone drives the same car. Each race is checked by the server as soon as you cross the line.</small></Route>
+      <Route route='rumble' open={routes.rumble}><p>Pick a fighter and beat all six circuit opponents in one official run, mirror-match finale included. Lose a fight and you retry that fight, not the whole circuit.</p><small>The circuit stays open for 30 minutes between fights. Each fight is checked by the server.</small></Route>
+    </div>
+    <div className={s.grid}>
+      <section className={s.card}><span className={s.eyebrow}>01 / PLAY</span><h2>Play first.</h2><p>No sign-in needed to start. The server replays every race and fight from your inputs. Scores claimed by the browser count for nothing.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>02 / SAVE</span><h2>Save with X, Farcaster or Discord.</h2><p>Finish a route, then save the spot to your Arcade Pass. Spots are first come, first served in the order they are saved, while the pool has room.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>03 / CHECK</span><h2>Log in any time.</h2><p>Your Arcade Pass shows which WL spots you hold, your points and rank, and where to add your mint address.</p><Link className={s.secondary} href='/arcade-pass'>MY ARCADE PASS →</Link></section>
+    </div>
+    <div className={s.sectionHeading}><h2>LEADERBOARD</h2><span className={s.fine}>Race win {POINTS.raceWin} · Cup +{POINTS.cupWin} · Fight win {POINTS.fightWin} · Circuit +{POINTS.circuitClear}</span></div>
+    <Leaderboard limit={10} compact/>
+    <p className={s.fine}>Points rank players. They don’t change WL spots.</p>
   </CampaignShell>;
 }

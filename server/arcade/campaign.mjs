@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {serialize,deserialize} from 'node:v8';
 import {openCampaignStore} from './campaign-store.mjs';
 import {token,hash,equal,fingerprint,cookieValue,sessionCookie,readJson,verifyReplay} from './campaign-security.mjs';
 import {xAuthorize,xIdentity} from './campaign-oauth.mjs';
@@ -6,9 +7,16 @@ import {xOAuth1Start,xOAuth1Identity} from './campaign-oauth1.mjs';
 import {discordAuthorize,discordIdentity} from './campaign-discord.mjs';
 import {farcasterIdentity} from './campaign-farcaster.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
-import {BARRY,addressWindow,canonicalReplay,campaignConfig,campaignOpen,challengeSnapshot} from '../../lib/arcade/bot-challenge.mjs';
+import {campaignConfig} from './campaign-config.mjs';
+import {BARRY,OPEN_ROUTES,addressWindow,canonicalReplay,campaignOpen,routeOpen} from '../../lib/arcade/campaign-rules.mjs';
+import {CUP_SEGMENT_TICKS,cupSnapshot,cupProgress} from '../../lib/arcade/bot-challenge.mjs';
+import {FIGHT_SEGMENT_TICKS,rumbleSnapshot,rumbleProgress} from '../../lib/arcade/rumble-challenge.mjs';
+import {CHARACTERS} from '../../lib/arcade/rumble-sim.mjs';
 
-const DAY=86400000;
+const DAY=86400000,MINUTE=60000;
+/** Official runs stay open while segments keep arriving, within an overall limit. */
+const RUN_IDLE=30*MINUTE,RUN_LIMIT=3*60*MINUTE;
+const SEGMENT_TICKS={cup:CUP_SEGMENT_TICKS,rumble:FIGHT_SEGMENT_TICKS};
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 const parse=value=>value?JSON.parse(value):null;
 const validCode=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{16}$/.test(value);
@@ -29,7 +37,7 @@ export function createCampaignService(options){
   const identifyDiscord=options.discordIdentity||discordIdentity,identifyFarcaster=options.farcasterIdentity||farcasterIdentity;
   const verify=options.verifyReplay||verifyReplay;
   const identify=options.xIdentity||xIdentity;
-  const config=()=>store.config();
+  const config=()=>campaignConfig(store.config());
   const json=(response,status,value,headers={})=>{response.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...headers});response.end(JSON.stringify(value));};
   const redirect=(response,path,cookie)=>{response.writeHead(303,{Location:origin+path,'Cache-Control':'no-store',...(cookie?{'Set-Cookie':cookie}:{})});response.end();};
   function session(request,response,create=false){
@@ -44,18 +52,30 @@ export function createCampaignService(options){
   const accountId=(provider,id)=>provider==='x'?String(id):provider+':'+id;
   const publicIdentity=row=>(row.provider||'x')==='farcaster'?'FID #'+row.username.replace(/^fid/,''):'@'+row.username;
   const rate=(key,limit,windowMs)=>{if(!store.rate(key,limit,windowMs,now()))fail('Too many attempts. Please try again shortly.',429);};
+  const progressSummary=row=>{const progress=row.progress?deserialize(row.progress):null;return row.kind==='cup'?cupProgress(progress):row.kind==='rumble'?rumbleProgress(progress):null;};
+  const qualifiedSpots=()=>store.get("SELECT count(*) AS n FROM spots WHERE status='qualified'").n;
   function publicRun(code){
-    const row=store.get(`SELECT r.*,u.provider,u.username,u.public_profile,u.status AS user_status,q.status AS access_status
-      FROM runs r JOIN users u ON u.id=r.user_id JOIN qualifications q ON q.user_id=u.id WHERE r.code=?`,code);
-    if(!row||row.invalidated||row.user_status!=='active'||row.access_status!=='qualified')return null;
-    return {code:row.code,player:row.public_profile?publicIdentity(row):'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
+    const row=store.get(`SELECT r.*,u.provider,u.username,u.public_profile,u.status AS user_status,sp.status AS spot_status
+      FROM runs r JOIN users u ON u.id=r.user_id JOIN spots sp ON sp.run_id=r.id WHERE r.code=?`,code);
+    if(!row||row.invalidated||row.user_status!=='active'||row.spot_status!=='qualified')return null;
+    return {code:row.code,kind:row.kind,player:row.public_profile?publicIdentity(row):'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
+  }
+  function pointsFor(userId){
+    return store.get(`SELECT coalesce(sum(r.points),0) AS n FROM runs r WHERE r.user_id=? AND r.invalidated=0 AND r.flags='[]'`,userId).n;
   }
   function pass(s){
     const u=user(s);if(!u)return null;
-    const q=store.get('SELECT * FROM qualifications WHERE user_id=?',u.id),wallet=store.get('SELECT * FROM wallets WHERE user_id=?',u.id);
-    const runs=store.all('SELECT id,code,result,completed_at,challenge,invalidated FROM runs WHERE user_id=? AND result IS NOT NULL ORDER BY completed_at DESC LIMIT 20',u.id);
-    return {provider:u.provider||'x',username:u.username,name:u.name,publicProfile:!!u.public_profile,status:u.status,qualification:q?{status:q.status,at:q.created_at}:null,
-      runs:runs.map(r=>({id:r.id,code:r.code,result:parse(r.result),challenge:parse(r.challenge),at:r.completed_at,invalidated:!!r.invalidated})),
+    const wallet=store.get('SELECT * FROM wallets WHERE user_id=?',u.id);
+    const spots=store.all('SELECT sp.route,sp.status,sp.created_at,r.code FROM spots sp JOIN runs r ON r.id=sp.run_id WHERE sp.user_id=? ORDER BY sp.created_at',u.id);
+    const runs=store.all(`SELECT id,kind,code,result,points,segments,progress,started_at,completed_at,expires_at,invalidated FROM runs
+      WHERE user_id=? AND kind<>'sprint' AND (completed_at IS NOT NULL OR segments>0) ORDER BY coalesce(completed_at,last_segment_at) DESC LIMIT 20`,u.id);
+    const points=pointsFor(u.id);
+    const rank=points?store.get(`SELECT count(*)+1 AS n FROM (SELECT r.user_id FROM runs r JOIN users u ON u.id=r.user_id
+      WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' GROUP BY r.user_id HAVING sum(r.points)>?)`,points).n:null;
+    return {provider:u.provider||'x',username:u.username,name:u.name,publicProfile:!!u.public_profile,status:u.status,points,rank,
+      spots:spots.map(sp=>({route:sp.route,status:sp.status,at:sp.created_at,code:sp.code})),
+      runs:runs.map(r=>({id:r.id,kind:r.kind,code:r.code,result:parse(r.result),points:r.points,progress:progressSummary(r),at:r.completed_at||r.started_at,
+        open:!r.completed_at&&r.expires_at>now(),invalidated:!!r.invalidated})),
       referrals:store.get('SELECT count(*) AS n FROM referrals WHERE referrer_id=?',u.id).n,
       wallet:wallet?{address:wallet.address,chainId:wallet.chain_id,updatedAt:wallet.updated_at}:null};
   }
@@ -63,26 +83,24 @@ export function createCampaignService(options){
     if(typeof runId!=='string'||!/^[a-f0-9]{32}$/.test(runId))fail('Invalid run');
     return store.transaction(()=>{
       const u=user(s),r=store.get('SELECT * FROM runs WHERE id=?',runId);
-      if(!u||u.status==='banned')fail('This account cannot save access.',403);
-      if(!r||r.anon_id!==s.anon_id||!parse(r.result)?.qualified||r.invalidated)fail('A verified winning run is required.',403);
+      if(!u||u.status==='banned')fail('This account cannot save WL spots.',403);
+      if(!r||r.anon_id!==s.anon_id||!parse(r.result)?.qualified||r.invalidated)fail('A verified, completed challenge is required.',403);
       if(r.user_id&&r.user_id!==u.id)fail('This run is already saved to another account.',409);
       store.run('UPDATE users SET public_profile=? WHERE id=?',publicProfile?1:0,u.id);
       store.run('UPDATE runs SET user_id=? WHERE id=?',u.id,r.id);
-      let q=store.get('SELECT * FROM qualifications WHERE user_id=?',u.id);
-      if(!q){
-        const capacity=store.get("SELECT count(*) AS n FROM qualifications WHERE status='qualified'").n;
-        const reused=store.get('SELECT count(DISTINCT user_id) AS n FROM runs WHERE anon_id=? AND user_id IS NOT NULL AND user_id<>?',s.anon_id,u.id).n;
-        const status=u.status==='review'||parse(r.flags).length||reused>=2?'review':capacity>=config().capacity?'waitlist':'qualified';
-        store.run('INSERT INTO qualifications(user_id,run_id,status,created_at) VALUES(?,?,?,?)',u.id,r.id,status,now());
-        q={status};
-        store.event('qualification_saved',{anonId:s.anon_id,userId:u.id,runId:r.id,detail:{status}},now());
-        const parent=r.ref_code&&store.get(`SELECT r.user_id FROM runs r JOIN qualifications q ON q.user_id=r.user_id JOIN users u ON u.id=r.user_id WHERE r.code=? AND r.invalidated=0 AND q.status='qualified' AND u.status='active'`,r.ref_code);
-        if(status==='qualified'&&parent?.user_id!==u.id&&parent?.user_id&&u.created_at>=r.started_at){
-          store.run('INSERT OR IGNORE INTO referrals(referred_id,referrer_id,run_id,created_at) VALUES(?,?,?,?)',u.id,parent.user_id,r.id,now());
-          store.event('referred_player_qualified',{anonId:s.anon_id,userId:u.id,runId:r.id},now());
-        }
+      const existing=store.get('SELECT sp.status,r.code FROM spots sp JOIN runs r ON r.id=sp.run_id WHERE sp.user_id=? AND sp.route=?',u.id,r.kind);
+      if(existing)return {status:existing.status,code:existing.code,route:r.kind,already:true};
+      const firstSpot=!store.get('SELECT 1 FROM spots WHERE user_id=?',u.id);
+      const reused=store.get('SELECT count(DISTINCT user_id) AS n FROM runs WHERE anon_id=? AND user_id IS NOT NULL AND user_id<>?',s.anon_id,u.id).n;
+      const status=u.status==='review'||parse(r.flags).length||reused>=2?'review':qualifiedSpots()>=config().capacity?'waitlist':'qualified';
+      store.run('INSERT INTO spots(user_id,route,run_id,status,created_at) VALUES(?,?,?,?,?)',u.id,r.kind,r.id,status,now());
+      store.event('qualification_saved',{anonId:s.anon_id,userId:u.id,runId:r.id,detail:{status,route:r.kind}},now());
+      const parent=firstSpot&&r.ref_code&&store.get(`SELECT r.user_id FROM runs r JOIN spots sp ON sp.run_id=r.id JOIN users u ON u.id=r.user_id WHERE r.code=? AND r.invalidated=0 AND sp.status='qualified' AND u.status='active'`,r.ref_code);
+      if(status==='qualified'&&parent?.user_id&&parent.user_id!==u.id&&u.created_at>=r.started_at){
+        store.run('INSERT OR IGNORE INTO referrals(referred_id,referrer_id,run_id,created_at) VALUES(?,?,?,?)',u.id,parent.user_id,r.id,now());
+        store.event('referred_player_qualified',{anonId:s.anon_id,userId:u.id,runId:r.id},now());
       }
-      return {status:q.status,code:r.code};
+      return {status,code:r.code,route:r.kind,already:false};
     });
   }
   function signedInSession(s,provider,identity){
@@ -92,6 +110,8 @@ export function createCampaignService(options){
         ON CONFLICT(id) DO UPDATE SET username=excluded.username,name=excluded.name,provider=excluded.provider,last_seen=excluded.last_seen`,id,identity.username,identity.name,provider,now(),now());
       store.run('INSERT INTO sessions(token_hash,anon_id,user_id,ref_code,created_at,expires_at) VALUES(?,?,?,?,?,?)',hash(fresh),s.anon_id,id,s.ref_code,now(),now()+30*DAY);
       store.run('DELETE FROM sessions WHERE token_hash=?',s.token_hash);
+      // Official runs played before signing in count toward this account's points.
+      store.run('UPDATE runs SET user_id=? WHERE anon_id=? AND user_id IS NULL',id,s.anon_id);
     });
     return {fresh,session:{...s,user_id:id,token_hash:hash(fresh)},userId:id};
   }
@@ -108,56 +128,60 @@ export function createCampaignService(options){
         rate('admin:'+network,20,60000);
         if(!adminToken||!equal(request.headers['x-campaign-admin'],adminToken))fail('Not found',404);
         if(path==='/admin/addresses'&&request.method==='GET'){
-          const addresses=store.all(`SELECT w.address,w.chain_id,w.updated_at FROM wallets w
-            JOIN qualifications q ON q.user_id=w.user_id JOIN users u ON u.id=w.user_id
-            JOIN runs r ON r.id=q.run_id
-            WHERE q.status='qualified' AND u.status='active' AND r.invalidated=0 ORDER BY w.address`);
+          const addresses=store.all(`SELECT w.address,w.chain_id,w.updated_at,count(*) AS spots,group_concat(sp.route,' ') AS routes FROM wallets w
+            JOIN spots sp ON sp.user_id=w.user_id JOIN users u ON u.id=w.user_id JOIN runs r ON r.id=sp.run_id
+            WHERE sp.status='qualified' AND u.status='active' AND r.invalidated=0 GROUP BY w.user_id ORDER BY w.address`);
           const c=config(),frozen=!!c.addressEndsAt&&now()>=c.addressEndsAt;
           store.audit('admin','address_export',{count:addresses.length,frozen},now());
           return json(response,200,{exportedAt:now(),frozen,addresses});
         }
         if(path==='/admin'&&request.method==='GET'){
           const funnel=store.all('SELECT name,count(*) AS total,count(DISTINCT anon_id) AS players FROM events WHERE at>=? GROUP BY name',now()-30*DAY);
-          return json(response,200,{config:config(),oauthReady:xReady,authReady,providers,funnel,
-            users:store.all(`SELECT u.id,u.provider,u.username,u.status,q.status AS qualification_status,q.created_at,w.address FROM users u LEFT JOIN qualifications q ON q.user_id=u.id LEFT JOIN wallets w ON w.user_id=u.id ORDER BY u.created_at DESC LIMIT 100`),
+          return json(response,200,{config:config(),authReady,providers,funnel,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
+            users:store.all(`SELECT u.id,u.provider,u.username,u.status,group_concat(sp.route||':'||sp.status,' ') AS spots,
+              (SELECT coalesce(sum(points),0) FROM runs WHERE user_id=u.id AND invalidated=0 AND flags='[]') AS points,w.address
+              FROM users u LEFT JOIN spots sp ON sp.user_id=u.id LEFT JOIN wallets w ON w.user_id=u.id GROUP BY u.id ORDER BY u.created_at DESC LIMIT 100`),
             audit:store.all('SELECT * FROM audit ORDER BY id DESC LIMIT 60')});
         }
         const body=await readJson(request,16000);
         if(path==='/admin/settings'&&request.method==='POST'){
-          const next=campaignConfig(body.config);if(next.active&&!authReady)fail('Configure at least one sign-in provider before opening qualification.',409);
+          const next=campaignConfig(body.config);if(next.active&&!authReady)fail('Configure at least one sign-in provider before opening WL challenges.',409);
           store.transaction(()=>{const previous=config();store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify(next));store.audit('admin','settings',{previous,next},now());});
           return json(response,200,{config:next});
         }
         if(path==='/admin/review'&&request.method==='POST'){
           if(!['qualified','review','banned'].includes(body.status)||typeof body.userId!=='string'||typeof body.reason!=='string'||body.reason.trim().length<5||body.reason.length>300)fail('Choose a status and give an audit reason.');
           store.transaction(()=>{
-            const q=store.get('SELECT * FROM qualifications WHERE user_id=?',body.userId);if(!q)fail('Qualification not found',404);
-            if(body.status==='qualified'&&q.status!=='qualified'&&store.get("SELECT count(*) AS n FROM qualifications WHERE status='qualified'").n>=config().capacity)fail('The access pool is full.',409);
-            store.run('UPDATE qualifications SET status=? WHERE user_id=?',body.status,body.userId);
+            // A review decision applies to every WL spot the account holds.
+            const spots=store.all('SELECT * FROM spots WHERE user_id=?',body.userId);if(!spots.length)fail('No WL spots found for that user',404);
+            const approving=spots.filter(sp=>sp.status!=='qualified').length;
+            if(body.status==='qualified'&&approving&&qualifiedSpots()+approving>config().capacity)fail('The WL pool is full.',409);
+            store.run('UPDATE spots SET status=? WHERE user_id=?',body.status,body.userId);
             store.run('UPDATE users SET status=? WHERE id=?',body.status==='banned'?'banned':'active',body.userId);
             if(body.status!=='qualified')store.run('DELETE FROM referrals WHERE referred_id=? OR referrer_id=?',body.userId,body.userId);
-            store.audit('admin','qualification_review',{userId:body.userId,status:body.status,reason:body.reason},now());
+            store.audit('admin','spot_review',{userId:body.userId,status:body.status,reason:body.reason,routes:spots.map(sp=>sp.route)},now());
           });return json(response,200,{ok:true});
         }
         fail('Not found',404);
       }
       if(path==='/config'&&request.method==='GET'){
-        const c=config();return json(response,200,{config:c,open:campaignOpen(c,now())&&authReady,oauthReady:xReady,authReady,providers,bot:BARRY,serverTime:now(),qualified:store.get("SELECT count(*) AS n FROM qualifications WHERE status='qualified'").n});
+        const c=config(),open=campaignOpen(c,now())&&authReady;
+        return json(response,200,{config:c,open,routes:Object.fromEntries(OPEN_ROUTES.map(route=>[route,open&&routeOpen(c,route,now())])),authReady,providers,bot:BARRY,serverTime:now(),claimed:qualifiedSpots(),capacity:c.capacity});
       }
       if(path.startsWith('/results/')&&request.method==='GET'){
         const code=path.slice(9);if(!validCode(code))fail('Challenge not found',404);
         const r=publicRun(code);if(!r)fail('Challenge not found',404);return json(response,200,r);
       }
       if(path==='/leaderboard'&&request.method==='GET'){
-        const since=url.searchParams.get('period')==='day'?Math.floor(now()/DAY)*DAY:0;
-        const rows=store.all(`SELECT * FROM (SELECT r.code,r.result,r.completed_at,u.provider,u.username,u.public_profile,
-          row_number() OVER(PARTITION BY r.user_id ORDER BY json_extract(r.result,'$.playerTicks') ASC) AS personal_rank
-          FROM runs r JOIN users u ON u.id=r.user_id JOIN qualifications q ON q.user_id=u.id
-          WHERE r.invalidated=0 AND q.status='qualified' AND u.status='active' AND r.completed_at>=? AND json_extract(r.result,'$.qualified')=1
-          AND json_extract(r.challenge,'$.track')=? AND json_extract(r.challenge,'$.vehicle')=? AND json_extract(r.challenge,'$.version')=1
-          ) WHERE personal_rank=1 ORDER BY json_extract(result,'$.playerTicks') ASC LIMIT 20`,since,config().track,config().vehicle);
-        const entries=rows.map((row,index)=>({rank:index+1,code:row.code,player:row.public_profile?publicIdentity(row):'ANON',result:parse(row.result)}));
-        return json(response,200,{entries,period:since?'day':'all',track:config().track,vehicle:config().vehicle});
+        const rows=store.all(`SELECT u.id,u.provider,u.username,u.public_profile,sum(r.points) AS points,max(r.last_segment_at) AS last
+          FROM runs r JOIN users u ON u.id=r.user_id WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' AND r.points>0
+          GROUP BY u.id ORDER BY points DESC,last ASC LIMIT 50`);
+        const spots=rows.length?store.all(`SELECT user_id,route FROM spots WHERE status='qualified' AND user_id IN (${rows.map(()=>'?').join(',')})`,...rows.map(row=>row.id)):[];
+        // Ties share a rank; earlier scoring breaks display order only.
+        let rank=0;
+        const entries=rows.map((row,index)=>{if(!index||row.points<rows[index-1].points)rank=index+1;
+          return {rank,player:row.public_profile?publicIdentity(row):'ANON',points:row.points,spots:spots.filter(sp=>sp.user_id===row.id).map(sp=>sp.route).sort()};});
+        return json(response,200,{entries});
       }
       let s=session(request,response,path==='/session');
       if(!s)fail('Start a fresh challenge to continue.',401);
@@ -194,41 +218,59 @@ export function createCampaignService(options){
       }
       if(path.startsWith('/runs/')&&request.method==='GET'){
         const row=store.get('SELECT * FROM runs WHERE id=?',path.slice(6));if(!row||row.anon_id!==s.anon_id&&(!s.user_id||row.user_id!==s.user_id))fail('Run not found',404);
-        return json(response,200,{id:row.id,result:parse(row.result),challenge:parse(row.challenge),code:row.user_id?row.code:null,saved:!!row.user_id});
+        const spot=row.user_id&&store.get('SELECT status FROM spots WHERE run_id=?',row.id);
+        return json(response,200,{id:row.id,kind:row.kind,result:parse(row.result),challenge:parse(row.challenge),progress:progressSummary(row),segments:row.segments,
+          open:!row.completed_at&&row.expires_at>now(),code:spot?row.code:null,saved:!!spot});
       }
       if(request.method!=='POST')fail('Not found',404);
       const body=await readJson(request);
       if(path==='/runs'){
         rate('start:'+s.anon_id,12,600000);rate('start-net:'+network,45,600000);
-        if(!campaignOpen(config(),now())||!authReady)fail('Official challenges are not open. The free arcade is still playable.',409);
+        const kind=body.kind;if(!OPEN_ROUTES.includes(kind))fail('Choose the Barry Cup or the Rekt Rumble Circuit.');
+        if(kind==='rumble'&&!Object.hasOwn(CHARACTERS,body.character))fail('Choose a fighter.');
+        if(!routeOpen(config(),kind,now())||!authReady)fail('This official challenge is not open. The free arcade is still playable.',409);
         if(user(s)?.status==='banned')fail('This account cannot enter official challenges.',403);
         let ref=s.ref_code;
         if(!ref&&validCode(body.ref)&&publicRun(body.ref)){ref=body.ref;store.run('UPDATE sessions SET ref_code=? WHERE token_hash=?',ref,s.token_hash);}
-        const id=randomBytes(16).toString('hex'),code=randomBytes(12).toString('base64url');
-        const challenge=challengeSnapshot(config(),randomBytes(4).readUInt32BE());
-        const started=now(),expires=started+20*60000;
-        store.run('INSERT INTO runs(id,anon_id,challenge,started_at,expires_at,code,ref_code) VALUES(?,?,?,?,?,?,?)',id,s.anon_id,JSON.stringify(challenge),started,expires,code,ref);
-        store.event('challenge_start',{anonId:s.anon_id,userId:s.user_id,runId:id},now());
+        const id=randomBytes(16).toString('hex'),code=randomBytes(12).toString('base64url'),seed=randomBytes(4).readUInt32BE();
+        const challenge=kind==='cup'?cupSnapshot(config(),seed):rumbleSnapshot(body.character,seed);
+        const started=now(),expires=started+RUN_IDLE;
+        store.run('INSERT INTO runs(id,anon_id,user_id,kind,challenge,started_at,last_segment_at,expires_at,code,ref_code) VALUES(?,?,?,?,?,?,?,?,?,?)',id,s.anon_id,s.user_id,kind,JSON.stringify(challenge),started,started,expires,code,ref);
+        store.event('challenge_start',{anonId:s.anon_id,userId:s.user_id,runId:id,detail:{route:kind}},now());
         if(ref)store.event('referred_player_started',{anonId:s.anon_id,runId:id},now());
-        return json(response,201,{id,challenge,expiresAt:expires,startedAt:started});
+        return json(response,201,{id,kind,challenge,expiresAt:expires,startedAt:started});
       }
       if(path==='/submit'){
-        rate('submit:'+s.anon_id,15,600000);
+        rate('submit:'+s.anon_id,40,600000);
         const row=store.get('SELECT * FROM runs WHERE id=?',typeof body.runId==='string'?body.runId:'');
-        if(!row||row.anon_id!==s.anon_id)fail('Run not found',404);
-        if(row.completed_at)return json(response,200,{id:row.id,result:parse(row.result),verified:true});
+        if(!row||row.anon_id!==s.anon_id||row.kind==='sprint')fail('Run not found',404);
+        const accepted=r=>({id:r.id,kind:r.kind,segments:r.segments,points:r.points,progress:progressSummary(r),result:parse(r.result),verified:true});
+        // Segments arrive in order. A repeat of an accepted segment is answered, not replayed.
+        if(!Number.isInteger(body.segment)||body.segment<0)fail('Invalid segment',422);
+        if(body.segment<row.segments)return json(response,200,{...accepted(row),duplicate:true});
+        if(row.completed_at)fail('This run is already complete.',409);
+        if(body.segment>row.segments)fail('Submit the earlier result first.',409);
         if(row.expires_at<now())fail('This attempt expired. Start another run.',410);
-        if(!Array.isArray(body.replay)||body.replay.length>18000)fail('Invalid replay',422);
-        const result=await verify(parse(row.challenge),body.replay);
-        if(now()-row.started_at<result.ticks*1000/60-2000)fail('The run finished faster than real time allows.',422);
-        const replayHash=hash(JSON.stringify(canonicalReplay(body.replay,result.ticks)));
-        const duplicate=store.get('SELECT id FROM runs WHERE replay_hash=? AND anon_id<>? LIMIT 1',replayHash,s.anon_id);
-        store.transaction(()=>{
-          if(store.get('SELECT completed_at FROM runs WHERE id=?',row.id).completed_at)return;
-          store.run('UPDATE runs SET completed_at=?,result=?,replay_hash=?,flags=? WHERE id=?',now(),JSON.stringify(result),replayHash,JSON.stringify(duplicate?['repeated_inputs']:[]),row.id);
-          store.event(result.qualified?'qualification_earned':'challenge_fail',{anonId:s.anon_id,userId:s.user_id,runId:row.id},now());
-          store.event('challenge_complete',{anonId:s.anon_id,runId:row.id},now());
-        });return json(response,200,{id:row.id,result,verified:true});
+        if(!Array.isArray(body.replay)||body.replay.length>SEGMENT_TICKS[row.kind])fail('Invalid replay',422);
+        const challenge=parse(row.challenge),out=await verify(challenge,row.progress?deserialize(row.progress):null,body.replay);
+        if(now()-row.last_segment_at<out.ticks*1000/60-2000)fail('The run finished faster than real time allows.',422);
+        // Winning inputs shared between browsers are flagged; idle losses are naturally identical.
+        const replayHash=hash(JSON.stringify([row.kind,canonicalReplay(body.replay,out.ticks)]));
+        const duplicate=out.segment.won&&store.get('SELECT 1 FROM replay_hashes WHERE hash=? AND anon_id<>? LIMIT 1',replayHash,s.anon_id);
+        const saved=store.transaction(()=>{
+          const current=store.get('SELECT * FROM runs WHERE id=?',row.id);
+          if(current.segments!==row.segments)return current;
+          const flags=parse(current.flags);if(duplicate&&!flags.includes('repeated_inputs'))flags.push('repeated_inputs');
+          const at=now(),done=!!out.result;
+          store.run(`UPDATE runs SET progress=?,segments=segments+1,points=points+?,last_segment_at=?,expires_at=?,flags=?,
+            completed_at=?,result=?,replay_hash=? WHERE id=?`,serialize(out.state),out.points,at,Math.min(at+RUN_IDLE,current.started_at+RUN_LIMIT),JSON.stringify(flags),
+            done?at:null,done?JSON.stringify(out.result):null,replayHash,row.id);
+          if(out.segment.won)store.run('INSERT OR IGNORE INTO replay_hashes(hash,anon_id,run_id) VALUES(?,?,?)',replayHash,s.anon_id,row.id);
+          store.event(row.kind==='cup'?'cup_race_complete':'rumble_fight_complete',{anonId:s.anon_id,userId:current.user_id,runId:row.id,detail:{won:out.segment.won}},at);
+          if(done)store.event(out.result.qualified?'qualification_earned':'challenge_fail',{anonId:s.anon_id,userId:current.user_id,runId:row.id,detail:{route:row.kind}},at);
+          return store.get('SELECT * FROM runs WHERE id=?',row.id);
+        });
+        return json(response,200,{...accepted(saved),segment:saved.segments===row.segments+1?out.segment:null});
       }
       if(path==='/auth/start'){
         const provider=body.provider===undefined?'x':body.provider;
@@ -236,7 +278,7 @@ export function createCampaignService(options){
         rate((provider==='farcaster'?'farcaster-start:':'oauth-start:')+s.anon_id,provider==='farcaster'?30:12,3600000);
         if(!providers[provider])fail(provider[0].toUpperCase()+provider.slice(1)+' sign-in is not available yet.',503);
         if(body.runId!==undefined&&(typeof body.runId!=='string'||!/^[a-f0-9]{32}$/.test(body.runId)))fail('Invalid run');
-        if(body.runId){const r=store.get('SELECT * FROM runs WHERE id=?',body.runId);if(!r||r.anon_id!==s.anon_id||!parse(r.result)?.qualified)fail('Win a verified challenge before saving access.',403);}
+        if(body.runId){const r=store.get('SELECT * FROM runs WHERE id=?',body.runId);if(!r||r.anon_id!==s.anon_id||!parse(r.result)?.qualified)fail('Complete a verified challenge before saving a WL spot.',403);}
         if(provider==='farcaster'){
           const nonce=randomBytes(16).toString('hex');
           store.run('INSERT INTO oauth_states(state_hash,session_hash,run_id,verifier,provider,public_profile,expires_at) VALUES(?,?,?,?,?,?,?)',hash(nonce),s.token_hash,body.runId||null,'',provider,body.publicProfile===true?1:0,now()+10*60000);
@@ -278,8 +320,8 @@ export function createCampaignService(options){
         store.run('UPDATE users SET public_profile=? WHERE id=?',body.publicProfile===true?1:0,u.id);return json(response,200,{pass:pass(s)});
       }
       if(path==='/wallet'){
-        const u=user(s),q=u&&store.get('SELECT status FROM qualifications WHERE user_id=?',u.id),c=config();
-        if(!u||u.status!=='active'||q?.status!=='qualified')fail('A saved qualification is required.',403);
+        const u=user(s),spot=u&&store.get("SELECT 1 FROM spots WHERE user_id=? AND status='qualified'",u.id),c=config();
+        if(!u||u.status!=='active'||!spot)fail('Save a WL spot before adding a mint address.',403);
         rate('address:'+u.id,8,3600000);
         if(!addressWindow(c,now()).open)fail('Address submission is closed.',409);
         if(body.chainId!==c.chainId||body.confirmed!==true)fail('Confirm this address is for Robinhood Chain mainnet.');
