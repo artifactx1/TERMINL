@@ -116,6 +116,7 @@ test('stored settings gain route defaults and reject a campaign with no route',(
   const legacy={...DEFAULT_CAMPAIGN,targetSeconds:180};delete legacy.cupEnabled;delete legacy.rumbleEnabled;
   const migrated=campaignConfig(legacy);assert.equal(migrated.cupEnabled,true);assert.equal(migrated.rumbleEnabled,true);assert.equal('targetSeconds' in migrated,false);
   assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,active:true,cupEnabled:false,rumbleEnabled:false}),/Enable/);
+  assert.equal(DEFAULT_CAMPAIGN.capacity,0,'FCFS spots are unlimited by default');assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,capacity:-1}),/Capacity/);
 });
 test('wallet checksum, zero address and non-address inputs',()=>{
   assert.equal(normalizeAddress('0x52908400098527886E0F7030069857D2E4169EE7'),'0x52908400098527886e0f7030069857d2e4169ee7');
@@ -389,6 +390,7 @@ test('existing single-race qualifications become honored sprint spots with point
       assert.equal((await get('/results/Yag0FRxedHtQxCPI')).kind,'sprint','legacy challenge pages keep working');
       assert.deepEqual((await get('/leaderboard')).entries,[{rank:1,player:'FID #8688',points:POINTS.legacySprint,spots:['sprint']}]);
       assert.equal((await get('/config')).config.cupEnabled,true);
+      assert.equal((await get('/config')).config.capacity,0,'the old 2048 default no longer caps FCFS spots');
     }finally{await new Promise(r=>server.close(r));}
   }finally{service.close();await rm(dir,{recursive:true,force:true});}
 });

@@ -77,6 +77,13 @@ export function openCampaignStore(directory){
   if(db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='qualifications'").get())
     db.exec("INSERT OR IGNORE INTO spots(user_id,route,run_id,status,created_at) SELECT user_id,'sprint',run_id,status,created_at FROM qualifications");
   db.prepare('INSERT OR IGNORE INTO settings(id,value) VALUES(1,?)').run(JSON.stringify(DEFAULT_CAMPAIGN));
+  // Settings saved before the two-route release carry the old default cap of 2048, the
+  // collection size rather than a WL decision. FCFS spots are now unlimited unless set.
+  const stored=JSON.parse(db.prepare('SELECT value FROM settings WHERE id=1').get().value);
+  if(!('cupEnabled' in stored)&&stored.capacity===2048){
+    db.prepare('UPDATE settings SET value=? WHERE id=1').run(JSON.stringify({...stored,capacity:0}));
+    db.prepare('INSERT INTO audit(at,actor,action,detail) VALUES(?,?,?,?)').run(Date.now(),'migration','settings',JSON.stringify({capacity:{previous:2048,next:0}}));
+  }
   const get=(sql,...args)=>db.prepare(sql).get(...args);
   const all=(sql,...args)=>db.prepare(sql).all(...args);
   const run=(sql,...args)=>db.prepare(sql).run(...args);

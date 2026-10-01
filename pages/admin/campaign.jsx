@@ -26,7 +26,7 @@ export default function CampaignAdmin(){
         <label>Player car<select value={draft.vehicle} onChange={e=>update('vehicle',e.target.value)}>{Object.values(VEHICLES).map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
         <label>Barry’s car<select value={draft.botVehicle} onChange={e=>update('botVehicle',e.target.value)}>{Object.values(VEHICLES).map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
         <label>Barry’s pace (0.55–1.10)<input type='number' min='.55' max='1.1' step='.01' value={draft.botPace} onChange={e=>update('botPace',Number(e.target.value))}/></label>
-        <label>FCFS WL spot capacity (all routes)<input type='number' min={1} max={100000} value={draft.capacity} onChange={e=>update('capacity',Number(e.target.value))}/></label>
+        <label>FCFS WL spot limit, all routes (0 = no limit)<input type='number' min={0} max={1000000} value={draft.capacity} onChange={e=>update('capacity',Number(e.target.value))}/></label>
         {date('Address submission opens','addressStartsAt')}{date('Address submission closes / freezes','addressEndsAt')}<p className={s.fine}>Leave both address dates blank to collect addresses immediately with no scheduled freeze.</p>
         <label>Optional announcement URL<input type='url' value={draft.announcementUrl} onChange={e=>update('announcementUrl',e.target.value)} placeholder='https://x.com/…'/></label>
         <button className={s.primary} disabled={busy}>SAVE SETTINGS</button><p className={s.fine}>New settings apply to new attempts. Runs already issued keep their recorded challenge rules.</p>

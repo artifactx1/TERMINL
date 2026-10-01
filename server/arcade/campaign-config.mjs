@@ -9,7 +9,7 @@ export function campaignConfig(input){
   if(c.active&&!c.cupEnabled&&!c.rumbleEnabled)throw new Error('Enable the Barry Cup or the Rekt Rumble Circuit before opening the campaign');
   if(!Object.hasOwn(TRACKS,c.track)||!Object.hasOwn(VEHICLES,c.vehicle)||!Object.hasOwn(VEHICLES,c.botVehicle))throw new Error('Unknown track or vehicle');
   if(!Number.isFinite(c.botPace)||c.botPace<.55||c.botPace>1.1)throw new Error('Bot pace must be between 0.55 and 1.1');
-  if(!Number.isInteger(c.capacity)||c.capacity<1||c.capacity>100000)throw new Error('Capacity must be 1–100,000');
+  if(!Number.isInteger(c.capacity)||c.capacity<0||c.capacity>1000000)throw new Error('Capacity must be 0 (no limit) to 1,000,000');
   for(const key of ['startsAt','endsAt','addressStartsAt','addressEndsAt'])if(!Number.isSafeInteger(c[key])||c[key]<0)throw new Error('Invalid campaign date');
   if(c.endsAt&&c.endsAt<=c.startsAt||c.addressEndsAt&&c.addressEndsAt<=c.addressStartsAt)throw new Error('Window must end after it starts');
   if(c.chainId!==4663)throw new Error('This campaign accepts Robinhood Chain mainnet addresses');

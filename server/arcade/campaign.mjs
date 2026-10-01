@@ -8,7 +8,7 @@ import {discordAuthorize,discordIdentity} from './campaign-discord.mjs';
 import {farcasterIdentity} from './campaign-farcaster.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
 import {campaignConfig} from './campaign-config.mjs';
-import {BARRY,OPEN_ROUTES,addressWindow,canonicalReplay,campaignOpen,routeOpen} from '../../lib/arcade/campaign-rules.mjs';
+import {BARRY,OPEN_ROUTES,addressWindow,canonicalReplay,campaignOpen,poolFull,routeOpen} from '../../lib/arcade/campaign-rules.mjs';
 import {CUP_SEGMENT_TICKS,cupSnapshot,cupProgress} from '../../lib/arcade/bot-challenge.mjs';
 import {FIGHT_SEGMENT_TICKS,rumbleSnapshot,rumbleProgress} from '../../lib/arcade/rumble-challenge.mjs';
 import {CHARACTERS} from '../../lib/arcade/rumble-sim.mjs';
@@ -92,7 +92,7 @@ export function createCampaignService(options){
       if(existing)return {status:existing.status,code:existing.code,route:r.kind,already:true};
       const firstSpot=!store.get('SELECT 1 FROM spots WHERE user_id=?',u.id);
       const reused=store.get('SELECT count(DISTINCT user_id) AS n FROM runs WHERE anon_id=? AND user_id IS NOT NULL AND user_id<>?',s.anon_id,u.id).n;
-      const status=u.status==='review'||parse(r.flags).length||reused>=2?'review':qualifiedSpots()>=config().capacity?'waitlist':'qualified';
+      const status=u.status==='review'||parse(r.flags).length||reused>=2?'review':poolFull(config(),qualifiedSpots())?'waitlist':'qualified';
       store.run('INSERT INTO spots(user_id,route,run_id,status,created_at) VALUES(?,?,?,?,?)',u.id,r.kind,r.id,status,now());
       store.event('qualification_saved',{anonId:s.anon_id,userId:u.id,runId:r.id,detail:{status,route:r.kind}},now());
       const parent=firstSpot&&r.ref_code&&store.get(`SELECT r.user_id FROM runs r JOIN spots sp ON sp.run_id=r.id JOIN users u ON u.id=r.user_id WHERE r.code=? AND r.invalidated=0 AND sp.status='qualified' AND u.status='active'`,r.ref_code);
@@ -155,7 +155,7 @@ export function createCampaignService(options){
             // A review decision applies to every WL spot the account holds.
             const spots=store.all('SELECT * FROM spots WHERE user_id=?',body.userId);if(!spots.length)fail('No WL spots found for that user',404);
             const approving=spots.filter(sp=>sp.status!=='qualified').length;
-            if(body.status==='qualified'&&approving&&qualifiedSpots()+approving>config().capacity)fail('The WL pool is full.',409);
+            if(body.status==='qualified'&&approving&&poolFull(config(),qualifiedSpots()+approving-1))fail('The WL pool is full.',409);
             store.run('UPDATE spots SET status=? WHERE user_id=?',body.status,body.userId);
             store.run('UPDATE users SET status=? WHERE id=?',body.status==='banned'?'banned':'active',body.userId);
             if(body.status!=='qualified')store.run('DELETE FROM referrals WHERE referred_id=? OR referrer_id=?',body.userId,body.userId);

@@ -23,7 +23,7 @@ export default function BeatTheBots(){
     <section className={s.hero}><div><span className={s.eyebrow}>TERMINL VS. THE BOTS / FCFS WL</span><h1>The bots take your allocation.<br/><em>Take it back.</em></h1>
       <p>Two ways in. Beat BarryBot across a full six-race cup, or fight your way through all six opponents in the Rekt Rumble circuit. Each one earns its own FCFS WL spot.</p>
       {!campaign?<p className={s.notice}>Checking the starting grid…</p>:!campaign.open&&<p className={s.notice}>WL challenges aren’t open right now. The arcade is, and practice is free.</p>}
-      {campaign?.open&&<p className={s.fine}>{campaign.claimed} of {campaign.capacity} FCFS WL spots saved so far.</p>}
+      {campaign?.open&&<p className={s.fine}>{campaign.claimed} FCFS WL spots saved so far{campaign.capacity?` (limit ${campaign.capacity})`:''}.</p>}
       <small className={s.fine}>No wallet connection, signature, follow or repost required. {FCFS_NOTE}</small>
     </div><div className={s.portrait}><Image src={`/degens/${BARRY.portrait}.webp`} alt='BarryBot, represented by Diamond Hands Pepe' width={340} height={560} priority/><span>“{BARRY.taunt}”</span></div></section>
     {error&&<p role='alert' className={s.error}>{error}</p>}
@@ -33,7 +33,7 @@ export default function BeatTheBots(){
     </div>
     <div className={s.grid}>
       <section className={s.card}><span className={s.eyebrow}>01 / PLAY</span><h2>Play first.</h2><p>No sign-in needed to start. The server replays every race and fight from your inputs. Scores claimed by the browser count for nothing.</p></section>
-      <section className={s.card}><span className={s.eyebrow}>02 / SAVE</span><h2>Save with X, Farcaster or Discord.</h2><p>Finish a route, then save the spot to your Arcade Pass. Spots are first come, first served in the order they are saved, while the pool has room.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>02 / SAVE</span><h2>Save with X, Farcaster or Discord.</h2><p>Finish a route, then save the spot to your Arcade Pass. Your spot is confirmed when you save it.</p></section>
       <section className={s.card}><span className={s.eyebrow}>03 / CHECK</span><h2>Log in any time.</h2><p>Your Arcade Pass shows which WL spots you hold, your points and rank, and where to add your mint address.</p><Link className={s.secondary} href='/arcade-pass'>MY ARCADE PASS →</Link></section>
     </div>
     <div className={s.sectionHeading}><h2>LEADERBOARD</h2><span className={s.fine}>Race win {POINTS.raceWin} · Cup +{POINTS.cupWin} · Fight win {POINTS.fightWin} · Circuit +{POINTS.circuitClear}</span></div>

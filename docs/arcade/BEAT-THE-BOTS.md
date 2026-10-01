@@ -13,8 +13,9 @@ play → verified Barry Cup or Rekt Rumble circuit → save an FCFS WL spot with
     mirror finale included. A lost fight is retried; the circuit keeps progress
     while fights keep arriving (30 minutes idle, 3 hours total).
 - FCFS, not GTD: a spot lets the holder mint during the WL phase while supply
-  lasts and never reserves an NFT. Spots are confirmed in save order while the
-  admin-set capacity (shared by both routes) has room; later saves are waitlisted.
+  lasts and never reserves an NFT. Spots are unlimited by default; an optional admin
+  limit (shared by both routes, 0 = none) waitlists saves beyond it. The original
+  2048 default was the collection size and is reset to unlimited on upgrade.
 - Spots from the retired single-race challenge became honored `sprint` spots.
 - Reuse the actual simulations, renderers and controls. A server-issued run pins
   game version, route, bot seed and settings. The browser submits each finished
@@ -113,7 +114,7 @@ token is revoked after lookup and is never stored. Implementation reference:
 [X OAuth/PKCE](https://docs.x.com/fundamentals/authentication/oauth-2-0/authorization-code).
 
 `/admin/campaign` accepts the separate admin token, kept only in page memory.
-Set campaign dates, enabled routes, Barry's car and pace, spot capacity and address window there. Activation
+Set campaign dates, enabled routes, Barry's car and pace, optional spot limit and address window there. Activation
 is refused only when no sign-in provider is available. The default is closed. Changes apply
 to new attempts; issued attempts keep their recorded rules and expire after
 twenty minutes. A completed route remains claimable after the campaign closes. A review decision applies to every spot an account holds.

@@ -41,7 +41,7 @@ export function OfficialResult({official,onRetry,onLeave,retryLabel}){
       <p className={s.points}>+{points} ARCADE POINTS THIS RUN</p>
       {won?<><h3>YOU EARNED AN FCFS WL SPOT.</h3><p>Save it with X, Farcaster or Discord. No wallet connection and nothing is posted for you.</p>
         <button className={s.primary} disabled={status==='saving'} onClick={official.save}>{status==='saving'?'SAVING…':'SAVE MY WL SPOT →'}</button>
-        <small className={s.fine}>{FCFS_NOTE} Spots are awarded in save order while the pool has room.</small>
+        <small className={s.fine}>{FCFS_NOTE}</small>
       </>:<p>Most points across the six races takes the cup. Your race points still count on the leaderboard once you sign in.</p>}
     </>}
     {error&&<p role='alert' className={s.error}>{error}</p>}
