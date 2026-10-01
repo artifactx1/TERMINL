@@ -2,12 +2,15 @@ import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 await mkdir('artifacts/after-hours-v2',{recursive:true});
+const base=process.env.ARCADE_TEST_URL||'http://127.0.0.1:4000';
 const browser=await chromium.launch({headless:true}),errors=[];
 try{
  for(const viewport of [{width:390,height:844},{width:844,height:390}]){
   const context=await browser.newContext({viewport,hasTouch:true,isMobile:true,deviceScaleFactor:1}),page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:4000/os/rug-exe');await page.getByRole('button',{name:'ENTER THE PROTOCOL →'}).tap();await page.waitForTimeout(800);
-  const client=await context.newCDPSession(page),stick=await page.getByRole('application',{name:'Movement thumbstick',exact:true}).boundingBox(),fire=await page.getByRole('button',{name:'Fire and aim. Hold to shoot, drag to aim.',exact:true}).boundingBox();
+  // Manual fire is under test here; auto-fire has its own simulation tests.
+  await page.addInitScript(()=>localStorage.setItem('terminl:rug-autofire','off'));
+  await page.goto(base+'/os/rug-exe');await page.getByRole('button',{name:'ENTER THE PROTOCOL →'}).tap();await page.waitForTimeout(800);
+  const client=await context.newCDPSession(page),stick=await page.getByRole('application',{name:'Movement thumbstick. Double-tap to dash.',exact:true}).boundingBox(),fire=await page.getByRole('button',{name:'Fire and aim. Hold to shoot, drag to aim.',exact:true}).boundingBox();
   for(const box of [stick,fire])assert.ok(box.y+box.height<=viewport.height&&box.x+box.width<=viewport.width,'Controls must be entirely reachable');
   let touches=[{x:stick.x+stick.width/2,y:stick.y+stick.height/2-30,id:1},{x:fire.x+fire.width/2,y:fire.y+fire.height/2,id:2}];
   const send=type=>client.send('Input.dispatchTouchEvent',{type,touchPoints:touches});
