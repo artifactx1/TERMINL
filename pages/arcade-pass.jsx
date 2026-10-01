@@ -9,7 +9,6 @@ import s from '../styles/Campaign.module.css';
 
 const FarcasterSignIn=dynamic(()=>import('../components/arcade/FarcasterSignIn'),{ssr:false,loading:()=>null});
 const providerName=provider=>provider==='farcaster'?'Farcaster':provider==='discord'?'Discord':'X';
-const identityName=pass=>pass?.provider==='farcaster'?'FID #'+pass.username.replace(/^fid/,''):pass?'@'+pass.username:'';
 const date=ms=>new Date(ms).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
 const PENDING_KEY='terminl:official-run';
 
@@ -94,7 +93,7 @@ export default function ArcadePass(){
   const qualified=!!pass?.spots.some(sp=>sp.status==='qualified');
   const serverNow=clock+(campaign?.clockSkew||0);
   return <CampaignShell><ArcadeMeta card='arcade-pass' noindex/>
-    <span className={s.eyebrow}>TERMINL ARCADE PASS</span><h1 className={s.title}>{pass?identityName(pass):'Your Arcade Pass.'}</h1>
+    <span className={s.eyebrow}>TERMINL ARCADE PASS</span><h1 className={s.title}>{pass?pass.display:'Your Arcade Pass.'}</h1>
     {!loaded&&<p>Finding your pass…</p>}{error&&<p role='alert' className={s.error}>{error}</p>}{notice&&<p role='status' className={s.notice}>{notice}</p>}
     {pending&&<section className={`${s.card} ${s.nextStep}`}><span className={s.badge}>{ROUTES[pending.kind].name.toUpperCase()} COMPLETE</span><h2>{resultSummary(pending.kind,pending.result)}</h2><p>Your run is verified. Save it to claim its FCFS WL spot.</p><label className={s.check}><input type='checkbox' checked={publicProfile} onChange={e=>setPublicProfile(e.target.checked)}/>Show my handle or account ID on public cards and the leaderboard</label>{pass?<button className={s.primary} disabled={busy} onClick={()=>signIn()}>SAVE TO MY ARCADE PASS →</button>:<SignInChoices campaign={campaign} runId={pending.id} publicProfile={publicProfile} busy={busy} onSignIn={signIn} onError={setError}/>}<p className={s.fine}>We request identity only. No wallet connection and nothing is posted on your behalf. {FCFS_NOTE}</p></section>}
     {loaded&&!pass&&!pending&&<section className={s.card}><h2>Log in to see your spots and points.</h2><p>Use the identity you saved your WL spot with. Your pass shows which spots you hold, your arcade points and leaderboard rank, and your mint address.</p><SignInChoices campaign={campaign} publicProfile={false} busy={busy} onSignIn={signIn} onError={setError}/><div className={s.actions}><Link className={s.secondary} href='/beat-the-bots'>HOW TO EARN A SPOT →</Link></div><p className={s.fine}>Identity is used to recover your Arcade Pass and stop duplicate claims. We request no email and never post for you.</p></section>}

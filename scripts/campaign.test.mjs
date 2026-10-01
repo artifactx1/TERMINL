@@ -9,6 +9,7 @@ import {normalizeAddress} from '../server/arcade/campaign-address.mjs';
 import {xAuthorize,xIdentity} from '../server/arcade/campaign-oauth.mjs';
 import {xOAuth1Header,xOAuth1Start,xOAuth1Identity} from '../server/arcade/campaign-oauth1.mjs';
 import {discordAuthorize,discordIdentity} from '../server/arcade/campaign-discord.mjs';
+import {farcasterUsername,farcasterLabel} from '../server/arcade/campaign-farcaster.mjs';
 import {addressWindow,canonicalReplay,captureInput,DEFAULT_CAMPAIGN,POINTS} from '../lib/arcade/campaign-rules.mjs';
 import {campaignConfig} from '../server/arcade/campaign-config.mjs';
 import {cupSnapshot,createChallengeRace,cupSegment,cupSegmentDone} from '../lib/arcade/bot-challenge.mjs';
@@ -223,11 +224,11 @@ test('OAuth 1 callback binds to its initiating session, saves a verified win and
   }finally{await new Promise(r=>server.close(r));service.close();await rm(dir,{recursive:true,force:true});}
 });
 test('Farcaster and Discord create namespaced identities without requiring X',async()=>{
-  const dir=await mkdtemp(join(tmpdir(),'terminl-social-auth-'));const clock={time:1800000000000};
+  const dir=await mkdtemp(join(tmpdir(),'terminl-social-auth-'));const clock={time:1800000000000};let fname='degen42';
   const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',now:()=>clock.time,verifyReplay:quickVerify,
     discordClientId:'123456789012345678',discordClientSecret:'secret',
     discordIdentity:async()=>({id:'987654321098765432',username:'discorddegen',name:'Discord Degen'}),
-    farcasterIdentity:async({nonce,domain,uri,message,signature})=>{assert.match(nonce,/^[a-f0-9]{32}$/);assert.equal(domain,'terminl.test');assert.equal(uri,'https://terminl.test/arcade-pass');assert.equal(message,'signed message');assert.equal(signature,'0xsigned');return {id:'42',username:'fid42',name:'Farcaster #42'};}});
+    farcasterIdentity:async({nonce,domain,uri,message,signature})=>{assert.match(nonce,/^[a-f0-9]{32}$/);assert.equal(domain,'terminl.test');assert.equal(uri,'https://terminl.test/arcade-pass');assert.equal(message,'signed message');assert.equal(signature,'0xsigned');return fname?{id:'42',username:fname,name:fname}:{id:'42',username:'fid42',name:'Farcaster #42'};}});
   const server=http.createServer((req,res)=>void service.handle(req,res));await new Promise(r=>server.listen(0,'127.0.0.1',r));
   const base=`http://127.0.0.1:${server.address().port}/campaign`,guest=()=>({cookie:'',network:Math.random().toString()});
   async function api(client,path,body,extra={}){
@@ -243,6 +244,9 @@ test('Farcaster and Discord create namespaced identities without requiring X',as
     const oldCookie=owner.cookie,complete=await api(owner,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'});
     assert.equal(complete.status,200);assert.notEqual(owner.cookie,oldCookie);assert.ok(complete.data.saved);assert.equal(complete.data.pass.provider,'farcaster');assert.equal(complete.data.pass.spots[0].status,'qualified');
     assert.equal((await api(owner,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'})).status,403,'nonce is single use');
+    assert.equal(complete.data.pass.display,'@degen42','the registry name is the handle');
+    fname=null;const again=await api(owner,'/auth/start',{provider:'farcaster'});
+    assert.equal((await api(owner,'/auth/complete',{provider:'farcaster',nonce:again.data.nonce,message:'signed message',signature:'0xsigned'})).data.pass.display,'@degen42','a failed lookup keeps the known name');
     const discord=guest();await api(discord,'/session');const discordStart=await api(discord,'/auth/start',{provider:'discord'});assert.equal(discordStart.status,200);
     const state=new URL(discordStart.data.url).searchParams.get('state'),discordCallback=await api(discord,'/auth/callback?state='+state+'&code=approved');assert.equal(discordCallback.status,303);
     assert.equal((await api(discord,'/me')).data.pass.provider,'discord');
@@ -369,6 +373,23 @@ test('WL spots per route, segment ordering, points leaderboard, referrals, capac
     restored.close();
   }finally{await new Promise(r=>server.close(r));try{service.close();}catch{}await rm(dir,{recursive:true,force:true});}
 });
+test('Farcaster names come from the official registry for the proven FID only',async()=>{
+  const registry=body=>async url=>{assert.equal(url,'https://fnames.farcaster.xyz/transfers/current?fid=8688');return {ok:true,json:async()=>body};};
+  assert.equal(await farcasterUsername(8688,registry({transfer:{username:'generationart',to:8688}})),'generationart');
+  assert.equal(await farcasterUsername(8688,registry({transfer:{username:'someoneelse',to:9}})),null,'a name owned by another FID is ignored');
+  assert.equal(await farcasterUsername(8688,registry({transfer:{username:'<script>',to:8688}})),null);
+  assert.equal(await farcasterUsername(8688,async()=>({ok:false})),null);
+  assert.equal(await farcasterUsername(8688,async()=>{throw new Error('down');}),null,'registry outages fall back to the FID');
+  assert.equal(farcasterLabel(8688,'generationart'),'@generationart');assert.equal(farcasterLabel(8688,'fid8688'),'FID #8688');
+  const dir=await mkdtemp(join(tmpdir(),'terminl-fname-'));
+  let service=createCampaignService({dataDir:dir,serviceToken:'service',siteOrigin:'https://terminl.test',farcasterUsername:async()=>null});
+  service.store.run("INSERT INTO users(id,username,name,provider,public_profile,created_at,last_seen) VALUES('farcaster:8688','fid8688','Farcaster #8688','farcaster',1,1,1)");
+  await service.backfill;service.close();
+  service=createCampaignService({dataDir:dir,serviceToken:'service',siteOrigin:'https://terminl.test',farcasterUsername:async fid=>fid===8688?'generationart':null});
+  try{
+    await service.backfill;assert.equal(service.store.get("SELECT username FROM users WHERE id='farcaster:8688'").username,'generationart','saved accounts gain their name');
+  }finally{service.close();await rm(dir,{recursive:true,force:true});}
+});
 test('existing single-race qualifications become honored sprint spots with points',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'terminl-migrate-'));
   const {DatabaseSync}=await import('node:sqlite');const db=new DatabaseSync(join(dir,'campaign.sqlite'));
@@ -380,7 +401,7 @@ test('existing single-race qualifications become honored sprint spots with point
     INSERT INTO runs VALUES('${'a'.repeat(32)}','anon','{"version":1,"track":"night-market","vehicle":"comet"}',1,2,3,'{"qualified":true,"playerTicks":3350,"botTicks":4821,"winner":0}','h','[]','Yag0FRxedHtQxCPI',NULL,'farcaster:8688',0);
     INSERT INTO qualifications VALUES('farcaster:8688','${'a'.repeat(32)}','qualified',3);`);
   db.prepare('INSERT INTO settings(id,value) VALUES(1,?)').run(JSON.stringify({...DEFAULT_CAMPAIGN,active:true,targetSeconds:180}));db.close();
-  const service=createCampaignService({dataDir:dir,serviceToken:'service',siteOrigin:'https://terminl.test',farcasterEnabled:true});
+  const service=createCampaignService({dataDir:dir,serviceToken:'service',siteOrigin:'https://terminl.test',farcasterEnabled:true,farcasterUsername:async()=>null});
   try{
     assert.deepEqual(service.store.all('SELECT user_id,route,status FROM spots').map(row=>({...row})),[{user_id:'farcaster:8688',route:'sprint',status:'qualified'}]);
     assert.equal(service.store.get('SELECT points FROM runs').points,POINTS.legacySprint);

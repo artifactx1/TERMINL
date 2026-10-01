@@ -5,7 +5,7 @@ import {token,hash,equal,fingerprint,cookieValue,sessionCookie,readJson,verifyRe
 import {xAuthorize,xIdentity} from './campaign-oauth.mjs';
 import {xOAuth1Start,xOAuth1Identity} from './campaign-oauth1.mjs';
 import {discordAuthorize,discordIdentity} from './campaign-discord.mjs';
-import {farcasterIdentity} from './campaign-farcaster.mjs';
+import {farcasterIdentity,farcasterLabel,farcasterUsername} from './campaign-farcaster.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
 import {campaignConfig} from './campaign-config.mjs';
 import {BARRY,OPEN_ROUTES,addressWindow,canonicalReplay,campaignOpen,poolFull,routeOpen} from '../../lib/arcade/campaign-rules.mjs';
@@ -50,7 +50,7 @@ export function createCampaignService(options){
   }
   const user=s=>s?.user_id?store.get('SELECT * FROM users WHERE id=?',s.user_id):null;
   const accountId=(provider,id)=>provider==='x'?String(id):provider+':'+id;
-  const publicIdentity=row=>(row.provider||'x')==='farcaster'?'FID #'+row.username.replace(/^fid/,''):'@'+row.username;
+  const publicIdentity=(row,userId)=>(row.provider||'x')==='farcaster'?farcasterLabel(Number(userId.replace(/^farcaster:/,'')),row.username):'@'+row.username;
   const rate=(key,limit,windowMs)=>{if(!store.rate(key,limit,windowMs,now()))fail('Too many attempts. Please try again shortly.',429);};
   const progressSummary=row=>{const progress=row.progress?deserialize(row.progress):null;return row.kind==='cup'?cupProgress(progress):row.kind==='rumble'?rumbleProgress(progress):null;};
   const qualifiedSpots=()=>store.get("SELECT count(*) AS n FROM spots WHERE status='qualified'").n;
@@ -58,7 +58,7 @@ export function createCampaignService(options){
     const row=store.get(`SELECT r.*,u.provider,u.username,u.public_profile,u.status AS user_status,sp.status AS spot_status
       FROM runs r JOIN users u ON u.id=r.user_id JOIN spots sp ON sp.run_id=r.id WHERE r.code=?`,code);
     if(!row||row.invalidated||row.user_status!=='active'||row.spot_status!=='qualified')return null;
-    return {code:row.code,kind:row.kind,player:row.public_profile?publicIdentity(row):'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
+    return {code:row.code,kind:row.kind,player:row.public_profile?publicIdentity(row,row.user_id):'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
   }
   function pointsFor(userId){
     return store.get(`SELECT coalesce(sum(r.points),0) AS n FROM runs r WHERE r.user_id=? AND r.invalidated=0 AND r.flags='[]'`,userId).n;
@@ -72,7 +72,7 @@ export function createCampaignService(options){
     const points=pointsFor(u.id);
     const rank=points?store.get(`SELECT count(*)+1 AS n FROM (SELECT r.user_id FROM runs r JOIN users u ON u.id=r.user_id
       WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' GROUP BY r.user_id HAVING sum(r.points)>?)`,points).n:null;
-    return {provider:u.provider||'x',username:u.username,name:u.name,publicProfile:!!u.public_profile,status:u.status,points,rank,
+    return {provider:u.provider||'x',username:u.username,display:publicIdentity(u,u.id),name:u.name,publicProfile:!!u.public_profile,status:u.status,points,rank,
       spots:spots.map(sp=>({route:sp.route,status:sp.status,at:sp.created_at,code:sp.code})),
       runs:runs.map(r=>({id:r.id,kind:r.kind,code:r.code,result:parse(r.result),points:r.points,progress:progressSummary(r),at:r.completed_at||r.started_at,
         open:!r.completed_at&&r.expires_at>now(),invalidated:!!r.invalidated})),
@@ -107,7 +107,10 @@ export function createCampaignService(options){
     const id=accountId(provider,identity.id),fresh=token();
     store.transaction(()=>{
       store.run(`INSERT INTO users(id,username,name,provider,created_at,last_seen) VALUES(?,?,?,?,?,?)
-        ON CONFLICT(id) DO UPDATE SET username=excluded.username,name=excluded.name,provider=excluded.provider,last_seen=excluded.last_seen`,id,identity.username,identity.name,provider,now(),now());
+        ON CONFLICT(id) DO UPDATE SET provider=excluded.provider,last_seen=excluded.last_seen,
+        -- A Farcaster sign-in whose name lookup failed keeps the name already on file.
+        username=CASE WHEN excluded.username='fid'||substr(excluded.id,11) THEN users.username ELSE excluded.username END,
+        name=CASE WHEN excluded.username='fid'||substr(excluded.id,11) THEN users.name ELSE excluded.name END`,id,identity.username,identity.name,provider,now(),now());
       store.run('INSERT INTO sessions(token_hash,anon_id,user_id,ref_code,created_at,expires_at) VALUES(?,?,?,?,?,?)',hash(fresh),s.anon_id,id,s.ref_code,now(),now()+30*DAY);
       store.run('DELETE FROM sessions WHERE token_hash=?',s.token_hash);
       // Official runs played before signing in count toward this account's points.
@@ -180,7 +183,7 @@ export function createCampaignService(options){
         // Ties share a rank; earlier scoring breaks display order only.
         let rank=0;
         const entries=rows.map((row,index)=>{if(!index||row.points<rows[index-1].points)rank=index+1;
-          return {rank,player:row.public_profile?publicIdentity(row):'ANON',points:row.points,spots:spots.filter(sp=>sp.user_id===row.id).map(sp=>sp.route).sort()};});
+          return {rank,player:row.public_profile?publicIdentity(row,row.id):'ANON',points:row.points,spots:spots.filter(sp=>sp.user_id===row.id).map(sp=>sp.route).sort()};});
         return json(response,200,{entries});
       }
       let s=session(request,response,path==='/session');
@@ -349,5 +352,14 @@ export function createCampaignService(options){
     }
     return true;
   }
-  return {handle,store,close:()=>store.close(),configured:!!serviceToken&&authReady};
+  // Farcaster accounts saved before usernames were looked up show only an FID.
+  // Fill them in once, in the background; each later sign-in refreshes the name.
+  const lookupName=options.farcasterUsername||farcasterUsername;
+  const backfill=farcasterReady?(async()=>{
+    for(const row of store.all("SELECT id FROM users WHERE provider='farcaster' AND username=('fid'||substr(id,11))")){
+      const fid=Number(row.id.slice(10)),username=await lookupName(fid);
+      if(username)store.run('UPDATE users SET username=?,name=? WHERE id=? AND username=?',username,username,row.id,'fid'+fid);
+    }
+  })().catch(()=>{}):Promise.resolve();
+  return {handle,store,backfill,close:()=>store.close(),configured:!!serviceToken&&authReady};
 }
