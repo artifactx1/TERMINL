@@ -156,3 +156,16 @@ test('ollies stay connected and a flip catches the deck before the next trick',(
  stepMall(s,{flip:true});for(let i=0;i<22;i++)stepMall(s);const pose=sampleSkatePose(s,0);
  assert.equal(pose.boardRoll,0);assert.ok(pose.bodyLift<1e-7);assert.equal(pose.flipping,false);assert.equal(pose.rearFrame,SKATE_CLIPS.ollie);
 });
+test('touch play auto-fires only on a hittable target, and aim slows over enemies',()=>{
+  const aimed=createRug({level:1});aimed.enemies=[spawnEnemy('whale',0,23,0)];const before=aimed.enemies[0].hp;
+  stepRug(aimed,{autoFire:true,touchAssist:true});assert.ok(aimed.enemies[0].hp<before,'crosshair on an enemy fires');
+  const away=createRug({level:1});away.enemies=[spawnEnemy('whale',0,23,0)];away.player.yaw+=1.2;stepRug(away,{autoFire:true});
+  assert.equal(away.shots,0,'no target, no shot');
+  const bag=createRug({level:1});bag.enemies=[spawnEnemy('whale',0,23,0)];bag.unlocked.push(7);bag.weapon=7;stepRug(bag,{autoFire:true});
+  assert.equal(bag.shots,0,'auto-fire never triggers EXIT LIQUIDITY');
+  const free=createRug({level:1}),slowed=createRug({level:1});free.enemies=[];slowed.enemies=[spawnEnemy('whale',0,23,0)];
+  const yaw=free.player.yaw;stepRug(free,{lookX:20,touchAssist:true});stepRug(slowed,{lookX:20,touchAssist:true});
+  assert.ok(Math.abs(slowed.player.yaw-yaw)<Math.abs(free.player.yaw-yaw),'aim friction over a target');
+  const mouse=createRug({level:1});mouse.enemies=[spawnEnemy('whale',0,23,0)];stepRug(mouse,{lookX:20});
+  assert.equal(mouse.player.yaw,free.player.yaw,'mouse aim is never assisted');
+});
