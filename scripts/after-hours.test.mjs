@@ -13,7 +13,7 @@ test('repeat tricks diminish, bank is safe, bail destroys only unbanked score',(
 test('three minute runs end, seeded challenges repeat, saves survive malformed data',()=>{const s=createMall({seed:17});assert.deepEqual(s.challengeIds,createMall({seed:17}).challengeIds);s.tick=MALL_TUNING.duration-1;stepMall(s);assert.equal(s.phase,'finished');const storage={getItem:()=>'{',setItem(){throw Error('quota');}};const result=recordRun(readProgress(storage),s,storage);assert.equal(result.saved,false);assert.equal(result.progress.mall.records.length,1);});
 import {createRug,stepRug} from '../lib/arcade/after-hours/rug-sim.mjs';
 import {nextWaypoint} from '../lib/arcade/after-hours/rug-navigation.mjs';
-import {fireWeapon,damageEnemy,hurtPlayer,stepEnemies} from '../lib/arcade/after-hours/rug-combat.mjs';
+import {fireWeapon,damageEnemy,hurtPlayer,stepEnemies,hitscanTargets,AUTO_FIRE_DELAY} from '../lib/arcade/after-hours/rug-combat.mjs';
 import {spawnEnemy} from '../lib/arcade/after-hours/rug-world.mjs';
 test('shooter strafe speed is normalized; dash, slide-jump and walls preserve control',()=>{const a=createRug({level:1}),b=createRug({level:1});a.enemies=[];b.enemies=[];for(let i=0;i<25;i++){stepRug(a,{forward:true});stepRug(b,{forward:true,right:true});}assert.ok(Math.abs(Math.hypot(a.player.vx,a.player.vz)-Math.hypot(b.player.vx,b.player.vz))<.01);stepRug(a,{dash:true,forward:true});assert.ok(Math.hypot(a.player.vx,a.player.vz)>25);stepRug(a,{crouch:true,jump:true});assert.ok(a.player.vy>9);Object.assign(a.player,{x:33.4,z:27,y:0,vx:20,vz:0});stepRug(a,{right:true});assert.ok(a.player.x<34);});
 test('three slice weapons have different ranges, resources and damage',()=>{for(const weapon of [0,1,2]){const s=createRug({level:1});s.enemies=[spawnEnemy('whale',0,23,0)];s.weapon=weapon;const before=s.enemies[0].hp;fireWeapon(s);assert.ok(s.enemies[0].hp<before);if(weapon===0)assert.equal(s.ammo.shells,24);if(weapon===1)assert.equal(s.ammo.shells,23);if(weapon===2)assert.equal(s.ammo.gwei,178);}const s=createRug();s.enemies=[spawnEnemy('bot',0,23,0)];s.world.solids.push({x:0,z:25,w:5,d:1,y:0,h:4});fireWeapon(s);assert.equal(s.enemies[0].hp,45);});
@@ -159,10 +159,14 @@ test('ollies stay connected and a flip catches the deck before the next trick',(
 });
 test('touch play auto-fires only on a hittable target, and aim slows over enemies',()=>{
   const aimed=createRug({level:1});aimed.enemies=[spawnEnemy('whale',0,23,0)];const before=aimed.enemies[0].hp;
-  stepRug(aimed,{autoFire:true,touchAssist:true});assert.ok(aimed.enemies[0].hp<before,'crosshair on an enemy fires');
-  const away=createRug({level:1});away.enemies=[spawnEnemy('whale',0,23,0)];away.player.yaw+=1.2;stepRug(away,{autoFire:true});
+  stepRug(aimed,{autoFire:true,touchAssist:true});assert.equal(aimed.shots,0,'no shot the instant an enemy is under the crosshair');
+  for(let i=0;i<AUTO_FIRE_DELAY;i++)stepRug(aimed,{autoFire:true,touchAssist:true});assert.ok(aimed.enemies[0].hp<before,'holding the crosshair on an enemy fires');
+  const edge=createRug({level:1});edge.enemies=[spawnEnemy('whale',0,13,0)];edge.player.yaw+=.07;
+  assert.ok(hitscanTargets(edge).length,'inside the weapon spread');for(let i=0;i<40;i++)stepRug(edge,{autoFire:true});
+  assert.equal(edge.shots,0,'a target at the edge of the spread is not auto-fired at');
+  const away=createRug({level:1});away.enemies=[spawnEnemy('whale',0,23,0)];away.player.yaw+=1.2;for(let i=0;i<40;i++)stepRug(away,{autoFire:true});
   assert.equal(away.shots,0,'no target, no shot');
-  const bag=createRug({level:1});bag.enemies=[spawnEnemy('whale',0,23,0)];bag.unlocked.push(7);bag.weapon=7;stepRug(bag,{autoFire:true});
+  const bag=createRug({level:1});bag.enemies=[spawnEnemy('whale',0,23,0)];bag.unlocked.push(7);bag.weapon=7;for(let i=0;i<40;i++)stepRug(bag,{autoFire:true});
   assert.equal(bag.shots,0,'auto-fire never triggers EXIT LIQUIDITY');
   const free=createRug({level:1}),slowed=createRug({level:1});free.enemies=[];slowed.enemies=[spawnEnemy('whale',0,23,0)];
   const yaw=free.player.yaw;stepRug(free,{lookX:20,touchAssist:true});stepRug(slowed,{lookX:20,touchAssist:true});
