@@ -13,3 +13,4 @@
 .gyroToggle{min-height:40px;padding:8px 14px;background:#09271d;border:1px solid #a9c18d99;color:#dceac5;font:11px var(--terminl-font);letter-spacing:.08em}.gyroToggle[aria-pressed=true]{background:#9dbd77;color:#102616}
 @media(pointer:coarse){.gyroSetting{display:block}}
 .touchLayer .actionCluster>div>button{font:700 11px var(--terminl-font);letter-spacing:0;padding:0}
+.gyroSpeed{display:flex;align-items:center;gap:12px;margin-top:12px;color:#dceac5;font:11px var(--terminl-font);letter-spacing:.08em}.gyroSpeed input{flex:1;max-width:260px;accent-color:#9dbd77;min-height:32px}
