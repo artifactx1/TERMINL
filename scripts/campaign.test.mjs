@@ -114,6 +114,14 @@ test('official Rumble circuit advances only on verified wins, with a fresh bot s
     const spam=driveFight(challenge,{index,attempts:index,fights:[]},pressure);
     assert.equal(spam.won,false,`crouch-kick spam loses to official rival ${index+1}`);
   }
+  const hard={...challenge,bot:2},hardFight=driveFight(hard,{index:3,attempts:2,fights:[]});
+  assert.equal(rumbleSegment(hard,{index:3,attempts:2,fights:[]},hardFight.replay).segment.won,hardFight.won,'circuits issued under the first rival verify as played');
+  // A casual player (the practice bot's own style, no frame-perfect reactions) can clear the circuit.
+  for(const character of ['max','diamond','mia']){
+    const run=rumbleSnapshot(character,99);let progress=null,result=null;
+    while(!result){const before=progress||{index:0,attempts:0,fights:[]},fight=driveFight(run,before,state=>botInput(state,0)),out=rumbleSegment(run,progress,fight.replay);progress=out.state;result=out.result;}
+    assert.ok(progress.attempts<=40,`a casual ${character} clears the circuit in ${progress.attempts} attempts`);
+  }
   const legacy={...challenge};delete legacy.bot;
   const old=driveFight(legacy,{index:0,attempts:0,fights:[]},pressure);
   assert.equal(rumbleSegment(legacy,null,old.replay).segment.won,old.won,'runs issued before the rival keep their original bot');
