@@ -103,7 +103,7 @@ export default function Rumble({assetLabEnabled=false}){
         if(!current.paused){accumulator+=elapsed;while(accumulator>=FRAME){
           const wasFinished=game.current.phase==="finished",officialFight=current.circuit?.official;
           if(officialFight&&!wasFinished)current.official.record(fightInput);
-          game.current=stepFight(game.current,[fightInput,current.training&&current.lesson<2?0:current.circuit?circuitInput(game.current,current.circuit,current.circuit.seed||0):botInput(game.current,1)]);
+          game.current=stepFight(game.current,[fightInput,current.training&&current.lesson<2?0:current.circuit?.rival?current.circuit.rival(game.current):current.circuit?circuitInput(game.current,current.circuit):botInput(game.current,1)]);
           if(officialFight&&!wasFinished&&game.current.phase==="finished")current.official.cut({hold:true});
           accumulator-=FRAME;}}
         draw=game.current;
@@ -145,8 +145,8 @@ export default function Rumble({assetLabEnabled=false}){
   };
   /** The next official fight. Its bot seed depends on how many fights the server has been sent. */
   const officialFight=(challenge,index)=>{
-    const {circuit:next,seed,state:fight}=circuitFight(challenge,{index,attempts:official.segments()});
-    official.restartSegment();setCircuit({...next,official:true,seed});setCharacter(challenge.character);circuitFinished.current=false;begin(fight);
+    const {circuit:next,input:rival,state:fight}=circuitFight(challenge,{index,attempts:official.segments()});
+    official.restartSegment();setCircuit({...next,official:true,rival});setCharacter(challenge.character);circuitFinished.current=false;begin(fight);
   };
   const startOfficial=async()=>{const run=await official.start({character});if(run)officialFight(run.challenge,0);};
   const continueOfficial=()=>officialFight(official.attempt.challenge,official.progress?.index||0);
@@ -192,7 +192,7 @@ export default function Rumble({assetLabEnabled=false}){
     {notice&&<div className={s.notice} role="status">{notice}<button aria-label="Dismiss notice" onClick={()=>setNotice("")}>×</button></div>}
     {mode==="menu"?<main className={s.menu}>
       <OfficialPanel official={official} portrait={roster.portrait} eyebrow='OFFICIAL / REKT RUMBLE CIRCUIT / FCFS WL'
-        title='Six fights. One WL spot.' startLabel={`START AS ${roster.name.toUpperCase()} →`} onStart={startOfficial}
+        title='Six fights. Your FCFS WL spot.' startLabel={`START AS ${roster.name.toUpperCase()} →`} onStart={startOfficial}
         action={official.attempt&&!official.result?<button className={s.primary} onClick={continueOfficial}>CONTINUE · FIGHT {(official.progress?.index||0)+1}/6 →</button>:null}>
         <p>Win all six circuit fights in one official run. Lose a fight and you retry that fight; the circuit keeps your progress for 30 minutes between fights.</p>
         <small>Pick your fighter below first. The finale is a mirror match.</small>

@@ -33,6 +33,11 @@ export function openCampaignStore(directory){
       run_id TEXT UNIQUE NOT NULL REFERENCES runs(id), status TEXT NOT NULL, created_at INTEGER NOT NULL,
       PRIMARY KEY(user_id,route));
     CREATE INDEX IF NOT EXISTS spots_status ON spots(status,created_at);
+    CREATE TABLE IF NOT EXISTS gtd (
+      user_id TEXT PRIMARY KEY REFERENCES users(id), position INTEGER NOT NULL,
+      points INTEGER NOT NULL, created_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS gtd_close (
+      id INTEGER PRIMARY KEY CHECK(id=1), ends_at INTEGER NOT NULL, closed_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS replay_hashes (
       hash TEXT NOT NULL, anon_id TEXT NOT NULL, run_id TEXT NOT NULL, PRIMARY KEY(hash,anon_id));
     CREATE TABLE IF NOT EXISTS referrals (
@@ -84,6 +89,10 @@ export function openCampaignStore(directory){
     db.prepare('UPDATE settings SET value=? WHERE id=1').run(JSON.stringify({...stored,capacity:0}));
     db.prepare('INSERT INTO audit(at,actor,action,detail) VALUES(?,?,?,?)').run(Date.now(),'migration','settings',JSON.stringify({capacity:{previous:2048,next:0}}));
   }
+  // One FCFS spot per account (the contract allows one per user). Earlier releases saved
+  // one per route; the earliest stays the spot and later ones become plain route clears.
+  db.exec(`UPDATE spots SET status='cleared' WHERE status<>'cleared' AND EXISTS (SELECT 1 FROM spots o WHERE o.user_id=spots.user_id
+    AND o.status<>'cleared' AND (o.created_at<spots.created_at OR o.created_at=spots.created_at AND o.rowid<spots.rowid))`);
   const get=(sql,...args)=>db.prepare(sql).get(...args);
   const all=(sql,...args)=>db.prepare(sql).all(...args);
   const run=(sql,...args)=>db.prepare(sql).run(...args);

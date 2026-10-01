@@ -10,8 +10,10 @@ export function campaignConfig(input){
   if(!Object.hasOwn(TRACKS,c.track)||!Object.hasOwn(VEHICLES,c.vehicle)||!Object.hasOwn(VEHICLES,c.botVehicle))throw new Error('Unknown track or vehicle');
   if(!Number.isFinite(c.botPace)||c.botPace<.55||c.botPace>1.1)throw new Error('Bot pace must be between 0.55 and 1.1');
   if(!Number.isInteger(c.capacity)||c.capacity<0||c.capacity>1000000)throw new Error('Capacity must be 0 (no limit) to 1,000,000');
-  for(const key of ['startsAt','endsAt','addressStartsAt','addressEndsAt'])if(!Number.isSafeInteger(c[key])||c[key]<0)throw new Error('Invalid campaign date');
+  if(!Number.isInteger(c.gtdSlots)||c.gtdSlots<0||c.gtdSlots>10000)throw new Error('GTD spots must be 0–10,000');
+  for(const key of ['startsAt','endsAt','addressStartsAt','addressEndsAt','gtdEndsAt','gtdAddressEndsAt'])if(!Number.isSafeInteger(c[key])||c[key]<0)throw new Error('Invalid campaign date');
   if(c.endsAt&&c.endsAt<=c.startsAt||c.addressEndsAt&&c.addressEndsAt<=c.addressStartsAt)throw new Error('Window must end after it starts');
+  if(c.gtdAddressEndsAt&&c.gtdEndsAt&&c.gtdAddressEndsAt<=c.gtdEndsAt)throw new Error('GTD submissions must close after the leaderboard closes');
   if(c.chainId!==4663)throw new Error('This campaign accepts Robinhood Chain mainnet addresses');
   if(c.announcementUrl){let url;try{url=new URL(c.announcementUrl);}catch{throw new Error('Invalid announcement URL');}if(url.protocol!=='https:'||!['x.com','www.x.com','terminl.net','www.terminl.net'].includes(url.hostname))throw new Error('Use a TERMINL or X announcement URL');}
   return Object.fromEntries(Object.keys(DEFAULT_CAMPAIGN).map(k=>[k,c[k]]));

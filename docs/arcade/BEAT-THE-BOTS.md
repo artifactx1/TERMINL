@@ -5,7 +5,9 @@ play → verified Barry Cup or Rekt Rumble circuit → save an FCFS WL spot with
 
 ## Product decisions
 
-- Two routes, each worth one **FCFS WL spot** per identity:
+- Two routes; clearing either earns the account's one **FCFS WL spot** (the
+  contract allows one per user). Clearing the other route is recorded as a clear
+  and scores points:
   - **Barry Cup** (Wen Lambo): beat BarryBot on points across all six courses.
     One race win is not enough. 1st scores 10, 2nd 6, ties on points go to the
     lower combined time (the cup's own rules).
@@ -17,13 +19,22 @@ play → verified Barry Cup or Rekt Rumble circuit → save an FCFS WL spot with
   limit (shared by both routes, 0 = none) waitlists saves beyond it. The original
   2048 default was the collection size and is reset to unlimited on upgrade.
 - Spots from the retired single-race challenge became honored `sprint` spots.
+- Official Rekt Rumble fights use a dedicated rival (`lib/arcade/rumble-rival.mjs`)
+  that guards the right height, punishes recovery and breaks throws, tightening
+  over the six fights. Spam that cleared the practice bot loses every fight.
+  Practice keeps the original bot; runs issued before the rival keep theirs.
 - Reuse the actual simulations, renderers and controls. A server-issued run pins
   game version, route, bot seed and settings. The browser submits each finished
   race or fight as one segment, in order; the server replays it from the stored
   state of the previous segment. Browser-reported scores confer nothing.
   Rumble attempts each get a bot timing seed derived from the run seed, so
   winning inputs cannot be replayed against another fight.
-- Arcade points rank the public leaderboard and never change WL spots: 10 per
+- **GTD**: when the leaderboard closes at `gtdEndsAt` (end of the marketing
+  period), the top `gtdSlots` (default 100) by points become the fixed GTD list;
+  ties go to whoever reached their total first. The snapshot is taken before any
+  request after the close is handled. Holders submit a mint address until
+  `gtdAddressEndsAt`; admin exports the list with addresses.
+- Arcade points rank the public leaderboard and decide GTD; they never change FCFS: 10 per
   race win, +50 for the cup, 10 per fight win, +50 for clearing the circuit,
   10 for a legacy sprint win. Points accrue to signed-in accounts; official runs
   played before sign-in on the same browser are added when the player signs in.

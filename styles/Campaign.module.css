@@ -20,3 +20,4 @@
 .resultTimes>p{grid-column:1/-1;margin:0;font-size:13px}.card a:not(.primary):not(.secondary):not(.textButton){color:#d1fabb}
 @media(max-width:700px){.routes{grid-template-columns:1fr}}
 .card+.card,.tableWrap+.card,.spotGrid+.fine+.card{margin-top:20px}
+.grid>.card,.spotGrid>.card,.routes>.card{margin-top:0}

@@ -11,7 +11,7 @@ export function OfficialPanel({official,portrait,eyebrow,title,children,action,s
   return <section className={s.raceChallenge} aria-label='Official WL challenge'>
     <Image src={`/degens/${portrait}.webp`} alt='' width={85} height={140}/>
     <div><span className={s.eyebrow}>{eyebrow}</span><h2>{title}</h2>{children}
-      <small>Verified by the server. Earns one FCFS WL spot. No wallet required.</small>
+      <small>{official.held?'You already hold your FCFS WL spot. Clearing this route still scores leaderboard points toward the top-100 GTD spots.':'Verified by the server. Clear it to earn your FCFS WL spot (one per person). No wallet required.'}</small>
       {official.error&&<p role='alert' className={s.error}>{official.error}</p>}
     </div>{action||<button className={s.primary} disabled={official.status==='starting'} onClick={onStart}>{official.status==='starting'?'SETTING UP…':startLabel}</button>}
   </section>;
@@ -39,8 +39,8 @@ export function OfficialResult({official,onRetry,onLeave,retryLabel}){
       {kind==='cup'&&<p>{won?BARRY.beaten:BARRY.won}</p>}
       <Details official={official}/>
       <p className={s.points}>+{points} ARCADE POINTS THIS RUN</p>
-      {won?<><h3>YOU EARNED AN FCFS WL SPOT.</h3><p>Save it with X, Farcaster or Discord. No wallet connection and nothing is posted for you.</p>
-        <button className={s.primary} disabled={status==='saving'} onClick={official.save}>{status==='saving'?'SAVING…':'SAVE MY WL SPOT →'}</button>
+      {won?<><h3>{official.held?'ROUTE CLEARED. YOUR FCFS SPOT IS ALREADY SAVED.':'YOU EARNED AN FCFS WL SPOT.'}</h3><p>{official.held?'Save the clear to your Arcade Pass. Your points already count toward the top-100 GTD spots.':'Save it with X, Farcaster or Discord. No wallet connection and nothing is posted for you.'}</p>
+        <button className={s.primary} disabled={status==='saving'} onClick={official.save}>{status==='saving'?'SAVING…':official.held?'SAVE THIS CLEAR →':'SAVE MY WL SPOT →'}</button>
         <small className={s.fine}>{FCFS_NOTE}</small>
       </>:<p>Most points across the six races takes the cup. Your race points still count on the leaderboard once you sign in.</p>}
     </>}

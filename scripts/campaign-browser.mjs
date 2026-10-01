@@ -4,8 +4,8 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {createChallengeRace} from '../lib/arcade/bot-challenge.mjs';
 import {circuitFight} from '../lib/arcade/rumble-challenge.mjs';
 import {stepRace,raceBotInput} from '../lib/arcade/race-sim.mjs';
-import {stepFight,botInput,INPUT} from '../lib/arcade/rumble-sim.mjs';
-import {circuitInput} from '../lib/arcade/rumble-circuit.mjs';
+import {stepFight} from '../lib/arcade/rumble-sim.mjs';
+import {rivalInput} from '../lib/arcade/rumble-rival.mjs';
 
 // Runs only against the separate localhost fixture (scripts/campaign-browser-service.mjs),
 // which simulates identity providers and runs a 20x clock.
@@ -38,7 +38,6 @@ async function drive(masks){
 /** Extra neutral frames after a result flush the 100ms React HUD cadence. Only safe
  * once the simulation has stopped consuming input for this run. */
 const settle=()=>page.evaluate(()=>{for(let i=0;i<10;i++)window.driveFrame(0);});
-const pressure=s=>{if(s.phase==='finishWindow')return botInput(s,0);const p=s.players[0],e=s.players[1];return Math.abs(p.x-e.x)>90?(p.x<e.x?INPUT.RIGHT:INPUT.LEFT):INPUT.DOWN|(s.tick%14<2?INPUT.HEAVY:0);};
 try{
   // Barry Cup: six real races through the game, each verified by the service as it ends.
   await page.goto(base+'/beat-the-bots');await page.getByRole('link',{name:'PLAY BARRY CUP →'}).click();
@@ -88,17 +87,18 @@ try{
   await page.getByRole('button',{name:/^START AS /}).click();const circuit=await (await circuitIssued).json();
   assert.equal(circuit.kind,'rumble');let progress={index:0,attempts:0,fights:[]};
   while(progress.index<6){
-    let {circuit:c,seed,state}=circuitFight(circuit.challenge,progress);const masks=[];
-    while(state.phase!=='finished'){const input=pressure(state);masks.push(input);state=stepFight(state,[input,circuitInput(state,c,seed)]);}
+    let {input:rival,state}=circuitFight(circuit.challenge,progress);const masks=[];const player=s=>rivalInput(s,0,5,7919*(progress.attempts+1));
+    while(state.phase!=='finished'){const input=player(state);masks.push(input);state=stepFight(state,[input,rival(state)]);}
     await driveInRealTime(masks);await settle();progress={index:progress.index+(state.winner===0?1:0),attempts:progress.attempts+1,fights:[]};
     if(progress.index===6)break;
     const next=page.getByRole('button',{name:state.winner===0?'NEXT OPPONENT →':'RETRY FIGHT →'});await next.waitFor();await next.click();
   }
   await page.getByRole('heading',{name:'CIRCUIT CLEARED.',exact:true}).waitFor({timeout:60000});
   await page.screenshot({path:'artifacts/campaign/circuit-cleared.png'});
-  await page.getByRole('button',{name:'SAVE MY WL SPOT →'}).click();await page.waitForURL('**/arcade-pass?saved=*');
-  await page.getByText('Rekt Rumble Circuit FCFS WL spot saved.',{exact:false}).waitFor();
-  assert.equal(await page.getByText('FCFS WL SPOT',{exact:true}).count(),2,'both routes show a confirmed spot');
+  await page.getByRole('button',{name:'SAVE THIS CLEAR →'}).click();await page.waitForURL('**/arcade-pass?saved=*');
+  await page.getByText('Rekt Rumble Circuit cleared. You already hold your FCFS spot',{exact:false}).waitFor();
+  assert.equal(await page.getByText('FCFS WL SPOT',{exact:true}).count(),1,'one FCFS spot per person');
+  assert.equal(await page.getByText('CLEARED',{exact:true}).count(),2,'both routes show as cleared');
   await page.screenshot({path:'artifacts/campaign/pass-two-spots.png',fullPage:true});
 
   await page.goto(base+'/leaderboard');await page.getByRole('cell',{name:'@testdegen'}).waitFor();
@@ -106,5 +106,5 @@ try{
   await page.setViewportSize({width:390,height:844});await page.screenshot({path:'artifacts/campaign/mobile-leaderboard.png',fullPage:true});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.goto(base+'/admin/campaign');await page.getByLabel('CAMPAIGN ADMIN TOKEN').fill('local-admin-test');await page.getByRole('button',{name:'OPEN DASHBOARD'}).click();await page.getByRole('heading',{name:'Campaign and routes'}).waitFor();await page.screenshot({path:'artifacts/campaign/mobile-admin.png',fullPage:true});
-  assert.deepEqual(errors,[]);console.log(`PASS input-driven Barry Cup, ${progress.attempts}-attempt Rekt Rumble circuit, X sign-in fixture, two FCFS spots, address, challenge page, OG card, leaderboard and admin`);
+  assert.deepEqual(errors,[]);console.log(`PASS input-driven Barry Cup, ${progress.attempts}-attempt Rekt Rumble circuit against the official rival, X sign-in fixture, one FCFS spot plus a second route clear, address, challenge page, OG card, leaderboard and admin`);
 }catch(error){await page.screenshot({path:'artifacts/campaign/failure.png'}).catch(()=>{});console.error((await page.locator('body').innerText()).slice(-3500));throw error;}finally{await browser.close();}

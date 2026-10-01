@@ -1,6 +1,6 @@
 import {campaignConfigured,campaignFetch,campaignOrigin} from '../../../lib/server/campaign';
 
-const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|admin(?:\/(?:settings|review|addresses))?)$/;
+const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|admin(?:\/(?:settings|review|addresses|gtd))?)$/;
 export const maxDuration=30;
 export const config={api:{bodyParser:{sizeLimit:'400kb'}}};
 export default async function handler(req,res){

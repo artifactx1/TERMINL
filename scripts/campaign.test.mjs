@@ -17,6 +17,7 @@ import {rumbleSnapshot,rumbleSegment,circuitFight,CIRCUIT_MAX_ATTEMPTS} from '..
 import {stepRace,raceBotInput} from '../lib/arcade/race-sim.mjs';
 import {stepFight,botInput,INPUT} from '../lib/arcade/rumble-sim.mjs';
 import {circuitInput} from '../lib/arcade/rumble-circuit.mjs';
+import {rivalInput} from '../lib/arcade/rumble-rival.mjs';
 
 /** Drives a whole cup in the browser's way and cuts it where the client submits. */
 function driveCup(challenge,lose=false){
@@ -28,11 +29,13 @@ function driveCup(challenge,lose=false){
   }
   return {segments,state:s};
 }
-/** Crouching heavy pressure: a plain input strategy that beats every circuit opponent with retries. */
+/** Crouching heavy pressure: the spam that cleared the old practice-bot circuit. */
 const pressure=s=>{if(s.phase==='finishWindow')return botInput(s,0);const p=s.players[0],e=s.players[1];return Math.abs(p.x-e.x)>90?(p.x<e.x?INPUT.RIGHT:INPUT.LEFT):INPUT.DOWN|(s.tick%14<2?INPUT.HEAVY:0);};
-function driveFight(challenge,progress,strategy=pressure){
-  let {circuit,seed,state}=circuitFight(challenge,progress);const replay=[];
-  while(state.phase!=='finished'){const input=strategy(state);captureInput(replay,input);state=stepFight(state,[input,circuitInput(state,circuit,seed)]);}
+/** A skilled player: the rival's own top-level play, varied per attempt. */
+const skilled=attempt=>s=>rivalInput(s,0,5,7919*(attempt+1));
+function driveFight(challenge,progress,strategy=skilled(progress.attempts)){
+  let {input:rival,state}=circuitFight(challenge,progress);const replay=[];
+  while(state.phase!=='finished'){const input=strategy(state);captureInput(replay,input);state=stepFight(state,[input,rival(state)]);}
   return {replay,ticks:state.tick,won:state.winner===0};
 }
 /** Stand-in verifier for identity and storage tests. Segment input 1 is a win.
@@ -107,6 +110,13 @@ test('official Rumble circuit advances only on verified wins, with a fresh bot s
   assert.equal(result.qualified,true);assert.equal(result.opponents.length,6);assert.equal(result.losses,progress.attempts-6);
   assert.equal(points,6*POINTS.fightWin+POINTS.circuitClear);
   assert.notEqual(circuitFight(challenge,{index:0,attempts:0}).seed,circuitFight(challenge,{index:0,attempts:1}).seed);
+  for(let index=0;index<6;index++){
+    const spam=driveFight(challenge,{index,attempts:index,fights:[]},pressure);
+    assert.equal(spam.won,false,`crouch-kick spam loses to official rival ${index+1}`);
+  }
+  const legacy={...challenge};delete legacy.bot;
+  const old=driveFight(legacy,{index:0,attempts:0,fights:[]},pressure);
+  assert.equal(rumbleSegment(legacy,null,old.replay).segment.won,old.won,'runs issued before the rival keep their original bot');
   const first=driveFight(challenge,{index:0,attempts:0,fights:[]});
   assert.throws(()=>rumbleSegment(challenge,{index:6,attempts:9,fights:[]},first.replay),/already complete/);
   assert.throws(()=>rumbleSegment(challenge,{index:2,attempts:CIRCUIT_MAX_ATTEMPTS,fights:[]},first.replay),/all its attempts/);
@@ -323,9 +333,10 @@ test('WL spots per route, segment ordering, points leaderboard, referrals, capac
     assert.equal((await api(a,'/claim',{runId:loss.id})).status,403,'a lost cup earns no spot');
     assert.equal((await api(a,'/me')).data.pass.points,6*POINTS.raceWin+POINTS.cupWin+2*POINTS.raceWin,'race wins in a lost cup still score');
     const rumble=await playRumble(api,a,clock,{losses:2}),second=await api(a,'/claim',{runId:rumble.id});
-    assert.equal(second.status,200);assert.deepEqual(routes(second.data.pass),{cup:'qualified',rumble:'qualified'},'each route awards its own spot');
+    assert.equal(second.status,200);assert.equal(second.data.status,'cleared');assert.deepEqual(routes(second.data.pass),{cup:'qualified',rumble:'cleared'},'one FCFS spot per account; another route is a clear');
+    assert.deepEqual(second.data.pass.fcfs.route,'cup');
     const again=await playCup(api,a,clock);assert.equal((await api(a,'/claim',{runId:again.id})).data.already,true,'one spot per route');
-    assert.equal((await api(a,'/config')).data.claimed,2);
+    assert.equal((await api(a,'/config')).data.claimed,1);
     const runB=await playCup(api,b,clock,{ref:code}),passB=await save(b,runB.id,'202',true);
     assert.deepEqual(routes(passB),{cup:'qualified'});assert.equal((await api(a,'/me')).data.pass.referrals,1);
     await api(b,'/claim',{runId:runB.id,publicProfile:true});assert.equal((await api(a,'/me')).data.pass.referrals,1,'repeat claim cannot farm referrals');
@@ -348,8 +359,8 @@ test('WL spots per route, segment ordering, points leaderboard, referrals, capac
     assert.equal((await api(a,'/admin/addresses')).status,404,'address export is private');
     const exported=await api(guest(),'/admin/addresses',undefined,{'X-Campaign-Admin':'admin'});
     assert.equal(exported.data.frozen,true);assert.equal(exported.data.addresses.length,1);
-    assert.deepEqual([exported.data.addresses[0].address,exported.data.addresses[0].spots],[address.toLowerCase(),2]);
-    await settings({...service.store.config(),capacity:3});
+    assert.deepEqual([exported.data.addresses[0].address,exported.data.addresses[0].route],[address.toLowerCase(),'cup']);
+    await settings({...service.store.config(),capacity:2});
     const d=guest();await api(d,'/session');const overflow=await playCup(api,d,clock,{ref:code});
     assert.deepEqual(routes(await save(d,overflow.id,'303')),{cup:'waitlist'},'FCFS capacity cannot be oversubscribed');
     assert.equal((await api(a,'/me')).data.pass.referrals,1,'waitlisted accounts earn no referral credit');
@@ -409,11 +420,44 @@ test('existing single-race qualifications become honored sprint spots with point
     try{
       const get=path=>fetch(`http://127.0.0.1:${server.address().port}/campaign${path}`,{headers:{Authorization:'Bearer service'}}).then(r=>r.json());
       assert.equal((await get('/results/Yag0FRxedHtQxCPI')).kind,'sprint','legacy challenge pages keep working');
-      assert.deepEqual((await get('/leaderboard')).entries,[{rank:1,player:'FID #8688',points:POINTS.legacySprint,spots:['sprint']}]);
+      assert.deepEqual((await get('/leaderboard')).entries,[{rank:1,player:'FID #8688',points:POINTS.legacySprint,spots:['sprint'],gtd:true}]);
       assert.equal((await get('/config')).config.cupEnabled,true);
       assert.equal((await get('/config')).config.capacity,0,'the old 2048 default no longer caps FCFS spots');
     }finally{await new Promise(r=>server.close(r));}
   }finally{service.close();await rm(dir,{recursive:true,force:true});}
+});
+test('the leaderboard top closes into GTD spots that holders can submit an address for',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'terminl-gtd-'));const clock={time:1800000000000};
+  const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',xClientId:'client',xClientSecret:'secret',now:()=>clock.time,verifyReplay:quickVerify,
+    xIdentity:async({code})=>({id:code,username:'user'+code,name:'User '+code})});
+  const server=http.createServer((req,res)=>void service.handle(req,res));await new Promise(r=>server.listen(0,'127.0.0.1',r));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`,guest=()=>({cookie:'',network:Math.random().toString()});
+  async function api(client,path,body,extra={}){
+    const response=await fetch(base+path,{method:body?'POST':'GET',redirect:'manual',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json',Cookie:client.cookie,'X-Campaign-Client':client.network,...extra},...(body?{body:JSON.stringify(body)}:{})});
+    const cookie=response.headers.get('set-cookie');if(cookie)client.cookie=cookie.split(';')[0];const text=await response.text();return {status:response.status,data:text?JSON.parse(text):null};
+  }
+  const signIn=async(client,id)=>{const auth=await api(client,'/auth/start',{});await api(client,'/auth/callback?state='+new URL(auth.data.url).searchParams.get('state')+'&code='+id);return (await api(client,'/me')).data.pass;};
+  const closesAt=clock.time+3600000,settings={...DEFAULT_CAMPAIGN,active:true,gtdSlots:2,gtdEndsAt:closesAt,gtdAddressEndsAt:closesAt+86400000};
+  try{
+    assert.equal((await api(guest(),'/admin/settings',{config:{...settings,gtdAddressEndsAt:closesAt-1}},{'X-Campaign-Admin':'admin'})).status,400,'GTD submissions close after the leaderboard');
+    assert.equal((await api(guest(),'/admin/settings',{config:settings},{'X-Campaign-Admin':'admin'})).status,200);
+    const players=[];
+    for(const [id,wins] of [['1',6],['2',3],['3',2]]){const p=guest();await api(p,'/session');await playCup(api,p,clock,{wins});players.push({client:p,pass:await signIn(p,id)});}
+    const [first,second,third]=players;
+    assert.equal(first.pass.gtd.position,1);assert.equal(second.pass.gtd.position,2);assert.equal(third.pass.gtd.position,3);
+    assert.deepEqual((await api(guest(),'/leaderboard')).data.entries.map(e=>e.gtd),[true,true,false],'the GTD range is marked before close');
+    assert.equal((await api(second.client,'/wallet',{address:'0x'+'2'.repeat(40),chainId:4663,confirmed:true})).status,403,'no address before a spot is held');
+    clock.time=closesAt+1000;
+    await playCup(api,third.client,clock);
+    const after=(await api(third.client,'/me')).data.pass;assert.equal(after.gtd.closed,true);assert.equal(after.gtd.held,null,'points after the close do not change the GTD list');
+    assert.deepEqual(service.store.all('SELECT user_id,position FROM gtd ORDER BY position').map(row=>[row.user_id,row.position]),[['1',1],['2',2]]);
+    const holder=(await api(second.client,'/me')).data.pass;assert.equal(holder.gtd.held,2);assert.equal(holder.fcfs,null,'a lost cup earns GTD standing without an FCFS spot');
+    assert.equal((await api(second.client,'/wallet',{address:'0x'+'2'.repeat(40),chainId:4663,confirmed:true})).status,200,'GTD holders submit an address');
+    const exported=(await api(guest(),'/admin/gtd',undefined,{'X-Campaign-Admin':'admin'})).data;
+    assert.deepEqual(exported.holders.map(h=>[h.position,h.address]),[[1,null],[2,'0x'+'2'.repeat(40)]]);
+    clock.time=closesAt+86400001;
+    assert.equal((await api(second.client,'/wallet',{address:'0x'+'3'.repeat(40),chainId:4663,confirmed:true})).status,409,'GTD submissions close on schedule');
+  }finally{await new Promise(r=>server.close(r));service.close();await rm(dir,{recursive:true,force:true});}
 });
 test('real replay verification runs through the service for both routes',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'terminl-verify-'));const clock={time:1800000000000};

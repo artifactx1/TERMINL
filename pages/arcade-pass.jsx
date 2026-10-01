@@ -4,7 +4,7 @@ import {useEffect,useState} from 'react';
 import CampaignShell from '../components/arcade/CampaignShell';
 import ArcadeMeta from '../components/arcade/ArcadeMeta';
 import {campaignRequest,campaignEvent} from '../lib/arcade/campaign-client';
-import {FCFS_NOTE,OPEN_ROUTES,ROUTES,addressWindow,resultSummary,spotLabel} from '../lib/arcade/campaign-rules.mjs';
+import {FCFS_NOTE,GTD_NOTE,OPEN_ROUTES,ROUTES,addressWindow,resultSummary,spotLabel} from '../lib/arcade/campaign-rules.mjs';
 import s from '../styles/Campaign.module.css';
 
 const FarcasterSignIn=dynamic(()=>import('../components/arcade/FarcasterSignIn'),{ssr:false,loading:()=>null});
@@ -21,22 +21,33 @@ function SignInChoices({campaign,runId,publicProfile,busy,onSignIn,onError}){
   </div>;
 }
 
-function Spots({pass,campaign}){
-  const held=Object.fromEntries(pass.spots.map(sp=>[sp.route,sp]));
+function WlStatus({pass,campaign}){
+  const fcfs=pass.fcfs,gtd=pass.gtd,cleared=Object.fromEntries(pass.spots.map(sp=>[sp.route,sp]));
   const routes=[...OPEN_ROUTES,...pass.spots.map(sp=>sp.route).filter(route=>!OPEN_ROUTES.includes(route))];
-  return <div className={s.spotGrid}>{routes.map(route=>{const r=ROUTES[route],spot=held[route];
-    return <section key={route} className={`${s.card} ${spot?.status==='qualified'?s.spotEarned:''}`}>
-      <span className={s.eyebrow}>{r.game.toUpperCase()}</span><h2>{r.name}</h2>
-      <span className={s.badge}>{spotLabel(spot?.status)}</span>
-      {spot?<p>Saved {date(spot.at)}.{spot.status==='review'?' A reviewer will check this run before the spot is confirmed.':spot.status==='waitlist'?' The pool was full when you saved. No spot is reserved unless one opens.':''}</p>
-        :<p>{r.task}</p>}
-      {spot?.status==='qualified'&&<Link className={s.textButton} href={'/challenge/'+spot.code}>YOUR CHALLENGE CARD →</Link>}
-      {!spot&&!r.legacy&&(campaign?.routes?.[route]?<Link className={s.secondary} href={r.href}>PLAY {r.name.toUpperCase()} →</Link>:<p className={s.fine}>Not open for WL right now.</p>)}
-    </section>;})}</div>;
+  return <><div className={s.spotGrid}>
+    <section className={`${s.card} ${fcfs?.status==='qualified'?s.spotEarned:''}`}><span className={s.eyebrow}>FCFS WL · ONE PER PERSON</span><h2>{fcfs?ROUTES[fcfs.route].name:'Not earned yet'}</h2>
+      <span className={s.badge}>{spotLabel(fcfs?.status)}</span>
+      <p>{!fcfs?'Clear the Barry Cup or the Rekt Rumble circuit and save the result.':fcfs.status==='review'?'A reviewer will check this run before the spot is confirmed.':fcfs.status==='waitlist'?'The FCFS limit was reached when you saved. No spot is reserved unless one opens.':`Saved ${date(fcfs.at)}.`}</p>
+    </section>
+    {gtd?.slots>0&&<section className={`${s.card} ${gtd.held?s.spotEarned:''}`}><span className={s.eyebrow}>GTD WL · LEADERBOARD TOP {gtd.slots}</span>
+      <h2>{gtd.closed?(gtd.held?`Held · #${gtd.held}`:'Not in the top '+gtd.slots):gtd.position?`#${gtd.position} right now`:'No points yet'}</h2>
+      <span className={s.badge}>{gtd.closed?(gtd.held?'GTD WL SPOT':'LEADERBOARD CLOSED'):gtd.position&&gtd.position<=gtd.slots?'IN GTD RANGE':'OUTSIDE GTD RANGE'}</span>
+      <p>{gtd.closed?(gtd.held?(gtd.submitOpen?'Add your mint address below to claim it.':'Your GTD spot is recorded.'):'GTD spots went to the top of the leaderboard when it closed.')
+        :gtd.endsAt?`The top ${gtd.slots} when the leaderboard closes on ${new Date(gtd.endsAt).toLocaleString()} get GTD spots.`:`The top ${gtd.slots} when the leaderboard closes get GTD spots.`}</p>
+    </section>}
+  </div>
+  <div className={s.sectionHeading}><h2>ROUTES</h2></div>
+  <div className={s.spotGrid}>{routes.map(route=>{const r=ROUTES[route],spot=cleared[route];
+    return <section key={route} className={s.card}><span className={s.eyebrow}>{r.game.toUpperCase()}</span><h2>{r.name}</h2>
+      <span className={s.badge}>{spot?'CLEARED':'NOT CLEARED'}</span>
+      {spot?<p>Saved {date(spot.at)}.</p>:<p>{r.task}</p>}
+      {spot&&spot.status!=='review'&&spot.status!=='waitlist'&&fcfs?.status==='qualified'&&<Link className={s.textButton} href={'/challenge/'+spot.code}>YOUR CHALLENGE CARD →</Link>}
+      {!spot&&!r.legacy&&(campaign?.routes?.[route]?<Link className={s.secondary} href={r.href}>PLAY {r.name.toUpperCase()} →</Link>:<p className={s.fine}>Not open right now.</p>)}
+    </section>;})}</div></>;
 }
 
-function AddressStep({pass,qualified,config,serverNow,address,setAddress,confirmed,setConfirmed,busy,onSubmit}){
-  const {open,frozen,scheduled}=addressWindow(config||{},serverNow),saved=!!pass.wallet;
+function AddressStep({pass,qualified,gtdOpen,config,serverNow,address,setAddress,confirmed,setConfirmed,busy,onSubmit}){
+  const window=addressWindow(config||{},serverNow),fcfsOpen=pass.fcfs?.status==='qualified'&&window.open,open=fcfsOpen||gtdOpen,frozen=window.frozen&&!gtdOpen,scheduled=window.scheduled,saved=!!pass.wallet;
   const windowCopy=[config?.addressStartsAt?`Opens ${new Date(config.addressStartsAt).toLocaleString()}`:'',config?.addressEndsAt?`Closes ${new Date(config.addressEndsAt).toLocaleString()}`:''].filter(Boolean).join(' · ');
   return <section id='mint-address' className={`${s.card} ${qualified&&!saved&&open?s.nextStep:''}`}>
     <span className={s.eyebrow}>{qualified&&!saved?'FINAL STEP / WL SETUP':'MINT ADDRESS / ROBINHOOD CHAIN MAINNET'}</span>
@@ -44,8 +55,8 @@ function AddressStep({pass,qualified,config,serverNow,address,setAddress,confirm
     {saved&&<p className={s.address}>{pass.wallet.address}</p>}
     {scheduled&&windowCopy&&<p className={s.fine}>{windowCopy}</p>}
     {qualified&&open?<form onSubmit={onSubmit}><label>ROBINHOOD CHAIN WALLET ADDRESS<input name='wallet' value={address} onChange={e=>setAddress(e.target.value)} placeholder='0x…' autoComplete='off' spellCheck={false} maxLength={42} required/></label><label className={s.check}><input type='checkbox' checked={confirmed} onChange={e=>setConfirmed(e.target.checked)} required/>I control this address and want to use it to mint on Robinhood Chain mainnet.</label><button className={s.primary} disabled={busy||!confirmed}>{saved?'UPDATE MINT ADDRESS':'SAVE MINT ADDRESS'}</button></form>
-      :<p>{qualified?(frozen?'The editing deadline has passed. Your recorded address is shown above.':'Your spot is saved. Come back here when address submission opens.'):'Complete the Barry Cup or the Rekt Rumble circuit and save the result. The address step unlocks with your first confirmed spot.'}</p>}
-    <p className={s.fine}>One address covers every spot on this pass. Paste a public address only: no wallet connection, signature or transaction. Never enter a seed phrase or private key.</p>
+      :<p>{qualified?(frozen?'The editing deadline has passed. Your recorded address is shown above.':'Your spot is saved. Come back here when address submission opens.'):'Clear the Barry Cup or the Rekt Rumble circuit and save the result, or finish in the leaderboard top when it closes. The address step unlocks with a confirmed FCFS or GTD spot.'}</p>}
+    <p className={s.fine}>One address covers your FCFS and GTD spots. Paste a public address only: no wallet connection, signature or transaction. Never enter a seed phrase or private key.</p>
   </section>;
 }
 
@@ -72,7 +83,7 @@ export default function ArcadePass(){
       if(query.get('auth')==='failed')setError(authProvider+' sign-in did not finish. Your verified run is still here. Try again.');
       if(query.get('saved')){
         const saved=session.pass?.spots.find(sp=>sp.code===query.get('saved'));
-        if(saved)setNotice(saved.status==='qualified'?`${ROUTES[saved.route].name} FCFS WL spot saved.${session.pass.wallet?'':' Add your mint address below to finish setup.'}`:`${ROUTES[saved.route].name} result saved: ${spotLabel(saved.status).toLowerCase()}.`);
+        if(saved)setNotice(saved.status==='qualified'?`${ROUTES[saved.route].name} FCFS WL spot saved.${session.pass.wallet?'':' Add your mint address below to finish setup.'}`:saved.status==='cleared'?`${ROUTES[saved.route].name} cleared. You already hold your FCFS spot; the points count toward GTD.`:`${ROUTES[saved.route].name} result saved: ${spotLabel(saved.status).toLowerCase()}.`);
         try{sessionStorage.removeItem(PENDING_KEY);}catch{}
       }
       if(runId&&/^[a-f0-9]{32}$/.test(runId)){const run=await campaignRequest('/runs/'+runId).catch(()=>null);if(alive&&run?.result?.qualified&&!run.saved)setPending(run);}
@@ -81,16 +92,16 @@ export default function ArcadePass(){
   const signIn=async provider=>{setBusy(true);setError('');try{
     if(pass&&pending){
       const result=await campaignRequest('/claim',{runId:pending.id,publicProfile});loadPass(result.pass);setPending(null);try{sessionStorage.removeItem(PENDING_KEY);}catch{}
-      setNotice(result.already?`You already hold a ${ROUTES[result.route].name} spot. This run’s points are on your pass.`:result.status==='qualified'?`${ROUTES[result.route].name} FCFS WL spot saved.`:`${ROUTES[result.route].name} result saved: ${spotLabel(result.status).toLowerCase()}.`);
+      setNotice(result.already?`You already cleared the ${ROUTES[result.route].name}. This run’s points are on your pass.`:result.status==='cleared'?`${ROUTES[result.route].name} cleared. You already hold your FCFS spot; the points count toward GTD.`:result.status==='qualified'?`${ROUTES[result.route].name} FCFS WL spot saved.`:`${ROUTES[result.route].name} result saved: ${spotLabel(result.status).toLowerCase()}.`);
     }
     else {const auth=await campaignRequest('/auth/start',{provider,...(pending?{runId:pending.id}:{}),publicProfile});location.assign(auth.url);}
   }catch(e){setError(e.message);}finally{setBusy(false);}};
   const saveAddress=async e=>{e.preventDefault();setBusy(true);setError('');try{const result=await campaignRequest('/wallet',{address,chainId:4663,confirmed});loadPass(result.pass);setNotice('Mint address saved. Your WL setup is complete.');setConfirmed(false);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const privacy=async value=>{setBusy(true);try{const result=await campaignRequest('/profile',{publicProfile:value});loadPass(result.pass);}catch(e){setError(e.message);}finally{setBusy(false);}};
-  const shareSpot=pass?.spots.filter(sp=>sp.status==='qualified'&&sp.route!=='sprint').at(-1);
+  const shareSpot=pass?.fcfs?.status==='qualified'?pass.spots.filter(sp=>sp.route!=='sprint').at(-1):null;
   const share=spot=>{const url=location.origin+'/challenge/'+spot.code;const text=spot.route==='cup'?'I took the Barry Cup off BarryBot in Wen Lambo.\nBarry would like a recount.\n\nYour turn:':'I cleared all six fights in the Rekt Rumble circuit.\n\nYour turn:';campaignEvent('share_click',spot.code);window.open('https://x.com/intent/post?'+new URLSearchParams({text,url}),'_blank','noopener,noreferrer');};
   const copy=async spot=>{try{await navigator.clipboard.writeText(location.origin+'/challenge/'+spot.code);setNotice('Challenge link copied. Send it to your loudest friend.');}catch{setNotice('Open your challenge card and copy its address.');}};
-  const qualified=!!pass?.spots.some(sp=>sp.status==='qualified');
+  const gtdOpen=!!pass?.gtd?.held&&pass.gtd.submitOpen,qualified=pass?.fcfs?.status==='qualified'||!!pass?.gtd?.held;
   const serverNow=clock+(campaign?.clockSkew||0);
   return <CampaignShell><ArcadeMeta card='arcade-pass' noindex/>
     <span className={s.eyebrow}>TERMINL ARCADE PASS</span><h1 className={s.title}>{pass?pass.display:'Your Arcade Pass.'}</h1>
@@ -101,11 +112,11 @@ export default function ArcadePass(){
       <div className={s.grid}>
         <section className={s.card}><span className={s.eyebrow}>ACCOUNT</span><h2>{pass.status==='banned'?'SUSPENDED':pass.status==='review'?'UNDER REVIEW':'ACTIVE'}</h2><p>Signed in with {providerName(pass.provider)}.</p></section>
         <section className={s.card}><span className={s.eyebrow}>ARCADE POINTS</span><h2>{pass.points}</h2><p>{pass.rank?`Rank #${pass.rank} on the `:'Not on the '}<Link href='/leaderboard'>leaderboard</Link>.</p></section>
-        <section className={s.card}><span className={s.eyebrow}>FCFS WL SPOTS</span><h2>{pass.spots.filter(sp=>sp.status==='qualified').length}</h2><p>{pass.referrals?`${pass.referrals} friend${pass.referrals===1?'':'s'} earned a spot from your link.`:'One spot per route.'}</p></section>
+        <section className={s.card}><span className={s.eyebrow}>WL</span><h2>{[pass.fcfs?.status==='qualified'&&'FCFS',pass.gtd?.held&&'GTD'].filter(Boolean).join(' + ')||'NONE YET'}</h2><p>{pass.referrals?`${pass.referrals} friend${pass.referrals===1?'':'s'} earned a spot from your link.`:'FCFS from a route; GTD from the leaderboard top.'}</p></section>
       </div>
-      <Spots pass={pass} campaign={campaign}/>
-      <p className={s.fine}>{FCFS_NOTE}</p>
-      <AddressStep pass={pass} qualified={qualified} config={campaign?.config} serverNow={serverNow} address={address} setAddress={setAddress} confirmed={confirmed} setConfirmed={setConfirmed} busy={busy} onSubmit={saveAddress}/>
+      <WlStatus pass={pass} campaign={campaign}/>
+      <p className={s.fine}>{FCFS_NOTE} {GTD_NOTE}</p>
+      <AddressStep pass={pass} qualified={qualified} gtdOpen={gtdOpen} config={campaign?.config} serverNow={serverNow} address={address} setAddress={setAddress} confirmed={confirmed} setConfirmed={setConfirmed} busy={busy} onSubmit={saveAddress}/>
       {shareSpot&&<section className={s.card}><span className={s.eyebrow}>YOUR GROUP CHAT NEEDS THIS</span><h2>{shareSpot.route==='cup'?'Barry lost the cup.':'Six fights. Six wins.'}</h2><div className={s.actions}><button className={s.primary} onClick={()=>share(shareSpot)}>CHALLENGE ON X ↗</button><button className={s.secondary} onClick={()=>copy(shareSpot)}>COPY CHALLENGE LINK</button><Link className={s.secondary} href={'/challenge/'+shareSpot.code}>OPEN YOUR CARD →</Link></div><p className={s.fine}>Opens a composer. You decide whether to post. A referral counts when a new player saves a confirmed spot through your link.</p></section>}
       <Runs runs={pass.runs}/>
       <section className={s.card}><h2>PUBLIC DISPLAY</h2><label className={s.check}><input type='checkbox' checked={publicProfile} disabled={busy} onChange={e=>privacy(e.target.checked)}/>Show my {pass.provider==='farcaster'?'account ID':'handle'} on cards and the leaderboard</label><small>Off means ANON.</small></section>

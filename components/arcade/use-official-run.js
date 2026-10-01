@@ -11,7 +11,7 @@ function remember(key,value){try{if(value)localStorage.setItem(key,value);else l
  * race or fight is submitted in order; the server replays it and keeps the score. */
 export function useOfficialRun(kind){
   const [campaign,setCampaign]=useState(null),[attempt,setAttempt]=useState(null),[progress,setProgress]=useState(null),[last,setLast]=useState(null);
-  const [result,setResult]=useState(null),[points,setPoints]=useState(0),[status,setStatus]=useState('idle'),[error,setError]=useState('');
+  const [result,setResult]=useState(null),[points,setPoints]=useState(0),[held,setHeld]=useState(false),[status,setStatus]=useState('idle'),[error,setError]=useState('');
   const run=useRef(null),identity=useRef(null);
   useEffect(()=>{let alive=true;campaignRequest('/config').then(c=>{if(alive)setCampaign(c);}).catch(()=>{});return()=>{alive=false;};},[]);
   const begin=(next,segments=0)=>{
@@ -22,7 +22,7 @@ export function useOfficialRun(kind){
   const start=async(extra={})=>{
     setError('');setStatus('starting');
     try{
-      identity.current=(await campaignRequest('/session')).pass;
+      identity.current=(await campaignRequest('/session')).pass;setHeld(!!identity.current?.fcfs);
       const ref=new URLSearchParams(location.search).get('ref');
       const next=await campaignRequest('/runs',{kind,ref,...extra});begin(next);return next;
     }catch(e){setError(e.message);setStatus('idle');return null;}
@@ -32,7 +32,7 @@ export function useOfficialRun(kind){
     let id=null;try{id=localStorage.getItem(resumeKey(kind));}catch{}
     if(!id||!/^[a-f0-9]{32}$/.test(id))return null;
     try{
-      identity.current=(await campaignRequest('/session')).pass;
+      identity.current=(await campaignRequest('/session')).pass;setHeld(!!identity.current?.fcfs);
       const saved=await campaignRequest('/runs/'+id);
       if(saved.kind!==kind||!saved.open){remember(resumeKey(kind),null);return null;}
       begin({id:saved.id,kind,challenge:saved.challenge,progress:saved.progress},saved.segments);return saved;
@@ -74,6 +74,6 @@ export function useOfficialRun(kind){
     }catch(e){setError(e.message);setStatus('verified');}
   };
   const cancel=()=>{run.current=null;setAttempt(null);setResult(null);setLast(null);setProgress(null);setPoints(0);setStatus('idle');setError('');};
-  return {kind,campaign,open:!!campaign?.routes?.[kind],attempt,progress,last,result,points,status,error,
+  return {kind,campaign,open:!!campaign?.routes?.[kind],held,attempt,progress,last,result,points,status,error,
     segments:()=>run.current?.segments||0,start,resume,record,cut,restartSegment,retry,save,cancel};
 }

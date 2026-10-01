@@ -8,7 +8,7 @@ import {discordAuthorize,discordIdentity} from './campaign-discord.mjs';
 import {farcasterIdentity,farcasterLabel,farcasterUsername} from './campaign-farcaster.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
 import {campaignConfig} from './campaign-config.mjs';
-import {BARRY,OPEN_ROUTES,addressWindow,canonicalReplay,campaignOpen,poolFull,routeOpen} from '../../lib/arcade/campaign-rules.mjs';
+import {BARRY,OPEN_ROUTES,addressWindow,canonicalReplay,campaignOpen,gtdWindow,poolFull,routeOpen} from '../../lib/arcade/campaign-rules.mjs';
 import {CUP_SEGMENT_TICKS,cupSnapshot,cupProgress} from '../../lib/arcade/bot-challenge.mjs';
 import {FIGHT_SEGMENT_TICKS,rumbleSnapshot,rumbleProgress} from '../../lib/arcade/rumble-challenge.mjs';
 import {CHARACTERS} from '../../lib/arcade/rumble-sim.mjs';
@@ -54,10 +54,29 @@ export function createCampaignService(options){
   const rate=(key,limit,windowMs)=>{if(!store.rate(key,limit,windowMs,now()))fail('Too many attempts. Please try again shortly.',429);};
   const progressSummary=row=>{const progress=row.progress?deserialize(row.progress):null;return row.kind==='cup'?cupProgress(progress):row.kind==='rumble'?rumbleProgress(progress):null;};
   const qualifiedSpots=()=>store.get("SELECT count(*) AS n FROM spots WHERE status='qualified'").n;
+  /** Leaderboard order: points, then whoever reached their total first. */
+  const standings=(limit=-1)=>store.all(`SELECT u.id,u.provider,u.username,u.public_profile,sum(r.points) AS points,max(r.last_segment_at) AS last
+    FROM runs r JOIN users u ON u.id=r.user_id WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' AND r.points>0
+    GROUP BY u.id ORDER BY points DESC,last ASC,u.id ASC LIMIT ?`,limit);
+  const gtdClosed=()=>store.get('SELECT * FROM gtd_close WHERE id=1');
+  /** When the marketing period ends, the top of the leaderboard becomes the GTD list.
+   * Runs before any request that could change points, so the snapshot is exact. */
+  function closeGtd(){
+    const c=config();if(!c.gtdEndsAt||!c.gtdSlots||now()<c.gtdEndsAt||gtdClosed())return;
+    store.transaction(()=>{
+      if(gtdClosed())return;
+      const top=standings(c.gtdSlots);
+      top.forEach((row,index)=>store.run('INSERT INTO gtd(user_id,position,points,created_at) VALUES(?,?,?,?)',row.id,index+1,row.points,now()));
+      store.run('INSERT INTO gtd_close(id,ends_at,closed_at) VALUES(1,?,?)',c.gtdEndsAt,now());
+      store.audit('system','gtd_closed',{endsAt:c.gtdEndsAt,slots:c.gtdSlots,awarded:top.length},now());
+    });
+  }
+  const gtdInfo=()=>{const c=config(),closed=gtdClosed();return {slots:c.gtdSlots,endsAt:c.gtdEndsAt,addressEndsAt:c.gtdAddressEndsAt,...gtdWindow(c,closed,now())};};
   function publicRun(code){
     const row=store.get(`SELECT r.*,u.provider,u.username,u.public_profile,u.status AS user_status,sp.status AS spot_status
-      FROM runs r JOIN users u ON u.id=r.user_id JOIN spots sp ON sp.run_id=r.id WHERE r.code=?`,code);
-    if(!row||row.invalidated||row.user_status!=='active'||row.spot_status!=='qualified')return null;
+      FROM runs r JOIN users u ON u.id=r.user_id JOIN spots sp ON sp.run_id=r.id WHERE r.code=?
+      AND EXISTS (SELECT 1 FROM spots f WHERE f.user_id=u.id AND f.status='qualified')`,code);
+    if(!row||row.invalidated||row.user_status!=='active'||!['qualified','cleared'].includes(row.spot_status))return null;
     return {code:row.code,kind:row.kind,player:row.public_profile?publicIdentity(row,row.user_id):'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
   }
   function pointsFor(userId){
@@ -72,7 +91,11 @@ export function createCampaignService(options){
     const points=pointsFor(u.id);
     const rank=points?store.get(`SELECT count(*)+1 AS n FROM (SELECT r.user_id FROM runs r JOIN users u ON u.id=r.user_id
       WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' GROUP BY r.user_id HAVING sum(r.points)>?)`,points).n:null;
+    const fcfs=spots.find(sp=>sp.status!=='cleared'),gtd=gtdInfo(),held=gtd.closed&&store.get('SELECT position FROM gtd WHERE user_id=?',u.id);
+    const position=points&&!gtd.closed?standings().findIndex(row=>row.id===u.id)+1||null:null;
     return {provider:u.provider||'x',username:u.username,display:publicIdentity(u,u.id),name:u.name,publicProfile:!!u.public_profile,status:u.status,points,rank,
+      fcfs:fcfs?{route:fcfs.route,status:fcfs.status,at:fcfs.created_at}:null,
+      gtd:{...gtd,position,held:held?held.position:null},
       spots:spots.map(sp=>({route:sp.route,status:sp.status,at:sp.created_at,code:sp.code})),
       runs:runs.map(r=>({id:r.id,kind:r.kind,code:r.code,result:parse(r.result),points:r.points,progress:progressSummary(r),at:r.completed_at||r.started_at,
         open:!r.completed_at&&r.expires_at>now(),invalidated:!!r.invalidated})),
@@ -90,12 +113,18 @@ export function createCampaignService(options){
       store.run('UPDATE runs SET user_id=? WHERE id=?',u.id,r.id);
       const existing=store.get('SELECT sp.status,r.code FROM spots sp JOIN runs r ON r.id=sp.run_id WHERE sp.user_id=? AND sp.route=?',u.id,r.kind);
       if(existing)return {status:existing.status,code:existing.code,route:r.kind,already:true};
-      const firstSpot=!store.get('SELECT 1 FROM spots WHERE user_id=?',u.id);
+      // One FCFS spot per account: clearing another route is recorded, not a second spot.
+      const fcfs=store.get("SELECT status FROM spots WHERE user_id=? AND status<>'cleared'",u.id);
+      if(fcfs){
+        store.run("INSERT INTO spots(user_id,route,run_id,status,created_at) VALUES(?,?,?,'cleared',?)",u.id,r.kind,r.id,now());
+        store.event('route_cleared',{anonId:s.anon_id,userId:u.id,runId:r.id,detail:{route:r.kind}},now());
+        return {status:'cleared',fcfs:fcfs.status,code:r.code,route:r.kind,already:false};
+      }
       const reused=store.get('SELECT count(DISTINCT user_id) AS n FROM runs WHERE anon_id=? AND user_id IS NOT NULL AND user_id<>?',s.anon_id,u.id).n;
       const status=u.status==='review'||parse(r.flags).length||reused>=2?'review':poolFull(config(),qualifiedSpots())?'waitlist':'qualified';
       store.run('INSERT INTO spots(user_id,route,run_id,status,created_at) VALUES(?,?,?,?,?)',u.id,r.kind,r.id,status,now());
       store.event('qualification_saved',{anonId:s.anon_id,userId:u.id,runId:r.id,detail:{status,route:r.kind}},now());
-      const parent=firstSpot&&r.ref_code&&store.get(`SELECT r.user_id FROM runs r JOIN spots sp ON sp.run_id=r.id JOIN users u ON u.id=r.user_id WHERE r.code=? AND r.invalidated=0 AND sp.status='qualified' AND u.status='active'`,r.ref_code);
+      const parent=r.ref_code&&store.get(`SELECT r.user_id FROM runs r JOIN spots sp ON sp.run_id=r.id JOIN users u ON u.id=r.user_id WHERE r.code=? AND r.invalidated=0 AND sp.status='qualified' AND u.status='active'`,r.ref_code);
       if(status==='qualified'&&parent?.user_id&&parent.user_id!==u.id&&u.created_at>=r.started_at){
         store.run('INSERT OR IGNORE INTO referrals(referred_id,referrer_id,run_id,created_at) VALUES(?,?,?,?)',u.id,parent.user_id,r.id,now());
         store.event('referred_player_qualified',{anonId:s.anon_id,userId:u.id,runId:r.id},now());
@@ -123,6 +152,7 @@ export function createCampaignService(options){
     if(!url.pathname.startsWith('/campaign/'))return false;
     try{
       if(!serviceToken||!equal(request.headers.authorization,`Bearer ${serviceToken}`))fail('Not found',404);
+      closeGtd();
       const network=fingerprint(serviceToken,request.headers['x-campaign-client']||'unknown');
       rate('network:'+network,240,60000);
       if(!['GET','POST'].includes(request.method))fail('Method not allowed',405);
@@ -131,12 +161,18 @@ export function createCampaignService(options){
         rate('admin:'+network,20,60000);
         if(!adminToken||!equal(request.headers['x-campaign-admin'],adminToken))fail('Not found',404);
         if(path==='/admin/addresses'&&request.method==='GET'){
-          const addresses=store.all(`SELECT w.address,w.chain_id,w.updated_at,count(*) AS spots,group_concat(sp.route,' ') AS routes FROM wallets w
+          const addresses=store.all(`SELECT w.address,w.chain_id,w.updated_at,sp.route FROM wallets w
             JOIN spots sp ON sp.user_id=w.user_id JOIN users u ON u.id=w.user_id JOIN runs r ON r.id=sp.run_id
-            WHERE sp.status='qualified' AND u.status='active' AND r.invalidated=0 GROUP BY w.user_id ORDER BY w.address`);
+            WHERE sp.status='qualified' AND u.status='active' AND r.invalidated=0 ORDER BY w.address`);
           const c=config(),frozen=!!c.addressEndsAt&&now()>=c.addressEndsAt;
           store.audit('admin','address_export',{count:addresses.length,frozen},now());
           return json(response,200,{exportedAt:now(),frozen,addresses});
+        }
+        if(path==='/admin/gtd'&&request.method==='GET'){
+          const holders=store.all(`SELECT g.position,g.points,u.id,u.provider,u.username,w.address,w.chain_id FROM gtd g JOIN users u ON u.id=g.user_id
+            LEFT JOIN wallets w ON w.user_id=g.user_id WHERE u.status='active' ORDER BY g.position`);
+          store.audit('admin','gtd_export',{count:holders.length},now());
+          return json(response,200,{exportedAt:now(),...gtdInfo(),holders});
         }
         if(path==='/admin'&&request.method==='GET'){
           const funnel=store.all('SELECT name,count(*) AS total,count(DISTINCT anon_id) AS players FROM events WHERE at>=? GROUP BY name',now()-30*DAY);
@@ -148,7 +184,7 @@ export function createCampaignService(options){
         }
         const body=await readJson(request,16000);
         if(path==='/admin/settings'&&request.method==='POST'){
-          const next=campaignConfig(body.config);if(next.active&&!authReady)fail('Configure at least one sign-in provider before opening WL challenges.',409);
+          let next;try{next=campaignConfig(body.config);}catch(error){fail(error.message);}if(next.active&&!authReady)fail('Configure at least one sign-in provider before opening WL challenges.',409);
           store.transaction(()=>{const previous=config();store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify(next));store.audit('admin','settings',{previous,next},now());});
           return json(response,200,{config:next});
         }
@@ -156,35 +192,35 @@ export function createCampaignService(options){
           if(!['qualified','review','banned'].includes(body.status)||typeof body.userId!=='string'||typeof body.reason!=='string'||body.reason.trim().length<5||body.reason.length>300)fail('Choose a status and give an audit reason.');
           store.transaction(()=>{
             // A review decision applies to every WL spot the account holds.
-            const spots=store.all('SELECT * FROM spots WHERE user_id=?',body.userId);if(!spots.length)fail('No WL spots found for that user',404);
-            const approving=spots.filter(sp=>sp.status!=='qualified').length;
-            if(body.status==='qualified'&&approving&&poolFull(config(),qualifiedSpots()+approving-1))fail('The WL pool is full.',409);
-            store.run('UPDATE spots SET status=? WHERE user_id=?',body.status,body.userId);
+            const spot=store.get("SELECT * FROM spots WHERE user_id=? AND status<>'cleared'",body.userId);if(!spot)fail('No FCFS spot found for that user',404);
+            if(body.status==='qualified'&&spot.status!=='qualified'&&poolFull(config(),qualifiedSpots()))fail('The WL pool is full.',409);
+            store.run("UPDATE spots SET status=? WHERE user_id=? AND status<>'cleared'",body.status,body.userId);
             store.run('UPDATE users SET status=? WHERE id=?',body.status==='banned'?'banned':'active',body.userId);
             if(body.status!=='qualified')store.run('DELETE FROM referrals WHERE referred_id=? OR referrer_id=?',body.userId,body.userId);
-            store.audit('admin','spot_review',{userId:body.userId,status:body.status,reason:body.reason,routes:spots.map(sp=>sp.route)},now());
+            store.audit('admin','spot_review',{userId:body.userId,status:body.status,reason:body.reason,route:spot.route},now());
           });return json(response,200,{ok:true});
         }
         fail('Not found',404);
       }
       if(path==='/config'&&request.method==='GET'){
         const c=config(),open=campaignOpen(c,now())&&authReady;
-        return json(response,200,{config:c,open,routes:Object.fromEntries(OPEN_ROUTES.map(route=>[route,open&&routeOpen(c,route,now())])),authReady,providers,bot:BARRY,serverTime:now(),claimed:qualifiedSpots(),capacity:c.capacity});
+        return json(response,200,{config:c,open,routes:Object.fromEntries(OPEN_ROUTES.map(route=>[route,open&&routeOpen(c,route,now())])),authReady,providers,bot:BARRY,serverTime:now(),claimed:qualifiedSpots(),capacity:c.capacity,gtd:gtdInfo()});
       }
       if(path.startsWith('/results/')&&request.method==='GET'){
         const code=path.slice(9);if(!validCode(code))fail('Challenge not found',404);
         const r=publicRun(code);if(!r)fail('Challenge not found',404);return json(response,200,r);
       }
       if(path==='/leaderboard'&&request.method==='GET'){
-        const rows=store.all(`SELECT u.id,u.provider,u.username,u.public_profile,sum(r.points) AS points,max(r.last_segment_at) AS last
-          FROM runs r JOIN users u ON u.id=r.user_id WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' AND r.points>0
-          GROUP BY u.id ORDER BY points DESC,last ASC LIMIT 50`);
-        const spots=rows.length?store.all(`SELECT user_id,route FROM spots WHERE status='qualified' AND user_id IN (${rows.map(()=>'?').join(',')})`,...rows.map(row=>row.id)):[];
-        // Ties share a rank; earlier scoring breaks display order only.
+        const gtd=gtdInfo(),rows=standings(Math.max(100,gtd.slots));
+        const ids=rows.map(row=>row.id),marks=ids.length?`(${ids.map(()=>'?').join(',')})`:'(NULL)';
+        const spots=store.all(`SELECT user_id,route FROM spots WHERE status IN ('qualified','cleared') AND user_id IN ${marks}`,...ids);
+        const holders=new Set(gtd.closed?store.all(`SELECT user_id FROM gtd WHERE user_id IN ${marks}`,...ids).map(row=>row.user_id):[]);
+        // Ties share a rank; earlier scoring breaks display order and the GTD cut.
         let rank=0;
         const entries=rows.map((row,index)=>{if(!index||row.points<rows[index-1].points)rank=index+1;
-          return {rank,player:row.public_profile?publicIdentity(row,row.id):'ANON',points:row.points,spots:spots.filter(sp=>sp.user_id===row.id).map(sp=>sp.route).sort()};});
-        return json(response,200,{entries});
+          return {rank,player:row.public_profile?publicIdentity(row,row.id):'ANON',points:row.points,
+            spots:spots.filter(sp=>sp.user_id===row.id).map(sp=>sp.route).sort(),gtd:gtd.closed?holders.has(row.id):index<gtd.slots};});
+        return json(response,200,{entries,gtd});
       }
       let s=session(request,response,path==='/session');
       if(!s)fail('Start a fresh challenge to continue.',401);
@@ -323,10 +359,10 @@ export function createCampaignService(options){
         store.run('UPDATE users SET public_profile=? WHERE id=?',body.publicProfile===true?1:0,u.id);return json(response,200,{pass:pass(s)});
       }
       if(path==='/wallet'){
-        const u=user(s),spot=u&&store.get("SELECT 1 FROM spots WHERE user_id=? AND status='qualified'",u.id),c=config();
-        if(!u||u.status!=='active'||!spot)fail('Save a WL spot before adding a mint address.',403);
+        const u=user(s),c=config(),fcfs=u&&store.get("SELECT 1 FROM spots WHERE user_id=? AND status='qualified'",u.id),gtd=u&&store.get('SELECT 1 FROM gtd WHERE user_id=?',u.id);
+        if(!u||u.status!=='active'||!fcfs&&!gtd)fail('Earn an FCFS or GTD spot before adding a mint address.',403);
         rate('address:'+u.id,8,3600000);
-        if(!addressWindow(c,now()).open)fail('Address submission is closed.',409);
+        if(!(fcfs&&addressWindow(c,now()).open)&&!(gtd&&gtdWindow(c,gtdClosed(),now()).submitOpen))fail('Address submission is closed.',409);
         if(body.chainId!==c.chainId||body.confirmed!==true)fail('Confirm this address is for Robinhood Chain mainnet.');
         const address=normalizeAddress(body.address);
         store.transaction(()=>{
