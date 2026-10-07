@@ -10,8 +10,9 @@ open unless explicitly checked.
 - [ ] Complete real wallet public/allowlist mint testing, including mobile handoff.
 - [x] Restore the official launch address below in local config and
       `.env.production`.
-- [ ] Confirm Vercel Production/Preview use the official address, redeploy, and
-      rerun the launch readiness check against the deployed site.
+- [x] Confirm Vercel Production/Preview use the official address, redeploy, and
+      rerun the launch readiness check. The app is deployed safely closed; the
+      official contract still has the two readiness blockers below.
 
 ## Official contract readiness
 
@@ -26,10 +27,10 @@ open unless explicitly checked.
 
 ## Vercel environment
 
-- [ ] `NEXT_PUBLIC_TERMINL_CONTRACT` and `NEXT_PUBLIC_CHAIN_ID` — official
+- [x] `NEXT_PUBLIC_TERMINL_CONTRACT` and `NEXT_PUBLIC_CHAIN_ID` — official
       mainnet address above and `4663` on Production and Preview, with matching
-      committed production defaults and local configuration. Local and committed
-      values are complete; verify hosting overrides after updating them.
+      committed production defaults and local configuration. Verified on the
+      Git-linked Production deployment on 2026-10-06.
 - [x] `ALLOWLIST_API_URL` — `https://artifactxserver-production.up.railway.app`
       on Production and Preview. The backend uses the selected contract;
       stage definitions and proofs are selected by contract address.

@@ -2,8 +2,8 @@
 
 > 2026-10-06: Local and committed production configuration were restored to the
 > official contract `0xc9A4088fD8D2A3327BE33b28646d789549f0188A` after the
-> mainnet rehearsal. Production and Preview hosting overrides must match before
-> deployment.
+> mainnet rehearsal. Production and Preview hosting overrides were updated, and
+> the Git-linked production build was deployed to `terminl.net`.
 >
 > Rehearsal contract read at `2026-09-24T11:31:42Z`: name `TMNLT`,
 > prepared supply **10,000**, minted **10,000**, public-phase claimed **9,400**.
