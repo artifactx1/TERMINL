@@ -32,6 +32,13 @@ configure/sign the intended phases, and confirm dates, prices, wallet limits,
 and a matching published allowlist root. Run `npm run check:mint` again afterward.
 That command is read-only and exits 2 when configuration blockers remain.
 
+The locked local collection was rechecked on 2026-10-06: all 2,048 image
+checksums and all 2,048 metadata checksums pass. It is not upload-ready yet:
+the metadata intentionally still contains `ar://__IMAGE_TX__`. Upload the final
+images first, replace that placeholder with the permanent image manifest,
+regenerate the metadata checksum, upload the metadata folder, and only then
+use its immutable base URI in `lazyMint`.
+
 ## Changes
 
 ### Provider and request handling
@@ -140,7 +147,8 @@ Remaining launch gates:
    intended burst; observe usage and 429s during the final rehearsal.
 2. Owner completes token metadata/lazy supply and public/allowlist phase setup;
    verify root, time windows, prices, caps and available supply with `check:mint`.
-3. Confirm token metadata/images resolve after the final upload and mint setup.
+3. Confirm all placeholder image URIs were replaced and token metadata/images
+   resolve from the final permanent manifests before mint setup.
 4. Complete a real end-to-end mint rehearsal on a test deployment with the same
    configuration pattern, including eligible and ineligible wallets. Do not spend
    real launch supply just to test without the owner's explicit choice.

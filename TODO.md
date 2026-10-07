@@ -51,9 +51,26 @@ open unless explicitly checked.
 
 ## Assets
 
+- [x] Verify the locked collection has 2,048 images and metadata files with
+      matching SHA-256 checksums; the nine explicitly marked 1/1 Grails are
+      valid exceptions to the generated core-trait schema.
+- [ ] Upload the final 2,048 NFT images, replace `ar://__IMAGE_TX__` in metadata,
+      regenerate the metadata checksum, upload metadata, and verify several
+      resolved URIs before calling `lazyMint`. Do not mint the placeholder URI.
 - [ ] Re-upload the share card and icons — they were regenerated in the
       Robinhood yellow but the bucket still serves the green ones:
       `node --env-file=../ElementServer/.env scripts/upload-art.mjs`
+
+## Arcade campaign
+
+- [x] Campaign is active with X, Discord, and Farcaster sign-in; the six-race
+      Cup and six-fight Rumble routes are open, and the leaderboard is live.
+- [ ] Set the campaign close, FCFS address deadline, GTD leaderboard close, and
+      GTD address deadline. They are currently zero: FCFS stays open indefinitely
+      and the top-100 GTD list will never snapshot until dates are approved.
+- [ ] After the windows close, export FCFS/GTD addresses from the campaign admin,
+      import them as launch stages, publish the root, and verify proofs against
+      the official contract.
 
 ## Alchemy
 

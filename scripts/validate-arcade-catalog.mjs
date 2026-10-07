@@ -20,20 +20,25 @@ if(catalog){
   const publicRoster=publicSite.cast||publicSite.degens||[];
   const publicNames=new Set(publicRoster.map(x=>x.name));
   const compatibleNames=new Set(['Margin Call Max','Diamond Hands Pepe']);
-  const stats={count:Array.isArray(catalog)?catalog.length:0,schemaErrors:0,duplicateNames:0,invalidAttributes:0,duplicateTraitCategories:0,missingRequiredTraitCategories:0,publicRosterReferences:0,compatibleBaseRigReferences:0,safeFallbackReferences:0,privateTraitsExported:0,privateImagesCopied:0};
+  const stats={count:Array.isArray(catalog)?catalog.length:0,schemaErrors:0,duplicateNames:0,invalidAttributes:0,duplicateTraitCategories:0,missingRequiredTraitCategories:0,grailExemptions:0,publicRosterReferences:0,compatibleBaseRigReferences:0,safeFallbackReferences:0,privateTraitsExported:0,privateImagesCopied:0};
   const seen=new Set();
   if(Array.isArray(catalog))for(const token of catalog){
     if(!token||typeof token.name!=='string'||!token.name||typeof token.description!=='string'||typeof token.image!=='string'||!token.image||!Array.isArray(token.attributes)){stats.schemaErrors++;continue;}
     if(seen.has(token.name))stats.duplicateNames++;seen.add(token.name);
-    const categories=new Set();let companion='';
+    const categories=new Set();let companion='',grail=false;
     for(const attribute of token.attributes){
       if(!attribute||typeof attribute.trait_type!=='string'||!attribute.trait_type||!['string','number'].includes(typeof attribute.value)||typeof attribute.value==='number'&&!Number.isFinite(attribute.value)){stats.invalidAttributes++;continue;}
       if(categories.has(attribute.trait_type))stats.duplicateTraitCategories++;categories.add(attribute.trait_type);
       if(attribute.trait_type==='Companion'&&typeof attribute.value==='string')companion=attribute.value;
+      if(typeof attribute.value==='string'&&/1\/1 Grail/.test(attribute.value))grail=true;
     }
     // Prop, companion and effect slots are intentionally optional in this
     // collection's snapshot contract; absence must not be reported as damage.
-    for(const category of ['Background','Chassis','Chassis Finish','Screen / Face'])if(!categories.has(category))stats.missingRequiredTraitCategories++;
+    // The nine explicitly marked 1/1 Grails are hand-built outside the normal
+    // generator layers, so they deliberately do not carry the four generated
+    // core categories either. Only those named special cases are exempt.
+    if(grail)stats.grailExemptions++;
+    else for(const category of ['Background','Chassis','Chassis Finish','Screen / Face'])if(!categories.has(category))stats.missingRequiredTraitCategories++;
     if(publicNames.has(companion))stats.publicRosterReferences++;
     if(compatibleNames.has(companion))stats.compatibleBaseRigReferences++;
     else stats.safeFallbackReferences++;
