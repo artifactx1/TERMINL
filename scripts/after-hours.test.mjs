@@ -188,3 +188,12 @@ test('following only the objective guidance finishes every level',()=>{
     assert.equal(s.phase,'complete',`level ${level} is finishable by following the arrow`);
   }
 });
+test('USE appears only where it works, and touch players leave through the open exit by walking in',()=>{
+  const s=createRug({level:1});s.enemies=[];const a=s.world.switches[0];
+  Object.assign(s.player,{x:a.x+4,z:a.z});stepRug(s,{});assert.equal(s.canUse,false,'4m from a terminal, USE does nothing yet');
+  Object.assign(s.player,{x:a.x+2,z:a.z});stepRug(s,{});assert.equal(s.canUse,true);
+  const exit=createRug({level:1});exit.enemies=[];exit.world.switches.forEach(w=>{w.used=true;});exit.kills=99;
+  Object.assign(exit.player,{x:exit.world.exit.x,z:exit.world.exit.z+2,y:exit.world.exit.y});stepRug(exit,{});
+  assert.equal(exit.phase,'playing','keyboard players still press USE at the exit');assert.equal(exit.canUse,true);
+  stepRug(exit,{touchAssist:true});assert.equal(exit.phase,'complete','touch players leave by walking in');
+});
