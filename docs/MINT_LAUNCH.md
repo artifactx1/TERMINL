@@ -1,10 +1,9 @@
-# TERMINL mint launch audit — 2026-09-23
+# TERMINL mint launch audit — 2026-10-06
 
-> 2026-09-24: The site is temporarily wired to mainnet rehearsal contract
-> `0x0ccb402fD57b9302A3C4Cd6DE4f34771A47d03ab` for real wallet testing.
-> The official-contract observations below are historical. Restore the official
-> address in local/Vercel configuration and committed defaults, then redeploy
-> and rerun the readiness check before launch.
+> 2026-10-06: Local and committed production configuration were restored to the
+> official contract `0xc9A4088fD8D2A3327BE33b28646d789549f0188A` after the
+> mainnet rehearsal. Production and Preview hosting overrides must match before
+> deployment.
 >
 > Rehearsal contract read at `2026-09-24T11:31:42Z`: name `TMNLT`,
 > prepared supply **10,000**, minted **10,000**, public-phase claimed **9,400**.
@@ -19,7 +18,7 @@ Network: Robinhood mainnet, chain ID `4663`. Expected collection: 2,048 NFTs.
 Planning assumption: about 1,000 visitors, with a potentially concentrated mint burst.
 
 App hardening and automated verification do **not** establish that the drop is
-ready to open. The live read-only audit at `2026-09-24T01:45:10Z` found:
+ready to open. The live read-only audit at `2026-10-06T23:05:45Z` found:
 
 - Contract name: `TERMINL`.
 - Owner: `0xa894a5422a1eD5Aee9Fba393E3962AdEbC48E38B`.

@@ -152,14 +152,16 @@ pasting the link into a Discord DM to yourself.
 
 ## Deploying
 
-The committed `.env.production` temporarily configures the mainnet rehearsal contract
-`0x0ccb402fD57b9302A3C4Cd6DE4f34771A47d03ab` on Robinhood Chain (`4663`)
-and the mainnet ArtifactX allowlist backend.
-After testing, restore the official launch contract
-`0xc9A4088fD8D2A3327BE33b28646d789549f0188A` in local configuration,
-committed defaults, and Vercel Production/Preview, then rebuild and deploy.
-Hosting environment variables override these defaults; update any existing
-contract, chain, RPC, or allowlist overrides to match when deploying.
+The committed `.env.production` configures the official launch contract
+`0xc9A4088fD8D2A3327BE33b28646d789549f0188A` on Robinhood Chain (`4663`)
+and the mainnet ArtifactX allowlist backend. Hosting environment variables
+override these defaults; Production and Preview must use the same contract,
+chain, RPC, and allowlist settings when deploying.
+
+Selecting the official address does not open minting. The contract must first
+have prepared supply and owner-approved public and/or allowlist conditions.
+`npm run check:mint` is the read-only launch gate and exits nonzero while either
+is missing.
 
 Import the repo on Vercel. Nothing else is required. Two optional variables:
 
