@@ -12,23 +12,12 @@ import { CHAIN, CONTRACT } from "../lib/mint";
 
 const HERO_ROTATE_MS = 5200;
 
-/*
- * Art is addressed by opaque slug, never by token id — the numbers are part of
- * the surprise. The files themselves are produced by `npm run snapshot`, which
- * is the only thing that ever reads the locked collection; the deployed app has
- * no path back to the pieces it did not publish.
- *
- * Unset, this serves the copies committed under public/art. Point it at a
- * bucket or CDN to serve them from there instead.
- */
-const ART_BASE = (process.env.NEXT_PUBLIC_ART_BASE_URL || "/art").replace(/\/$/, "");
-const img = (slug) => `${ART_BASE}/${slug}.webp`;
-
-/* Portraits sit beside the art, wherever that is. */
-const DEGEN_BASE = ART_BASE.replace(/\/art$/, "/degens");
+/* The snapshot commits the published art and portraits with the site. Serve
+ * those same files in every environment so a stale bucket cannot hide updates. */
+const img = (slug) => `/art/${slug}.webp`;
 
 /* Authored, not generated — see data/degen-lore.js. */
-const degenPortrait = (slug) => `${DEGEN_BASE}/${slug}.webp`;
+const degenPortrait = (slug) => `/degens/${slug}.webp`;
 
 /*
  * Sharing metadata.
@@ -136,7 +125,6 @@ function Site({ data }) {
           */}
         <link rel="preconnect" href="https://api.web3modal.org" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://pulse.walletconnect.org" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://storage.googleapis.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://relay.walletconnect.org" />
 
         {/* Open Graph — Discord, Telegram, Slack, iMessage, LinkedIn, Facebook */}

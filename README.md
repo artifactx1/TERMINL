@@ -97,16 +97,10 @@ if you want even that opaque, move `SHOWCASE` into an environment variable.
 `public/art/<slug>.webp` — sixteen 1200px webp files, about 2.9 MB total,
 committed so a deploy always works.
 
-They are also on the ELEMENT bucket, which is what production serves:
-
-```
-NEXT_PUBLIC_ART_BASE_URL=https://storage.googleapis.com/curent-marketplace/terminl/art
-```
-
-Unset that and the site falls back to the committed copies, so a missing
-environment variable degrades instead of breaking. `scripts/upload-art.mjs`
-pushes the snapshot to the bucket; it reads credentials from the server's env
-file at run time and stores nothing in this repo:
+Production serves the committed `/art` and `/degens` files. The older ELEMENT
+bucket copy is optional archive storage; `NEXT_PUBLIC_ART_BASE_URL` no longer
+controls the site images. `scripts/upload-art.mjs` can still copy a snapshot to
+the bucket and reads credentials from the server's env file at run time:
 
 ```bash
 node --env-file=../ElementServer/.env scripts/upload-art.mjs --check   # nothing written
@@ -123,16 +117,16 @@ published art — no runtime rendering. Scrapers do not run JavaScript, time out
 aggressively and cache hard, so a static file on a stable URL is what actually
 survives being pasted somewhere.
 
-The card is **served from the bucket**, not the site:
+The card is served from the site at a stable absolute URL:
 
 ```
-https://storage.googleapis.com/curent-marketplace/terminl/og.jpg
+https://terminl.net/og.jpg
 ```
 
 `og:image` must be absolute — every scraper rejects a relative URL — and a
-Vercel preview domain changes on each deploy, so pointing at the bucket means
-previews work before the site has a domain. Override with
-`NEXT_PUBLIC_OG_IMAGE` once the real hostname is settled.
+Vercel preview domains change on each deploy, so the production hostname is
+used for previews too. Override with `NEXT_PUBLIC_OG_IMAGE` only when changing
+the published card URL.
 
 A few details that decide whether a platform renders the wide card at all:
 
@@ -173,9 +167,9 @@ Import the repo on Vercel. Nothing else is required. Two optional variables:
 | `NEXT_PUBLIC_RPC_URL` | the chain's public RPC, which is live |
 | `RPC_URL` | `/api/drop` reads the public RPC too. Set this, server-side only, to a keyed endpoint such as `https://robinhood-mainnet.g.alchemy.com/v2/<key>` — it is not `NEXT_PUBLIC_`, so the key never reaches the browser |
 | `ALLOWLIST_API_URL` | server-side only. The ArtifactX backend that holds allowlist stages; the testnet host is built in, mainnet must be set or the schedule shows the public phase alone |
-| `NEXT_PUBLIC_ART_BASE_URL` | serves the committed images from `/art` |
+| `NEXT_PUBLIC_ART_BASE_URL` | unused; site images are served from committed `/art` and `/degens` files |
 | `NEXT_PUBLIC_SITE_URL` | `og:url` and `canonical` are omitted; set to the production domain |
-| `NEXT_PUBLIC_OG_IMAGE` | card is served from the bucket, which is correct |
+| `NEXT_PUBLIC_OG_IMAGE` | defaults to the versioned card on `terminl.net` |
 
 `TERMINL_COLLECTION_DIR` is *not* needed to build or deploy. It is only read by
 `npm run snapshot`, on whichever machine holds the collection.
