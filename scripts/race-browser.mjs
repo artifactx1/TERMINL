@@ -29,7 +29,7 @@ try{
   const a=await guest('Driver A'),b=await guest('Driver B'),watch=await guest('Observer');
   await a.screenshot({path:`${output}/${browserName}-garage.png`,fullPage:true});
   await click(a,'CREATE RACE +');await a.getByLabel('Room invitation').waitFor();const invitation=await a.getByLabel('Room invitation').inputValue();
-  await b.getByRole('button',{name:/Spectre RX arcade roadster with Diamond Hands Pepe/}).click();await b.getByLabel('RACE INVITATION').fill(invitation);await click(b,'JOIN RACE →');
+  await b.getByRole('button',{name:/Spectre RX arcade roadster with Diamond Hands Glorp/}).click();await b.getByLabel('RACE INVITATION').fill(invitation);await click(b,'JOIN RACE →');
   await watch.getByLabel('RACE INVITATION').fill(invitation);await click(watch,'SPECTATE');await a.waitForFunction(()=>window.__room?.players.every(Boolean)&&window.__room.spectators===1);
   await click(a,"I'M READY →");await click(b,"I'M READY →");await a.waitForFunction(()=>window.__state?.phase==='racing');
   const match=await b.evaluate(()=>window.__room.matchId);await b.evaluate(()=>window.__sockets.find(s=>s.url.includes(':4010'))?.close());await b.waitForFunction(id=>window.__room?.matchId===id&&window.__wire.filter(m=>m.type==='joined').length>=2,match);

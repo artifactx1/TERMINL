@@ -162,21 +162,30 @@ async function main() {
 }
 
 const nameSlug = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const portraitLayer = {
+  "diamond-hands-glorp": "diamond-hands-pepe.png",
+  "rekt-glorp": "rekt-tears-pepe.png",
+  "smokin-glorp": "smokin-pepe.png",
+  "moonride-glorp": "lambo-pepe.png",
+};
 
 async function portraits(showcase) {
   const seen = new Map();
   for (const piece of showcase) {
     if (piece.companion && !seen.has(piece.companion)) seen.set(piece.companion, piece.companion);
   }
+  for (const name of ['Diamond Hands Glorp', 'Rekt Glorp', 'Smokin Glorp', 'Moonride Glorp']) {
+    seen.set(name, name);
+  }
 
   const out = [];
   for (const name of seen.keys()) {
-    const file = path.join(LAYERS, "companion", `${nameSlug(name)}.png`);
+    const slug = nameSlug(name);
+    const file = path.join(LAYERS, "companion", portraitLayer[slug] || `${slug}.png`);
     if (!fs.existsSync(file)) {
       console.warn(`  ! no sprite for ${name}`);
       continue;
     }
-    const slug = nameSlug(name);
     // trim() drops the transparent margin so the figure is framed on itself
     // rather than on whatever padding its sprite happened to carry.
     const figure = await sharp(file)

@@ -59,7 +59,7 @@ try{
   await page.unrouteAll();
   await page.setViewportSize({width:1440,height:960});
   await page.goto(base+'/os/rumble',{timeout:90000});
-  for(const [i,name] of ['Margin Call Max','Diamond Hands Pepe','Buy-High Brian','MEV Mia','Bridge Burn Bernie','Cold Storage Chloe'].entries()){
+  for(const [i,name] of ['Margin Call Max','Diamond Hands Glorp','Buy-High Brian','MEV Mia','Bridge Burn Bernie','Cold Storage Chloe'].entries()){
     await page.getByRole('button',{name:new RegExp(`^0${i+1} ${name}`)}).click();
     await page.getByRole('button',{name:'LEARN BY FIGHTING ↗',exact:true}).click();
     await page.waitForFunction(()=>Number(document.querySelector('canvas')?.dataset.tick)>5);

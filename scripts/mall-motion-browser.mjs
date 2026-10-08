@@ -8,7 +8,7 @@ async function clock(){await page.evaluate(()=>{let now=performance.now(),id=0;c
 async function advance(count,input,delta){await page.evaluate(({count,input,delta})=>{window.controls(input);for(let i=0;i<count;i++){window.skipGpu=i<count-1;window.advance(delta);}window.skipGpu=false;},{count,input,delta});}
 try{
  await mkdir('artifacts/mall-motion-v2',{recursive:true});
- for(const [id,name]of [['max','MARGIN CALL MAX'],['pepe','DIAMOND HANDS PEPE'],['mia','MEV MIA'],['chloe','COLD STORAGE CHLOE']]){
+ for(const [id,name]of [['max','MARGIN CALL MAX'],['glorp','DIAMOND HANDS GLORP'],['mia','MEV MIA'],['chloe','COLD STORAGE CHLOE']]){
   await page.goto(base+'/os/mall-rat');await page.getByRole('button',{name,exact:true}).click();
   await clock();await page.getByRole('button',{name:'BREAK IN →'}).click();
   // Allow real image decoding while the deterministic simulation clock is stopped.

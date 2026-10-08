@@ -44,7 +44,7 @@ const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL
 ).replace(/\/$/, "");
 
 const OG_IMAGE = process.env.NEXT_PUBLIC_OG_IMAGE
-  || "https://terminl.net/og.jpg?v=you-said-you-were-done";
+  || "https://terminl.net/og.jpg?v=glorp-2026-10";
 
 const OG_TITLE = "TERMINL — You said you were done.";
 
@@ -152,7 +152,7 @@ function Site({ data }) {
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:alt" content="TERMINL — pixel art terminals" />
+        <meta property="og:image:alt" content="TERMINL arcade machines with Diamond Hands Glorp" />
         <meta property="og:locale" content="en_US" />
 
         {/* X/Twitter reads its own namespace and ignores og:* for card type */}
@@ -494,7 +494,7 @@ function Degens({ data }) {
       <div className={styles.sectionHead}>
         <h2>The group chat, unfortunately.</h2>
         <p>
-          Every machine comes with a degen. There are {data.traitTotals.Companion} of them.
+          Most machines come with a degen. There are {data.traitTotals.Companion} of them.
           Tap a face to read their excuses. If none of them remind you of a friend,
           we have some uncomfortable news.
         </p>

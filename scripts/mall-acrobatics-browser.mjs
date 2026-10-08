@@ -6,7 +6,7 @@ const browser=await chromium.launch({headless:true}),page=await browser.newPage(
 const base=process.env.ARCADE_TEST_URL||'http://127.0.0.1:4000';await mkdir('artifacts/mall-park-v3',{recursive:true});
 async function frames(n){await page.evaluate(n=>{for(let i=0;i<n;i++){window.skipGpu=i<n-1;window.skateFrame();}window.skipGpu=false;},n);}
 try{
- for(const [id,name]of [['max','MARGIN CALL MAX'],['pepe','DIAMOND HANDS PEPE'],['mia','MEV MIA'],['chloe','COLD STORAGE CHLOE']]){
+ for(const [id,name]of [['max','MARGIN CALL MAX'],['glorp','DIAMOND HANDS GLORP'],['mia','MEV MIA'],['chloe','COLD STORAGE CHLOE']]){
   await page.goto(base+'/os/mall-rat');await page.getByRole('button',{name,exact:true}).click();
   await page.evaluate(()=>{let now=performance.now(),id=0;const q=new Map();performance.now=()=>now;window.requestAnimationFrame=f=>{q.set(++id,f);return id;};window.cancelAnimationFrame=id=>q.delete(id);window.skateFrame=()=>{now+=1000/60+.000001;const callbacks=[...q.values()];q.clear();callbacks.forEach(f=>f(now));};for(const name of ['drawElements','drawArrays','drawElementsInstanced','drawArraysInstanced']){const orig=WebGL2RenderingContext.prototype[name];WebGL2RenderingContext.prototype[name]=function(...args){if(!window.skipGpu)return orig.apply(this,args);};}});
   await page.getByRole('button',{name:'BREAK IN →'}).click();await page.waitForTimeout(800);await frames(2);

@@ -1,8 +1,8 @@
 # REKT RUMBLE art and audio
 
-## Current fighter pipeline — September 16, 2026
+## Current fighter pipeline — October 8, 2026
 
-Gameplay uses the recovered detailed nine-pose sprite sheets for Max, Pepe, Brian, Mia and Bernie, plus a matching generated Chloe sheet. The illustrated poses are drawn directly at full source detail. The code rigs described below remain loading/error fallbacks. See [FIGHTER-SPRITES.md](FIGHTER-SPRITES.md) for source assets, generation prompt, pose mapping, preparation and validation.
+Gameplay uses recovered detailed nine-pose sprite sheets for Max, Brian, Mia and Bernie, plus generated Glorp and Chloe sheets. The illustrated poses are drawn directly at full source detail. The code rigs described below remain loading/error fallbacks. See [FIGHTER-SPRITES.md](FIGHTER-SPRITES.md) for source assets, pose mapping, preparation and validation.
 
 ## Historical v1 foundation
 
@@ -16,14 +16,14 @@ animation polish. Existing Rug Runner and Moon Mission assets are unchanged.
 ## Canon and identity
 
 The public references are `public/degens/margin-call-max.webp` and
-`public/degens/diamond-hands-pepe.webp`, each 340 × 560. Their canonical names and
+`public/degens/diamond-hands-glorp.webp`, each 340 × 560. Their canonical names and
 clothing come from `data/site.json`, `data/degen-lore.js` and inspection of the
 actual images. No unpublished collection character is used or copied.
 
 | Character | Must remain recognizable | Rig treatment |
 | --- | --- | --- |
 | Margin Call Max | Tired human face, dark REKT tee, gold chain, purple −99% shorts, mismatched lower-leg clothing, sandals | Slumped shoulders, anxious eyes, receipt-colored impact accents; grapples extend both arms |
-| Diamond Hands Pepe | Green frog, dark shades, orange lips, black jacket, gold chain, enormous icy fist | Wider head and jacket, bent defensive stance, separately faceted cyan fist, metallic guard cues |
+| Diamond Hands Glorp | Bumpy green head, dark hoodie, tan cargo pants, enormous icy fist | Bent defensive stance, separately faceted cyan fist, metallic guard cues |
 
 The source portrait is allowed in selection and reference UI. It is **never**
 drawn as a gameplay sprite. Each character is built from a torso polygon, neck,

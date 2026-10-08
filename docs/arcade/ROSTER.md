@@ -5,13 +5,13 @@ Six free fighters share the same 1,000 health and universal inputs. No NFT or pa
 | Fighter | Identity and pixel art | How to play |
 | --- | --- | --- |
 | Margin Call Max | Exhausted eyes, stubble, messy hair, REKT tee, gold medallion, purple shorts and mismatched socks with sandals | Close-range grappler; command grab punishes guard |
-| Diamond Hands Pepe | Raised frog eyelids, orange lips, shades, leather jacket and oversized faceted diamond fist with ice points | Defensive bruiser; armored startup |
+| Diamond Hands Glorp | Bumpy green head, dark hoodie, tan cargo pants and oversized faceted diamond fist | Defensive bruiser; armored startup |
 | Buy-High Brian | Mullet, visor, floral overshirt, BUY HIGH tee, cargo shorts and sandals | Big damage and charging Market Buy; slow, punishable swings |
 | MEV Mia | Ponytail, perched shades, MEVD crop top, denim shorts, pink sneakers and a receipt-whip special | Fastest movement and light checks; lower damage and no armor |
 | Bridge Burn Bernie | Gaunt mechanic face, WAGMI cap, work shirt, tool belt, patched knees and wrench | Long-range wrench punishment; slow startup and movement |
 | Cold Storage Chloe | Mirrored shades, swept hair and bun, quilted blue puffer with fur collar, COLD tee, cargo pants, safe special and blue sneakers | Patient armored counters; throws beat Vault Door |
 
-All six fighters now use detailed illustrated nine-pose combat atlases based on the existing public companions. The original Max, Pepe, Brian, Mia and Bernie sheets were recovered; Chloe was generated to match. These assets are the primary gameplay art, with the old code rigs retained as loading/error fallbacks. See [FIGHTER-SPRITES.md](FIGHTER-SPRITES.md) for the preparation pipeline, exact generation prompt, pose mappings and animation limits.
+All six fighters use detailed illustrated nine-pose combat atlases based on the public companions. Max, Brian, Mia and Bernie use recovered sheets; Glorp and Chloe use newly generated sheets. These assets are the primary gameplay art, with the old code rigs retained as loading/error fallbacks. See [FIGHTER-SPRITES.md](FIGHTER-SPRITES.md) for the preparation pipeline, pose mappings and animation limits.
 
 Each fighter has eleven authored moves: standing, crouching and air light/heavy, three specials, throw and full-meter super. All six use the fifteen existing animation states. The selection menu, practice-opponent picker, move list, online lobby portraits and asset lab use the shared roster. Only the first selection portrait is prioritized; other portraits are lazy-loaded. No private collection metadata is bundled.
 

@@ -28,8 +28,8 @@ test('player body anchor/scale is independent of speed, acceleration, camera lag
   assert.deepEqual(playerCarFrame(1000,600),playerCarFrame(1000,600));assert.equal(playerCarFrame(1000,600).y,522);
   const s=createRace(),before=JSON.stringify(s),c=context();drawPerspectiveRace(c.ctx,s,{width:1000,height:600,slot:0});assert.equal(JSON.stringify(s),before);assert.equal(c.depth(),0);
 });
-test('runtime Pepe body and scenery atlases have real transparent alpha, not baked checkerboards',async()=>{
-  for(const name of ['california-pepe-bodies-v1.png','california-scenery-v1.png']){const p=`public/arcade/${name}`,m=await sharp(p).metadata(),stats=await sharp(p).stats();assert.equal(m.hasAlpha,true);assert.equal(stats.channels[3].min,0);assert.ok(stats.channels[3].max>240);assert.equal(m.width,1536);assert.equal(m.height,1024);}
+test('runtime Glorp body and scenery atlases have real transparent alpha, not baked checkerboards',async()=>{
+  for(const name of ['california-glorp-bodies-v1.png','california-scenery-v1.png']){const p=`public/arcade/${name}`,m=await sharp(p).metadata(),stats=await sharp(p).stats();assert.equal(m.hasAlpha,true);assert.equal(stats.channels[3].min,0);assert.ok(stats.channels[3].max>240);assert.equal(m.width,1536);assert.equal(m.height,1024);}
 });
 
 test('generated vehicles use transparent, distinct showroom and rear sprites in both racing seats',async(t)=>{

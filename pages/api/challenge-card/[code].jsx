@@ -4,7 +4,7 @@ import {rosterFor} from '../../../lib/arcade/rumble-roster.mjs';
 
 export const config={runtime:'edge'};
 /** PNG cut-outs that ImageResponse can draw; fighters without one get a text-only card. */
-const FIGURES={max:'/arcade/og/margin-call-max.png',brian:'/arcade/og/buy-high-brian.png',chloe:'/arcade/og/cold-storage-chloe.png',diamond:'/degens/diamond-hands-pepe-share.png'};
+const FIGURES={max:'/arcade/og/margin-call-max.png',brian:'/arcade/og/buy-high-brian.png',chloe:'/arcade/og/cold-storage-chloe.png',diamond:'/degens/diamond-hands-glorp-share.png'};
 function card(run){
   if(run.kind==='rumble')return {game:'REKT RUMBLE',claim:'CLEARED THE CIRCUIT.',big:'6 / 6',line:`Six fights as ${rosterFor(run.result.character)?.name||'a free fighter'}.`,figure:FIGURES[run.result.character]};
   if(run.kind==='cup')return {game:'WEN LAMBO',claim:'TOOK THE BARRY CUP.',big:`${run.result.points[0]}–${run.result.points[1]}`,line:'Barry would like a recount.',figure:FIGURES.diamond};
@@ -18,7 +18,7 @@ export default async function handler(request){
   try{
     const result=await fetch(base.replace(/\/$/,'')+'/campaign/results/'+code,{headers:{Authorization:`Bearer ${secret}`},signal:AbortSignal.timeout(10000)});
     if(!result.ok)return new Response('Result unavailable',{status:result.status===404?404:503});
-    const run=await result.json(),c=card(run),origin=new URL(process.env.CAMPAIGN_SITE_ORIGIN||'https://terminl.net').origin;
+    const run=await result.json(),c=card(run),origin=new URL(request.url).origin;
     const font=await fetch(origin+'/fonts/SpaceMono-Bold.ttf').then(r=>{if(!r.ok)throw new Error('Font unavailable');return r.arrayBuffer();});
     return new ImageResponse(<div style={{display:'flex',width:'100%',height:'100%',background:'#080e09',color:'#f0ffe9',fontFamily:'Space Mono',padding:48,position:'relative'}}>
       <div style={{display:'flex',flexDirection:'column',width:780,position:'relative'}}>

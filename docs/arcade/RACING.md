@@ -32,7 +32,7 @@ Inputs are bounded integers (0–32767): seven action bits plus an optional eigh
 
 ## Art and verification
 
-The playable road is a perspective projection of the actual shared world geometry, not an animated road movie. This is a Canvas 2.5D presentation, not a full 3D licensed car simulator. Generated California plates and sprite layers are used in the game; cars are unbranded designs. The original two use the existing Pepe body atlas; the three new exotics and Bike Tyson use generated transparent sprites with separate showroom and rear racing views. The original pixel fighters remain code-native articulated rigs. See `CALIFORNIA-ART.md` and `GRAND-TOUR-ART.md` for prompts, source paths, provenance and approval limits.
+The playable road is a perspective projection of the actual shared world geometry, not an animated road movie. This is a Canvas 2.5D presentation, not a full 3D licensed car simulator. Generated California plates and sprite layers are used in the game; cars are unbranded designs. The original two use the Glorp body atlas; the three new exotics and Bike Tyson use generated transparent sprites with separate showroom and rear racing views. The original pixel fighters remain code-native articulated rigs. See `CALIFORNIA-ART.md` and `GRAND-TOUR-ART.md` for prompts, source paths, provenance and approval limits.
 
 `node --test scripts/race-sim.test.mjs` checks deterministic cups, reverse/steering, input validation, checkpoint order, recovery, physics penalties, scoring, bounded rollback and replay reproduction. `node scripts/race-smoke.mjs` checks actual browser driving, reverse, all six environments, the rival tracker, settings, mobile layout and six-fighter navigation. `npm run test:race:browser` runs two independent browser drivers and a spectator through a real full cup, reconnect, durable replay, rematch and forfeit. Browser pilots use ordinary keyboard or controller inputs; they never inject positions or results. Browser engine can be selected with `ARCADE_TEST_BROWSER=firefox` or `webkit`.
 
@@ -53,8 +53,8 @@ Racing rules version 6 requires matching frontend/backend versions. Old racing c
 
 | Car | Driver | Character of the car |
 | --- | --- | --- |
-| Comet GT | Diamond Hands Pepe | Forgiving all-round roadster |
-| Spectre RX | Diamond Hands Pepe | Faster, looser drift roadster |
+| Comet GT | Diamond Hands Glorp | Forgiving all-round roadster |
+| Spectre RX | Diamond Hands Glorp | Faster, looser drift roadster |
 | Mirage V12 | MEV Mia | Angular wedge, responsive turn-in and planted exits |
 | Glacier R | Cold Storage Chloe | Wide electric hypercar, strong acceleration and grip |
 | Inferno X | Margin Call Max | Open track spyder with rear wing and the highest top speed |

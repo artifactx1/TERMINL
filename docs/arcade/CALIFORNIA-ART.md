@@ -2,7 +2,7 @@
 
 Created with the built-in image-generation tool. Generated outputs are copied into `public/arcade` and consumed by the playable racer, not only shown as concept art. Original source copies remain in the generator's output directory. Human visual approval and underlying character/design rights review remain pending; no licensed vehicle affiliation is implied.
 
-Final runtime assets: `california-coast-v1.png`, `california-desert-v1.png`, `california-scenery-v1.png`, and `california-pepe-bodies-v1.png`. Panorama and scenery generation used no external reference art. Pepe/car iterations use only the project's public `public/degens/diamond-hands-pepe.webp` and generated car concepts. No unpublished NFT art was accessed.
+Current runtime assets: `california-coast-v1.png`, `california-desert-v1.png`, `california-scenery-v1.png`, and `california-glorp-bodies-v1.png`. Panorama and scenery generation used no external reference art. The current car bodies show Diamond Hands Glorp, using the project's updated public portrait and generated car concepts. The historical prompts below describe the previous driver art.
 
 The renderer uses explicit atlas frame bounds, world-space roadside billboards, projected road geometry and independently animated wheels. The live body uses the straight rear frame with continuous chassis lean; it does not snap between three pictures. Rear wheels are aligned straight; front wheels steer. The ground anchor, rear contact patch and tight shadow agree, independently of camera lag. The runtime body/scenery PNGs were checked for a real alpha channel with zero-alpha background pixels. Rejected opaque-checkerboard iterations are not runtime sprites.
 

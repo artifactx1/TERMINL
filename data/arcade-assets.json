@@ -27,9 +27,9 @@
     {
       "id": "diamond-reference-v1",
       "role": "character-reference-portrait",
-      "source": "public/degens/diamond-hands-pepe.webp",
-      "provenance": "Existing project-supplied TERMINL public character portrait; visually inspected against current public lore.",
-      "rights": "Project-supplied reference. Pepe character rights require owner confirmation for commercial game release; no independent license is claimed.",
+      "source": "public/degens/diamond-hands-glorp.webp",
+      "provenance": "Glorp portrait rendered from the updated ELEMENT tickerbots v2 collection.",
+      "rights": "Project-generated Glorp reference; human character and design review pending.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
@@ -814,10 +814,10 @@
       "games": [
         "wen-lambo"
       ],
-      "id": "california-pepe-bodies-v1",
+      "id": "california-glorp-bodies-v1",
       "role": "racing-body-atlas",
-      "source": "public/arcade/california-pepe-bodies-v1.png",
-      "provenance": "Generated wheel-less open-cockpit bodies with public Diamond Hands Pepe identity; original wheels separately animated.",
+      "source": "public/arcade/california-glorp-bodies-v1.png",
+      "provenance": "Generated wheel-less open-cockpit bodies with Diamond Hands Glorp as the driver; wheels animate separately.",
       "variants": [
         "comet",
         "spectre"
@@ -1088,99 +1088,99 @@
     {
       "id": "diamond-illustrated-atlas-v1",
       "role": "character-sprite-atlas",
-      "source": "public/arcade/fighters/diamond-atlas-v1.webp",
+      "source": "public/arcade/fighters/glorp-atlas-v1.webp",
       "reference": "diamond-reference-v1",
       "character": "diamond",
-      "provenance": "Recovered original generated nine-pose companion sprite sheet. Illustration pixels packed without repainting or rescaling; used directly in gameplay.",
+      "provenance": "New nine-pose Diamond Hands Glorp sheet generated for this project and packed for gameplay.",
       "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1171,
-        "height": 1162
+        "width": 1183,
+        "height": 1209
       },
-      "decodedBudgetBytes": 5442808,
+      "decodedBudgetBytes": 5720988,
       "frames": [
         {
           "name": "idle",
           "x": 8,
           "y": 8,
-          "width": 298,
-          "height": 346,
-          "pivotX": 149,
-          "footY": 344
+          "width": 309,
+          "height": 370,
+          "pivotX": 155,
+          "footY": 368
         },
         {
           "name": "punch",
-          "x": 314,
+          "x": 325,
           "y": 8,
-          "width": 387,
-          "height": 343,
-          "pivotX": 155,
-          "footY": 341
+          "width": 396,
+          "height": 371,
+          "pivotX": 158,
+          "footY": 369
         },
         {
           "name": "kick",
-          "x": 709,
+          "x": 729,
           "y": 8,
-          "width": 384,
-          "height": 351,
+          "width": 386,
+          "height": 369,
           "pivotX": 104,
-          "footY": 349
+          "footY": 367
         },
         {
           "name": "special",
           "x": 8,
-          "y": 367,
-          "width": 387,
-          "height": 362,
-          "pivotX": 166,
-          "footY": 360
+          "y": 387,
+          "width": 392,
+          "height": 373,
+          "pivotX": 169,
+          "footY": 371
         },
         {
           "name": "sweep",
-          "x": 403,
-          "y": 367,
-          "width": 382,
-          "height": 250,
-          "pivotX": 134,
-          "footY": 248
+          "x": 408,
+          "y": 387,
+          "width": 392,
+          "height": 261,
+          "pivotX": 137,
+          "footY": 259
         },
         {
           "name": "air",
-          "x": 793,
-          "y": 367,
-          "width": 370,
-          "height": 314,
-          "pivotX": 133,
-          "footY": 312
+          "x": 808,
+          "y": 387,
+          "width": 367,
+          "height": 349,
+          "pivotX": 132,
+          "footY": 347
         },
         {
           "name": "hit",
           "x": 8,
-          "y": 737,
-          "width": 371,
-          "height": 345,
-          "pivotX": 204,
-          "footY": 343
+          "y": 768,
+          "width": 380,
+          "height": 360,
+          "pivotX": 209,
+          "footY": 358
         },
         {
           "name": "guard",
-          "x": 387,
-          "y": 737,
-          "width": 308,
-          "height": 340,
-          "pivotX": 154,
-          "footY": 338
+          "x": 396,
+          "y": 768,
+          "width": 327,
+          "height": 353,
+          "pivotX": 164,
+          "footY": 351
         },
         {
           "name": "victory",
-          "x": 703,
-          "y": 737,
-          "width": 298,
-          "height": 417,
-          "pivotX": 149,
-          "footY": 415
+          "x": 731,
+          "y": 768,
+          "width": 321,
+          "height": 433,
+          "pivotX": 161,
+          "footY": 431
         }
       ],
       "variants": [
@@ -1706,45 +1706,45 @@
     {
       "id": "diamond-finisher-atlas-v1",
       "role": "finisher-sprite-atlas",
-      "source": "public/arcade/fighters/diamond-finisher-atlas-v1.webp",
+      "source": "public/arcade/fighters/glorp-finisher-atlas-v1.webp",
       "reference": "diamond-reference-v1",
       "character": "diamond",
-      "provenance": "Built-in image generation from project character references; three non-graphic finishing poses, packed without rescaling. Prompt specifications: docs/rumble-finishers.md.",
+      "provenance": "New three-pose Diamond Hands Glorp finisher sheet generated for this project and packed for gameplay.",
       "rights": "Project-supplied character adaptation. No new third-party ownership claim.",
       "review": "development-only",
       "humanApproved": false,
       "dimensions": {
-        "width": 1721,
-        "height": 624
+        "width": 1740,
+        "height": 635
       },
-      "decodedBudgetBytes": 4295616,
+      "decodedBudgetBytes": 4419600,
       "frames": [
         {
           "name": "windup",
           "x": 8,
           "y": 8,
-          "width": 499,
-          "height": 541,
-          "pivotX": 250,
-          "footY": 539
+          "width": 480,
+          "height": 593,
+          "pivotX": 240,
+          "footY": 591
         },
         {
           "name": "impact",
-          "x": 515,
+          "x": 496,
           "y": 8,
-          "width": 753,
-          "height": 608,
-          "pivotX": 241,
-          "footY": 606
+          "width": 762,
+          "height": 619,
+          "pivotX": 244,
+          "footY": 617
         },
         {
           "name": "victory",
-          "x": 1276,
+          "x": 1266,
           "y": 8,
-          "width": 437,
-          "height": 550,
-          "pivotX": 219,
-          "footY": 548
+          "width": 466,
+          "height": 598,
+          "pivotX": 233,
+          "footY": 596
         }
       ],
       "games": [
@@ -2162,10 +2162,10 @@
       ]
     },
     {
-      "id": "mall-rat-diamond-hands-pepe-motion-atlas-v2",
+      "id": "mall-rat-glorp-motion-atlas-v3",
       "role": "skate-sprite-atlas",
-      "source": "public/arcade/mall-rat/diamond-hands-pepe-motion-atlas-v3.webp",
-      "provenance": "Built-in imagegen with canonical TERMINL portraits; twelve directional, body-only skate poses. Prompts in docs/mall-rat-motion-prompts.json; packed by scripts/prepare-mall-motion.mjs.",
+      "source": "public/arcade/mall-rat/glorp-motion-atlas-v3.webp",
+      "provenance": "New twelve-pose Diamond Hands Glorp skate motion sheet generated for this project and packed for gameplay.",
       "rights": "Generated adaptation for this project; no new third-party license asserted.",
       "review": "development-only",
       "humanApproved": false,
@@ -2185,109 +2185,109 @@
           "name": "coast",
           "x": 16,
           "y": 16,
-          "width": 165,
-          "height": 284,
-          "footX": 83,
-          "footY": 281
+          "width": 185,
+          "height": 279,
+          "footX": 93,
+          "footY": 276
         },
         {
           "name": "push-contact",
           "x": 336,
           "y": 16,
-          "width": 183,
-          "height": 285,
-          "footX": 92,
-          "footY": 282
+          "width": 189,
+          "height": 282,
+          "footX": 95,
+          "footY": 279
         },
         {
           "name": "push-extend",
           "x": 656,
           "y": 16,
-          "width": 182,
+          "width": 200,
           "height": 286,
-          "footX": 91,
+          "footX": 100,
           "footY": 283
         },
         {
           "name": "push-recover",
           "x": 16,
           "y": 336,
-          "width": 175,
-          "height": 271,
-          "footX": 88,
-          "footY": 268
+          "width": 197,
+          "height": 260,
+          "footX": 99,
+          "footY": 257
         },
         {
           "name": "crouch",
           "x": 336,
           "y": 336,
-          "width": 198,
-          "height": 217,
-          "footX": 99,
-          "footY": 214
+          "width": 211,
+          "height": 223,
+          "footX": 106,
+          "footY": 220
         },
         {
           "name": "ollie",
           "x": 656,
           "y": 336,
-          "width": 270,
-          "height": 241,
-          "footX": 135,
-          "footY": 238
+          "width": 275,
+          "height": 242,
+          "footX": 138,
+          "footY": 239
         },
         {
           "name": "flip",
           "x": 16,
           "y": 656,
-          "width": 275,
-          "height": 221,
-          "footX": 138,
-          "footY": 218
+          "width": 283,
+          "height": 219,
+          "footX": 142,
+          "footY": 216
         },
         {
           "name": "grab",
           "x": 336,
           "y": 656,
-          "width": 163,
-          "height": 191,
-          "footX": 82,
-          "footY": 188
+          "width": 169,
+          "height": 200,
+          "footX": 85,
+          "footY": 197
         },
         {
           "name": "grind",
           "x": 656,
           "y": 656,
-          "width": 271,
-          "height": 253,
-          "footX": 136,
-          "footY": 250
+          "width": 277,
+          "height": 249,
+          "footX": 139,
+          "footY": 246
         },
         {
           "name": "left",
           "x": 16,
           "y": 976,
-          "width": 186,
-          "height": 262,
-          "footX": 93,
-          "footY": 259
+          "width": 189,
+          "height": 273,
+          "footX": 95,
+          "footY": 270
         },
         {
           "name": "front",
           "x": 336,
           "y": 976,
-          "width": 185,
-          "height": 265,
-          "footX": 93,
-          "footY": 262
+          "width": 199,
+          "height": 276,
+          "footX": 100,
+          "footY": 273
         },
         {
           "name": "right",
           "x": 656,
           "y": 976,
-          "width": 190,
-          "height": 261,
-          "footX": 95,
-          "footY": 258
+          "width": 181,
+          "height": 263,
+          "footX": 91,
+          "footY": 260
         }
       ]
     },
@@ -3088,10 +3088,10 @@
       "decodedBudgetBytes": 2097152
     },
     {
-      "id": "mall-acrobatics-diamond-hands-pepe",
+      "id": "mall-acrobatics-glorp",
       "role": "skate-acrobatics-atlas",
-      "source": "public/arcade/mall-rat/diamond-hands-pepe-acrobatics-atlas-v3.webp",
-      "character": "diamond-hands-pepe",
+      "source": "public/arcade/mall-rat/glorp-acrobatics-atlas-v3.webp",
+      "character": "glorp",
       "games": [
         "mall-rat"
       ],
@@ -3099,7 +3099,7 @@
         "frontflip",
         "backflip"
       ],
-      "provenance": "Built-in image_gen; prompts in docs/mall-rat-acrobatics-prompts.json and alpha-prompts.json; packed by scripts/prepare-mall-acrobatics.mjs",
+      "provenance": "New eight-pose Diamond Hands Glorp acrobatics sheet generated for this project and packed for gameplay.",
       "rights": "Generated project artwork based on canonical TERMINL degen reference",
       "review": "development",
       "humanApproved": false,
@@ -3113,72 +3113,72 @@
           "x": 6,
           "y": 6,
           "width": 180,
-          "height": 233,
+          "height": 239,
           "footX": 90,
-          "footY": 230
+          "footY": 236
         },
         {
           "name": "somersault-45",
           "x": 262,
           "y": 6,
-          "width": 182,
+          "width": 179,
           "height": 244,
-          "footX": 91,
+          "footX": 90,
           "footY": 241
         },
         {
           "name": "somersault-90",
           "x": 518,
           "y": 6,
-          "width": 204,
-          "height": 150,
-          "footX": 102,
-          "footY": 147
+          "width": 196,
+          "height": 151,
+          "footX": 98,
+          "footY": 148
         },
         {
           "name": "somersault-135",
           "x": 774,
           "y": 6,
-          "width": 166,
-          "height": 227,
-          "footX": 83,
-          "footY": 224
+          "width": 170,
+          "height": 240,
+          "footX": 85,
+          "footY": 237
         },
         {
           "name": "somersault-180",
           "x": 6,
           "y": 262,
-          "width": 179,
-          "height": 216,
-          "footX": 90,
-          "footY": 213
+          "width": 176,
+          "height": 212,
+          "footX": 88,
+          "footY": 209
         },
         {
           "name": "somersault-225",
           "x": 262,
           "y": 262,
-          "width": 162,
-          "height": 204,
-          "footX": 81,
-          "footY": 201
+          "width": 160,
+          "height": 206,
+          "footX": 80,
+          "footY": 203
         },
         {
           "name": "somersault-270",
           "x": 518,
           "y": 262,
-          "width": 201,
-          "height": 243,
-          "footX": 101,
-          "footY": 240
+          "width": 193,
+          "height": 235,
+          "footX": 97,
+          "footY": 232
         },
         {
           "name": "somersault-315",
           "x": 774,
           "y": 262,
-          "width": 212,
-          "height": 226,
-          "footX": 106,
-          "footY": 223
+          "width": 208,
+          "height": 225,
+          "footX": 104,
+          "footY": 222
         }
       ],
       "decodedBudgetBytes": 2097152

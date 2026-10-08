@@ -25,7 +25,7 @@ try{
   const a=await guest('Alice'),b=await guest('Bob'),spectator=await guest('Observer');
   await a.screenshot({path:`${output}/${browserName}-select.png`,fullPage:true});
   await click(a,'CREATE A ROOM +');await a.getByLabel('Room invitation').waitFor();const invite=await a.getByLabel('Room invitation').inputValue();
-  await b.getByRole('button',{name:/02 Diamond Hands Pepe/}).click();await b.getByLabel('FRIEND INVITATION').fill(invite);await click(b,'JOIN FIGHT →');
+  await b.getByRole('button',{name:/02 Diamond Hands Glorp/}).click();await b.getByLabel('FRIEND INVITATION').fill(invite);await click(b,'JOIN FIGHT →');
   await spectator.getByLabel('FRIEND INVITATION').fill(invite);await click(spectator,'SPECTATE');
   await a.waitForFunction(()=>window.__room?.players.every(Boolean)&&window.__room.spectators===1);
   await click(a,"I'M READY →");await click(b,"I'M READY →");

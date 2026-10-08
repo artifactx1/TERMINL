@@ -1,11 +1,11 @@
 # Illustrated companion fighters
 
-The primary Rumble renderer now draws the detailed generated combat poses. The original Max sheet shown by the user was recovered alongside matching Pepe, Brian, Mia and Bernie sheets. Chloe was generated with the built-in image tool using that Max sheet as the style and pose-layout reference and the public Chloe companion as the identity reference.
+The primary Rumble renderer draws detailed generated combat poses. The original Max sheet shown by the user was recovered alongside matching Brian, Mia and Bernie sheets. Glorp and Chloe were generated with the built-in image tool using the established style and their public companions as identity references.
 
 ## Assets and preparation
 
-- Source sheets: `public/arcade/fighters/{max,diamond,brian,mia,bernie,chloe}-poses-v1.png`.
-- Runtime atlases: `public/arcade/fighters/{character}-atlas-v1.webp`.
+- Source sheets: `public/arcade/fighters/{max,glorp,brian,mia,bernie,chloe}-poses-v1.png` (Mia uses v2).
+- Runtime atlases: `public/arcade/fighters/{max,glorp,brian,mia,bernie,chloe}-atlas-v1.webp` (Mia uses v2).
 - Frame metadata: `lib/arcade/rumble-sprite-data.mjs`.
 - Preparation: `node scripts/prepare-rumble-sprites.mjs`.
 - Rendering and phase selection: `lib/arcade/rumble-sprites.mjs`.

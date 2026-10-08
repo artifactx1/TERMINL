@@ -19,7 +19,7 @@ try{catalog=JSON.parse(await fs.readFile(source,'utf8'));}catch{
 if(catalog){
   const publicRoster=publicSite.cast||publicSite.degens||[];
   const publicNames=new Set(publicRoster.map(x=>x.name));
-  const compatibleNames=new Set(['Margin Call Max','Diamond Hands Pepe']);
+  const compatibleNames=new Set(['Margin Call Max','Diamond Hands Glorp']);
   const stats={count:Array.isArray(catalog)?catalog.length:0,schemaErrors:0,duplicateNames:0,invalidAttributes:0,duplicateTraitCategories:0,missingRequiredTraitCategories:0,grailExemptions:0,publicRosterReferences:0,compatibleBaseRigReferences:0,safeFallbackReferences:0,privateTraitsExported:0,privateImagesCopied:0};
   const seen=new Set();
   if(Array.isArray(catalog))for(const token of catalog){

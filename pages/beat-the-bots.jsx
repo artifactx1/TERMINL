@@ -25,7 +25,7 @@ export default function BeatTheBots(){
       {!campaign?<p className={s.notice}>Checking the starting grid…</p>:!campaign.open&&<p className={s.notice}>WL challenges aren’t open right now. The arcade is, and practice is free.</p>}
       {campaign?.open&&<p className={s.fine}>{campaign.claimed} FCFS WL spots saved so far{campaign.capacity?` (limit ${campaign.capacity})`:''}.</p>}
       <small className={s.fine}>No wallet connection, signature, follow or repost required. {FCFS_NOTE}</small>
-    </div><div className={s.portrait}><Image src={`/degens/${BARRY.portrait}.webp`} alt='BarryBot, represented by Diamond Hands Pepe' width={340} height={560} priority/><span>“{BARRY.taunt}”</span></div></section>
+    </div><div className={s.portrait}><Image src={`/degens/${BARRY.portrait}.webp`} alt='BarryBot, represented by Diamond Hands Glorp' width={340} height={560} priority/><span>“{BARRY.taunt}”</span></div></section>
     {error&&<p role='alert' className={s.error}>{error}</p>}
     <div className={s.routes}>
       <Route route='cup' open={routes.cup}><p>Six courses, three laps each, one BarryBot. 1st place scores 10, 2nd scores 6. Finish the cup with more points than Barry. Winning a single race isn’t enough.</p><small>Everyone drives the same car. Each race is checked by the server as soon as you cross the line.</small></Route>

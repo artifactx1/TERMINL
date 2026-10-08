@@ -144,7 +144,7 @@ export const LORE = {
       "Bought in 2017, put it in cold storage and developed interests. During the exchange collapse she asked if anyone wanted to go hiking. The chat muted her for a week. Her portfolio remains the most offensive thing about her.",
   },
 
-  "diamond-hands-pepe": {
+  "diamond-hands-glorp": {
     epithet: "the screenshot was the take-profit",
     spec: {
       ENTRY: "the top",
@@ -154,6 +154,42 @@ export const LORE = {
     },
     story:
       "Rode it down 94%, then all the way back. The group chat begged him to sell. He sent a diamond emoji. His gains folder contains 600 screenshots and his bank account contains a direct debit he’s worried about.",
+  },
+
+  "rekt-glorp": {
+    epithet: "the chart was only down from one angle",
+    spec: {
+      ENTRY: "after the first dip",
+      EXIT: "after the fifth",
+      DAMAGE: "the whole stack",
+      COPE: "“building character”",
+    },
+    story:
+      "Glorp bought the dip and watched it dig a basement. He kept every alert on, including the ones that woke him up at 3am. The position is closed now. The notifications are not.",
+  },
+
+  "smokin-glorp": {
+    epithet: "one more candle, one more break",
+    spec: {
+      ENTRY: "between breaks",
+      EXIT: "after this candle",
+      DAMAGE: "mostly sleep",
+      COPE: "“I have a system”",
+    },
+    story:
+      "Glorp checks the chart, takes a break, then checks what happened during the break. His trading journal has meticulous timestamps and almost no conclusions. He calls that discipline.",
+  },
+
+  "moonride-glorp": {
+    epithet: "the getaway car is still in the garage",
+    spec: {
+      ENTRY: "at launch",
+      EXIT: "at the moon",
+      DAMAGE: "fuel money",
+      COPE: "“roadmap first”",
+    },
+    story:
+      "Glorp planned the drive to the moon before the token had a route there. He keeps the car polished and the bags packed. Every week he says the departure is close enough to hear the engine.",
   },
 
   "mev-marlon": {

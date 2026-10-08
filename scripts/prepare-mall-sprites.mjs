@@ -1,6 +1,6 @@
 /** Pack generated alpha sprites into consistent 512px cells, preserving proportions. */
 import sharp from 'sharp';
-const ids=['margin-call-max','diamond-hands-pepe','mev-mia','cold-storage-chloe'];
+const ids=['margin-call-max','glorp','mev-mia','cold-storage-chloe'];
 for(const id of ids){
  const input=`public/arcade/mall-rat/${id}-v1.png`,meta=await sharp(input).metadata(),w=Math.floor(meta.width/2),h=Math.floor(meta.height/2),tiles=[];
  for(let i=0;i<4;i++){

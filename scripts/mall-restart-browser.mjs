@@ -62,7 +62,7 @@ try{
   let changed=0;for(let i=0;i<a.length;i+=3)if(Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2])>30)changed++;
   assert.ok(changed/(1280*400)<.01,`spawn scene restores props, camera and effects (${changed} changed pixels)`);
   await page.getByRole('button',{name:'PAUSE / HELP'}).click();await page.getByRole('button',{name:'SKATER SELECT',exact:true}).click();
-  await page.getByRole('button',{name:'DIAMOND HANDS PEPE',exact:true}).click();await page.getByRole('button',{name:'BREAK IN →'}).click();await page.waitForTimeout(600);await frames(3);
+  await page.getByRole('button',{name:'DIAMOND HANDS GLORP',exact:true}).click();await page.getByRole('button',{name:'BREAK IN →'}).click();await page.waitForTimeout(600);await frames(3);
   const changedSkater=await snapshot();assert.equal(changedSkater.gpu.contexts,warm.gpu.contexts+1,'changing skaters rebuilds their assets');
   await page.screenshot({path:'artifacts/mall-restart/changed-skater.png'});
   await page.getByRole('button',{name:'PAUSE / HELP'}).click();await page.getByRole('button',{name:'SKATER SELECT',exact:true}).click();

@@ -3,7 +3,8 @@ import fs from 'node:fs/promises';
 import sharp from 'sharp';
 const roster={};
 for(const id of ['max','diamond','brian','mia','bernie','chloe']){
-  const source=`public/arcade/fighters/${id}-finisher-poses-v1.png`;
+  const sprite=id==='diamond'?'glorp':id;
+  const source=`public/arcade/fighters/${sprite}-finisher-poses-v1.png`;
   const {data,info}=await sharp(source).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   const {width:w,height:h}=info,seen=new Uint8Array(w*h),parts=[];
   for(let n=0;n<w*h;n++){
@@ -33,7 +34,7 @@ for(const id of ['max','diamond','brian','mia','bernie','chloe']){
     frames.push({name:['windup','impact','victory'][i],x,y:8,width,height:h,pivotX:Math.round(width*pivot),footY:h-2});
     x+=width+8;height=Math.max(height,h+16);
   }
-  const src=`/arcade/fighters/${id}-finisher-atlas-v1.webp`;
+  const src=`/arcade/fighters/${sprite}-finisher-atlas-v1.webp`;
   await sharp({create:{width:x,height,channels:4,background:'#00000000'}}).composite(tiles).webp({lossless:true}).toFile('public'+src);
   roster[id]={src,width:x,height,worldHeight:240,referenceHeight:frames[2].height,frames};
   console.log(`${id}: three finisher poses, ${x} × ${height}`);
