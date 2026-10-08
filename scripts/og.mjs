@@ -40,7 +40,7 @@ async function card() {
   const PANEL = W - ART_W; // 570
 
   const hero = await sharp(art(HERO)).resize(ART_W, ART_W).toBuffer();
-  const glorp = await sharp('public/degens/diamond-hands-glorp.webp')
+  const brian = await sharp('public/degens/buy-high-brian.webp')
     .resize({height: 560})
     .png()
     .toBuffer();
@@ -86,7 +86,7 @@ async function card() {
     .composite([
       { input: hero, left: PANEL, top: -Math.round((ART_W - H) / 2) },
       { input: fade, left: PANEL, top: 0 },
-      { input: glorp, left: 838, top: 70 },
+      { input: brian, left: 838, top: 70 },
       ...thumbs,
       { input: text, left: 0, top: 0 },
     ])
