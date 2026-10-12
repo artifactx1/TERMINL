@@ -8,10 +8,130 @@
  *
  * `spec` mirrors the trait rows on a piece, so a degen opens in the same modal
  * with the same shape — four rows and a paragraph, where a machine has six rows
- * and a picture. A degen missing from here still opens; it just shows the
- * portrait and the name.
+ * and a picture. Every published degen needs an entry; the homepage build checks
+ * that the cast and this file stay in sync.
  */
 export const LORE = {
+  "chain-smoking-pigeon": {
+    epithet: "has seen every top from the same windowsill",
+    spec: {
+      ENTRY: "whenever the crowd gathers",
+      EXIT: "before the crumbs run out",
+      DAMAGE: "one lunch, repeatedly",
+      COPE: "“I was just watching”",
+    },
+    story:
+      "The pigeon has watched three exchanges open and two close from a windowsill outside the trading floor. It flies off whenever the room starts cheering. Nobody follows it. By morning, they all wish they had.",
+  },
+
+  "pump-queen-priya": {
+    epithet: "the thread went live before the sell order filled",
+    spec: {
+      ENTRY: "before the announcement",
+      EXIT: "while you read the thread",
+      DAMAGE: "your average entry",
+      COPE: "“just sharing my research”",
+    },
+    story:
+      "Priya's twelve-part thesis has charts, a rocket emoji and a pinned disclaimer. The price doubled while everyone read it. She says the community found the project together. Her transaction history remembers who found the exit first.",
+  },
+
+  "mod-cave-dana": {
+    epithet: "the only person still answering tickets",
+    spec: {
+      ENTRY: "the first welcome message",
+      EXIT: "still online",
+      DAMAGE: "sleep and six keyboards",
+      COPE: "“please check the pinned post”",
+    },
+    story:
+      "Dana has banned 4,000 scam bots and answered the same question 4,001 times. The founders haven't posted in weeks, but she still updates the FAQ. Her last vacation was a thirty-minute server outage.",
+  },
+
+  "paper-hands-paul": {
+    epithet: "secured two percent. watched the next hundred.",
+    spec: {
+      ENTRY: "after three days of research",
+      EXIT: "+2%, just before the pump",
+      DAMAGE: "a lifetime of screenshots",
+      COPE: "“profit is profit”",
+    },
+    story:
+      "Paul sold the morning before the chart went vertical. He still sends the group chat articles about risk management, then checks the price under the table. The sale was profitable. He has calculated what holding would have paid every day since.",
+  },
+
+  "tax-loss-trevor": {
+    epithet: "calls the red candles a filing strategy",
+    spec: {
+      ENTRY: "the spring breakout",
+      EXIT: "December 31, 11:58pm",
+      DAMAGE: "the position and accountant fees",
+      COPE: "“it's tax efficient”",
+    },
+    story:
+      "Trevor bought a token for its upside and sold it for its deduction. His spreadsheet calls the loss strategic. His accountant calls it a loss. He bought back in on January 2 because the chart looked ready this time.",
+  },
+
+  "otc-ollie": {
+    epithet: "the private deal came with a public lesson",
+    spec: {
+      ENTRY: "a friend-of-a-friend price",
+      EXIT: "after the unlock, apparently",
+      DAMAGE: "the spread and a friendship",
+      COPE: "“I got preferred terms”",
+    },
+    story:
+      "Ollie skipped the exchange and bought directly from a guy who knew a guy. The discount was real. So was the six-month lockup nobody mentioned until after the transfer. He still calls it an exclusive allocation.",
+  },
+
+  "margin-molly": {
+    epithet: "interest accrues even while she sleeps",
+    spec: {
+      ENTRY: "borrowed against the last win",
+      EXIT: "when the lender called",
+      DAMAGE: "the collateral",
+      COPE: "“it's a temporary drawdown”",
+    },
+    story:
+      "Molly borrowed against a winning position to buy more of the same position. The price dipped, the collateral went with it, and the lender sold before her alarm went off. She keeps the original profit screenshot in a folder called Proof.",
+  },
+
+  "degen-dad-denise": {
+    epithet: "explained liquidity pools at the school pickup",
+    spec: {
+      ENTRY: "after the kids went to bed",
+      EXIT: "before the morning carpool",
+      DAMAGE: "the holiday budget",
+      COPE: "“it's educational”",
+    },
+    story:
+      "Denise calls every trade a lesson in financial literacy. The kids can now explain slippage but still want to know where the beach trip went. She says the family is early. The family would prefer to be on vacation.",
+  },
+
+  "mcrugged-mike": {
+    epithet: "worked the late shift for someone else's exit",
+    spec: {
+      ENTRY: "after closing time",
+      EXIT: "the liquidity left first",
+      DAMAGE: "three weeks of wages",
+      COPE: "“the team is probably asleep”",
+    },
+    story:
+      "Mike clocked out, saw a launch in the group chat and put in his overtime pay. By the time he got home, the team had deleted the chat and the pool was empty. He still showed up for the morning shift.",
+  },
+
+  "gas-war-gloria": {
+    epithet: "won the block. lost the budget.",
+    spec: {
+      ENTRY: "first block, maximum priority",
+      EXIT: "after the fee cleared",
+      DAMAGE: "more gas than tokens",
+      COPE: "“at least it confirmed”",
+    },
+    story:
+      "Gloria raised the priority fee every time another wallet bid higher. Her transaction landed first. The mint cost less than the gas, and the floor price fell before she could tell anyone she'd won.",
+  },
+
   "liquidation-vulture": {
     epithet: "your stop loss rang the dinner bell",
     spec: {

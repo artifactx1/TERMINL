@@ -632,6 +632,14 @@ export async function getStaticProps() {
    */
   // eslint-disable-next-line global-require
   const site = require("../data/site.json");
+  const incompleteDegens = site.degens.filter(({ slug }) => {
+    const lore = loreFor(slug);
+    return !lore?.epithet || !lore?.story
+      || ["ENTRY", "EXIT", "DAMAGE", "COPE"].some((key) => !lore.spec?.[key]);
+  });
+  if (incompleteDegens.length) {
+    throw new Error(`Missing homepage degen lore: ${incompleteDegens.map(({ slug }) => slug).join(", ")}`);
+  }
   const bySlug = new Map(site.showcase.map((t) => [t.slug, t]));
 
   return {
