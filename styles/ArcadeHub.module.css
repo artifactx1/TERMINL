@@ -15,6 +15,17 @@
 .intro h1 em{font-style:normal;color:var(--terminl-accent)}
 .intro>p{font:12.5px/1.8 var(--terminl-font);max-width:285px;margin:0 0 7px;color:var(--terminl-ink)}
 .intro>p span{display:block;margin-top:13px;font-size:11px;color:var(--terminl-muted)}
+.introAside{max-width:285px}
+.introAside p{font:12.5px/1.8 var(--terminl-font);color:var(--terminl-ink)}
+.introAside p span{display:block;margin-top:13px;font-size:11px;color:var(--terminl-muted)}
+.introAside button{margin-top:12px;padding:12px 15px;background:var(--terminl-accent);border:1px solid var(--terminl-accent);color:var(--terminl-accent-ink);font:bold 10px var(--terminl-font);cursor:pointer}
+.introAside small{display:block;margin-top:8px;color:var(--terminl-dim);font-size:10px;overflow-wrap:anywhere}
+.leaderboard{scroll-margin-top:76px;margin:0 0 30px;padding:24px;border:1px solid var(--terminl-border);background:var(--terminl-panel)}
+.leaderboardHeading{display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.leaderboardHeading h2{font:700 27px/1.1 var(--terminl-font);color:#fff;margin:8px 0}
+.leaderboardHeading p{max-width:720px;color:var(--terminl-dim);font:12px/1.7 var(--terminl-font);margin:0 0 16px}
+.leaderboardHeading>a{flex-shrink:0;padding:12px 15px;border:1px solid var(--terminl-accent);color:var(--terminl-accent);font:bold 10px var(--terminl-font);text-decoration:none;letter-spacing:.08em;margin-bottom:16px}
+.leaderboard :global(table){width:100%}
 .featured{display:grid;grid-template-columns:1fr 1fr;gap:12px;scroll-margin-top:80px}
 .card{min-width:0;background:var(--terminl-panel);border:1px solid var(--terminl-border)}
 .artLink{display:block;text-decoration:none}
@@ -77,7 +88,13 @@
 .intro h1{font-size:var(--terminl-heading);letter-spacing:-.04em}
 .intro>p{font-size:12.5px;margin-top:25px;max-width:none}
 .intro>p br{display:none}
+.introAside{max-width:none}
+.introAside p br{display:none}
 .intro>p span{font-size:11px;margin-top:6px}
+.leaderboard{padding:18px;margin-bottom:24px}
+.leaderboardHeading{align-items:flex-start;flex-direction:column;gap:0}
+.leaderboardHeading h2{font-size:23px}
+.leaderboardHeading>a{margin:0 0 14px}
 .featured{grid-template-columns:1fr;gap:22px}
 .raceArt,.fightArt{height:290px}
 .cardBody{padding:24px 21px}

@@ -21,3 +21,5 @@
 @media(max-width:700px){.routes{grid-template-columns:1fr}}
 .card+.card,.tableWrap+.card,.spotGrid+.fine+.card{margin-top:20px}
 .grid>.card,.spotGrid>.card,.routes>.card{margin-top:0}
+.resultShare{display:inline-flex;flex-direction:column;align-items:flex-start;gap:7px;max-width:520px}
+.resultShare small{font:10px/1.5 var(--terminl-font);color:var(--terminl-dim)}

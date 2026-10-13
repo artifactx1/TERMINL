@@ -3,7 +3,8 @@ import dynamic from 'next/dynamic';
 import {useEffect,useState} from 'react';
 import CampaignShell from '../components/arcade/CampaignShell';
 import ArcadeMeta from '../components/arcade/ArcadeMeta';
-import {campaignRequest,campaignEvent} from '../lib/arcade/campaign-client';
+import ResultShareButton from '../components/arcade/ResultShareButton';
+import {campaignRequest} from '../lib/arcade/campaign-client';
 import {FCFS_NOTE,GTD_NOTE,OPEN_ROUTES,ROUTES,addressWindow,resultSummary,spotLabel} from '../lib/arcade/campaign-rules.mjs';
 import s from '../styles/Campaign.module.css';
 
@@ -60,12 +61,12 @@ function AddressStep({pass,qualified,gtdOpen,config,serverNow,address,setAddress
   </section>;
 }
 
-function Runs({runs}){
+function Runs({runs,onPrompt}){
   if(!runs.length)return null;
-  return <><div className={s.sectionHeading}><h2>RECENT OFFICIAL RUNS</h2></div><div className={s.tableWrap}><table className={s.table}><thead><tr><th>ROUTE</th><th>RESULT</th><th>POINTS</th><th>DATE</th></tr></thead>
+  return <><div className={s.sectionHeading}><h2>RECENT OFFICIAL RUNS</h2></div><div className={s.tableWrap}><table className={s.table}><thead><tr><th>ROUTE</th><th>RESULT</th><th>POINTS</th><th>DATE</th><th>SHARE</th></tr></thead>
     <tbody>{runs.map(run=><tr key={run.id}><td>{ROUTES[run.kind]?.name}</td>
       <td>{run.invalidated?'INVALIDATED':run.result?`${run.result.qualified?'COMPLETED':'CUP LOST'} · ${resultSummary(run.kind,run.result)}`:run.open?(run.kind==='cup'?`IN PROGRESS · RACE ${run.progress.races+1}/6`:`IN PROGRESS · FIGHT ${run.progress.index+1}/6`):'UNFINISHED · EXPIRED'}</td>
-      <td>{run.points}</td><td>{date(run.at)}</td></tr>)}</tbody></table></div></>;
+      <td>{run.points}</td><td>{date(run.at)}</td><td>{!run.invalidated&&run.segments>0&&<ResultShareButton runId={run.id} shared={run.shareXp!==null} label='PREPARE RESULT →' onPrompt={onPrompt}/>}</td></tr>)}</tbody></table></div></>;
 }
 
 export default function ArcadePass(){
@@ -99,7 +100,8 @@ export default function ArcadePass(){
   const saveAddress=async e=>{e.preventDefault();setBusy(true);setError('');try{const result=await campaignRequest('/wallet',{address,chainId:4663,confirmed});loadPass(result.pass);setNotice('Mint address saved. Your WL setup is complete.');setConfirmed(false);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const privacy=async value=>{setBusy(true);try{const result=await campaignRequest('/profile',{publicProfile:value});loadPass(result.pass);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const shareSpot=pass?.fcfs?.status==='qualified'?pass.spots.filter(sp=>sp.route!=='sprint').at(-1):null;
-  const share=spot=>{const url=location.origin+'/challenge/'+spot.code;const text=spot.route==='cup'?'I took the Barry Cup off BarryBot in Wen Lambo.\nBarry would like a recount.\n\nYour turn:':'I cleared all six fights in the Rekt Rumble circuit.\n\nYour turn:';campaignEvent('share_click',spot.code);window.open('https://x.com/intent/post?'+new URLSearchParams({text,url}),'_blank','noopener,noreferrer');};
+  const shareRun=shareSpot&&pass.runs.find(run=>run.code===shareSpot.code);
+  const recordShare=(runId,xp)=>setPass(current=>current?{...current,shareXp:(current.shareXp||0)+xp,runs:current.runs.map(run=>run.id===runId?{...run,shareXp:run.shareXp??xp}:run)}:current);
   const copy=async spot=>{try{await navigator.clipboard.writeText(location.origin+'/challenge/'+spot.code);setNotice('Challenge link copied. Send it to your loudest friend.');}catch{setNotice('Open your challenge card and copy its address.');}};
   const gtdOpen=!!pass?.gtd?.held&&pass.gtd.submitOpen,qualified=pass?.fcfs?.status==='qualified'||!!pass?.gtd?.held;
   const serverNow=clock+(campaign?.clockSkew||0);
@@ -107,18 +109,18 @@ export default function ArcadePass(){
     <span className={s.eyebrow}>TERMINL ARCADE PASS</span><h1 className={s.title}>{pass?pass.display:'Your Arcade Pass.'}</h1>
     {!loaded&&<p>Finding your pass…</p>}{error&&<p role='alert' className={s.error}>{error}</p>}{notice&&<p role='status' className={s.notice}>{notice}</p>}
     {pending&&<section className={`${s.card} ${s.nextStep}`}><span className={s.badge}>{ROUTES[pending.kind].name.toUpperCase()} COMPLETE</span><h2>{resultSummary(pending.kind,pending.result)}</h2><p>Your run is verified. Save it to claim its FCFS WL spot.</p><label className={s.check}><input type='checkbox' checked={publicProfile} onChange={e=>setPublicProfile(e.target.checked)}/>Show my handle or account ID on public cards and the leaderboard</label>{pass?<button className={s.primary} disabled={busy} onClick={()=>signIn()}>SAVE TO MY ARCADE PASS →</button>:<SignInChoices campaign={campaign} runId={pending.id} publicProfile={publicProfile} busy={busy} onSignIn={signIn} onError={setError}/>}<p className={s.fine}>We request identity only. No wallet connection and nothing is posted on your behalf. {FCFS_NOTE}</p></section>}
-    {loaded&&!pass&&!pending&&<section className={s.card}><h2>Log in to see your spots and points.</h2><p>Use the identity you saved your WL spot with. Your pass shows which spots you hold, your arcade points and leaderboard rank, and your mint address.</p><SignInChoices campaign={campaign} publicProfile={false} busy={busy} onSignIn={signIn} onError={setError}/><div className={s.actions}><Link className={s.secondary} href='/beat-the-bots'>HOW TO EARN A SPOT →</Link></div><p className={s.fine}>Identity is used to recover your Arcade Pass and stop duplicate claims. We request no email and never post for you.</p></section>}
+    {loaded&&!pass&&!pending&&<section className={s.card}><h2>Sign in to save your points.</h2><p>Verified race and fight wins from this browser count even without a full route clear. Sign in to add those points to your Arcade Pass and the leaderboard, or to see spots you already saved.</p><SignInChoices campaign={campaign} publicProfile={false} busy={busy} onSignIn={signIn} onError={setError}/><div className={s.actions}><Link className={s.secondary} href='/beat-the-bots'>HOW TO EARN POINTS →</Link></div><p className={s.fine}>Identity is used to recover your Arcade Pass and stop duplicate claims. We request no email and never post for you.</p></section>}
     {pass&&<>
       <div className={s.grid}>
         <section className={s.card}><span className={s.eyebrow}>ACCOUNT</span><h2>{pass.status==='banned'?'SUSPENDED':pass.status==='review'?'UNDER REVIEW':'ACTIVE'}</h2><p>Signed in with {providerName(pass.provider)}.</p></section>
-        <section className={s.card}><span className={s.eyebrow}>ARCADE POINTS</span><h2>{pass.points}</h2><p>{pass.rank?`Rank #${pass.rank} on the `:'Not on the '}<Link href='/leaderboard'>leaderboard</Link>.</p></section>
+        <section className={s.card}><span className={s.eyebrow}>ARCADE POINTS</span><h2>{pass.points}</h2><p>{pass.rank?`Rank #${pass.rank} on the `:'Not on the '}<Link href='/leaderboard'>leaderboard</Link>. <b>{pass.shareXp||0} result XP</b> earned from preparing verified result cards; XP does not affect rank or WL spots.</p></section>
         <section className={s.card}><span className={s.eyebrow}>WL</span><h2>{[pass.fcfs?.status==='qualified'&&'FCFS',pass.gtd?.held&&'GTD'].filter(Boolean).join(' + ')||'NONE YET'}</h2><p>{pass.referrals?`${pass.referrals} friend${pass.referrals===1?'':'s'} earned a spot from your link.`:'FCFS from a route; GTD from the leaderboard top.'}</p></section>
       </div>
       <WlStatus pass={pass} campaign={campaign}/>
       <p className={s.fine}>{FCFS_NOTE} {GTD_NOTE}</p>
       <AddressStep pass={pass} qualified={qualified} gtdOpen={gtdOpen} config={campaign?.config} serverNow={serverNow} address={address} setAddress={setAddress} confirmed={confirmed} setConfirmed={setConfirmed} busy={busy} onSubmit={saveAddress}/>
-      {shareSpot&&<section className={s.card}><span className={s.eyebrow}>YOUR GROUP CHAT NEEDS THIS</span><h2>{shareSpot.route==='cup'?'Barry lost the cup.':'Six fights. Six wins.'}</h2><div className={s.actions}><button className={s.primary} onClick={()=>share(shareSpot)}>CHALLENGE ON X ↗</button><button className={s.secondary} onClick={()=>copy(shareSpot)}>COPY CHALLENGE LINK</button><Link className={s.secondary} href={'/challenge/'+shareSpot.code}>OPEN YOUR CARD →</Link></div><p className={s.fine}>Opens a composer. You decide whether to post. A referral counts when a new player saves a confirmed spot through your link.</p></section>}
-      <Runs runs={pass.runs}/>
+      {shareSpot&&<section className={s.card}><span className={s.eyebrow}>YOUR GROUP CHAT NEEDS THIS</span><h2>{shareSpot.route==='cup'?'Barry lost the cup.':'Six fights. Six wins.'}</h2><div className={s.actions}><ResultShareButton runId={shareSpot.runId} shared={shareRun?shareRun.shareXp!==null:false} label='PREPARE RESULT CARD →' onPrompt={recordShare}/><button className={s.secondary} onClick={()=>copy(shareSpot)}>COPY CHALLENGE LINK</button><Link className={s.secondary} href={'/challenge/'+shareSpot.code}>OPEN YOUR CARD →</Link></div><p className={s.fine}>Preparing a verified result card earns result XP. Posting it is your choice. A referral counts when a new player saves a confirmed spot through your link.</p></section>}
+      <Runs runs={pass.runs} onPrompt={recordShare}/>
       <section className={s.card}><h2>PUBLIC DISPLAY</h2><label className={s.check}><input type='checkbox' checked={publicProfile} disabled={busy} onChange={e=>privacy(e.target.checked)}/>Show my {pass.provider==='farcaster'?'account ID':'handle'} on cards and the leaderboard</label><small>Off means ANON.</small></section>
       {campaign?.config?.announcementUrl&&<p><a className={s.secondary} href={campaign.config.announcementUrl} target='_blank' rel='noreferrer'>MINT ANNOUNCEMENTS ↗</a></p>}
       <div className={s.actions} style={{marginTop:25}}><Link className={s.primary} href='/beat-the-bots'>EARN MORE POINTS →</Link><button className={s.textButton} onClick={async()=>{try{await campaignRequest('/logout',{});setPass(null);setPending(null);}catch(e){setError(e.message);}}}>SIGN OUT</button></div>

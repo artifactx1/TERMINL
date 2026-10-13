@@ -3,6 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import {CAMPAIGN_KEY,CAMPAIGN_WORLDS,campaignWorld,newCampaignLevel,stepCampaign,readCampaign,clearCampaignLevel,LEFT,RIGHT,JUMP} from '../../lib/moon-campaign.mjs';
 import {drawCampaign} from '../../lib/moon-campaign-draw.js';
 import {watchPointerRelease} from '../../lib/arcade/pointer-release.mjs';
+import {arcadeGameStart} from '../../lib/arcade/campaign-client';
 import s from '../../styles/MoonCampaign.module.css';
 
 export default function MoonCampaign(){
@@ -10,7 +11,7 @@ export default function MoonCampaign(){
   const saved=useRef(save);saved.current=save;
   useEffect(()=>{try{const next=readCampaign(localStorage.getItem(CAMPAIGN_KEY));saved.current=next;setSave(next);}catch{setStorageError(true);}setReady(true);},[]);
   const persist=next=>{saved.current=next;setSave(next);try{localStorage.setItem(CAMPAIGN_KEY,JSON.stringify(next));}catch{setStorageError(true);}};
-  const start=(level,checkpoint=-1)=>{if(!ready||level>saved.current.unlocked)return;persist({...saved.current,current:level,checkpoint});setRun({level,checkpoint,id:crypto.randomUUID()});};
+  const start=(level,checkpoint=-1)=>{if(!ready||level>saved.current.unlocked)return;arcadeGameStart('moon','solo');persist({...saved.current,current:level,checkpoint});setRun({level,checkpoint,id:crypto.randomUUID()});};
   if(run)return <Mission key={run.id} run={run} onLeave={()=>setRun(null)} onRetry={checkpoint=>start(run.level,checkpoint)} onNext={()=>start(run.level+1)}
     onCheckpoint={checkpoint=>persist({...saved.current,current:run.level,checkpoint})} onFinish={state=>{if(state.won)persist(clearCampaignLevel(saved.current,state));}} storageError={storageError}/>;
   const allClear=save.completed.length===10;

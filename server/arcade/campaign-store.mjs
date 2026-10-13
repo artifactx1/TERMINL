@@ -58,6 +58,10 @@ export function openCampaignStore(directory){
       id INTEGER PRIMARY KEY, at INTEGER NOT NULL, name TEXT NOT NULL,
       anon_id TEXT, user_id TEXT, run_id TEXT, detail TEXT NOT NULL DEFAULT '{}');
     CREATE INDEX IF NOT EXISTS events_time ON events(at,name);
+    CREATE TABLE IF NOT EXISTS result_cards (
+      run_id TEXT PRIMARY KEY REFERENCES runs(id), anon_id TEXT NOT NULL,
+      at INTEGER NOT NULL, xp INTEGER NOT NULL DEFAULT 0);
+    CREATE INDEX IF NOT EXISTS result_cards_at ON result_cards(at,anon_id);
     CREATE TABLE IF NOT EXISTS event_once (
       key TEXT PRIMARY KEY, at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS rate_limits (
@@ -89,6 +93,13 @@ export function openCampaignStore(directory){
     db.prepare('UPDATE settings SET value=? WHERE id=1').run(JSON.stringify({...stored,capacity:0}));
     db.prepare('INSERT INTO audit(at,actor,action,detail) VALUES(?,?,?,?)').run(Date.now(),'migration','settings',JSON.stringify({capacity:{previous:2048,next:0}}));
   }
+  // Ease Barry for new cups on installations using the previous 0.82 pace.
+  // Other configured values and snapshots already issued to players stay as they are.
+  const currentSettings=JSON.parse(db.prepare('SELECT value FROM settings WHERE id=1').get().value);
+  if(currentSettings.botPace===.82){
+    db.prepare('UPDATE settings SET value=? WHERE id=1').run(JSON.stringify({...currentSettings,botPace:.78}));
+    db.prepare('INSERT INTO audit(at,actor,action,detail) VALUES(?,?,?,?)').run(Date.now(),'migration','settings',JSON.stringify({botPace:{previous:.82,next:.78}}));
+  }
   // One FCFS spot per account (the contract allows one per user). Earlier releases saved
   // one per route; the earliest stays the spot and later ones become plain route clears.
   db.exec(`UPDATE spots SET status='cleared' WHERE status<>'cleared' AND EXISTS (SELECT 1 FROM spots o WHERE o.user_id=spots.user_id
@@ -113,8 +124,8 @@ export function openCampaignStore(directory){
     run('DELETE FROM sessions WHERE expires_at<?',now);
     run('DELETE FROM rate_limits WHERE reset_at<?',now);
     // Aggregate metrics are retained; only unused anonymous attempts expire.
-    run('DELETE FROM replay_hashes WHERE run_id IN (SELECT id FROM runs WHERE user_id IS NULL AND completed_at IS NULL AND expires_at<?)',now-7*86400000);
-    run('DELETE FROM runs WHERE user_id IS NULL AND completed_at IS NULL AND expires_at<?',now-7*86400000);
+    run('DELETE FROM replay_hashes WHERE run_id IN (SELECT id FROM runs WHERE user_id IS NULL AND completed_at IS NULL AND expires_at<? AND id NOT IN (SELECT run_id FROM result_cards))',now-7*86400000);
+    run('DELETE FROM runs WHERE user_id IS NULL AND completed_at IS NULL AND expires_at<? AND id NOT IN (SELECT run_id FROM result_cards)',now-7*86400000);
   });
   return {db,get,all,run,transaction,event,rate,audit,cleanup,config:()=>JSON.parse(get('SELECT value FROM settings WHERE id=1').value),close:()=>db.close()};
 }

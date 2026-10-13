@@ -13,6 +13,9 @@ import {createChallengeRace} from '../../lib/arcade/bot-challenge.mjs';
 import {BARRY} from '../../lib/arcade/campaign-rules.mjs';
 import {useOfficialRun} from './use-official-run';
 import {OfficialPanel,OfficialResult} from './OfficialChallenge';
+import {arcadeGameStart} from '../../lib/arcade/campaign-client';
+import {parseRoomLink} from '../../lib/arcade/room-links.mjs';
+import RoomShare,{IncomingRoomInvite,RoomShareDialog} from './RoomShare';
 import s from '../../styles/Racing.module.css';
 
 const FRAME=1000/60;
@@ -24,7 +27,6 @@ function CupPanel({official,onStart}){
   </OfficialPanel>;
 }
 const seconds=ticks=>ticks===null?'DNF':`${(ticks/60).toFixed(2)}s`;
-function invitation(value){try{const u=new URL(value,location.origin),p=new URLSearchParams(u.hash.slice(1));return p.get('room')&&p.get('token')?{code:p.get('room'),token:p.get('token')}:null;}catch{return null;}}
 function endpoint(){return process.env.NEXT_PUBLIC_ARCADE_WS_URL||(['localhost','127.0.0.1'].includes(location.hostname)?'ws://localhost:4010':'');}
 
 export default function WenLambo(){
@@ -32,26 +34,27 @@ export default function WenLambo(){
   const [mode,setMode]=useState('menu'),[vehicle,setVehicle]=useState('comet'),[track,setTrack]=useState('night-market');
   const [name,setName]=useState('ANON'),[invite,setInvite]=useState(''),[view,setView]=useState(null),[room,setRoom]=useState(null),[seat,setSeat]=useState(null),[result,setResult]=useState(null);
   const [connection,setConnection]=useState('offline'),[rtt,setRtt]=useState(0),[notice,setNotice]=useState(''),[paused,setPaused]=useState(false),[tutorial,setTutorial]=useState(false),[lesson,setLesson]=useState(0),[settings,setSettings]=useState(false),[resume,setResume]=useState(null);
+  const [incoming,setIncoming]=useState(null),[shareOpen,setShareOpen]=useState(false);
   const [prefs,setPrefs]=useState({music:.12,sfx:.4,reducedMotion:false,quality:'high'});
   const [touchReset,setTouchReset]=useState(0);
   const [botProfile,setBotProfile]=useState(null);
   const bot=useRef(null);
   const [mapOpen,setMapOpen]=useState(false),compact=useRef(true);
   const canvas=useRef(null),arena=useRef(null),shell=useRef(null),game=useRef(null),client=useRef(null),audio=useRef(null),input=useRef(0),keyboard=useRef(0),touch=useRef(0),pad=useRef(0),match=useRef(null);
-  const current=useRef(null);current.current={mode,paused,prefs,tutorial,lesson,mapOpen,settings,official};
+  const current=useRef(null);current.current={mode,paused,prefs,tutorial,lesson,mapOpen,settings,shareOpen,official};
   const held=useRef(new Map());
   const touchAxis=useRef(0),touchActive=useRef(false),padAxis=useRef(0);
   const applyInput=()=>{const next=composeRaceInput({keyboard:keyboard.current,touch:touch.current,pad:pad.current,touchAxis:touchAxis.current,padAxis:padAxis.current,touchActive:touchActive.current});if(next!==input.current){input.current=next;client.current?.setInput(next);}};
   const neutral=()=>{keyboard.current=0;touch.current=0;touchAxis.current=0;touchActive.current=false;padAxis.current=0;pad.current=0;input.current=0;held.current.clear();client.current?.setInput(0);setTouchReset(n=>n+1);};
   useEffect(()=>{
     try{const stored=JSON.parse(localStorage.getItem('terminl:race-prefs'));if(stored)setPrefs(p=>({...p,...stored}));else setPrefs(p=>({...p,reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches}));setName(JSON.parse(localStorage.getItem('terminl-os:v2'))?.name||'ANON');setResume(JSON.parse(sessionStorage.getItem('terminl:race-session')));}catch{}
-    if(invitation(location.href))setInvite(location.href);audio.current=new RaceAudio();
+    const linked=parseRoomLink(location.href,location.origin);if(linked){setInvite(location.href);setIncoming(linked);}audio.current=new RaceAudio();
     const key=e=>{
       if(e.type==='keyup'){held.current.delete(e.code||e.key.toLowerCase());keyboard.current=raceKeyboardInput(held.current.values());applyInput();return;}
       if(current.current.mode==='menu'||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName)||e.ctrlKey||e.metaKey)return;
       if(e.target?.closest?.('[data-testid="mobile-rival"]')&&[' ','Enter'].includes(e.key))return;
       if(e.key==='Escape'&&e.type==='keydown'){neutral();if(current.current.mode==='practice')setPaused(p=>!p);return;}
-      if(current.current.settings||current.current.mode==='practice'&&current.current.paused)return;
+      if(current.current.settings||current.current.shareOpen||current.current.mode==='practice'&&current.current.paused)return;
       const bit=KEYS[e.key]||KEYS[e.key.toLowerCase()];if(!bit)return;e.preventDefault();
       held.current.set(e.code||e.key.toLowerCase(),e.key);
       keyboard.current=raceKeyboardInput(held.current.values());applyInput();
@@ -104,6 +107,7 @@ export default function WenLambo(){
     };raf=requestAnimationFrame(frame);return ()=>cancelAnimationFrame(raf);
   },[mode]);
   const practice=(teach,cup=!teach)=>{
+    arcadeGameStart('lambo',teach?'training':cup?'solo_cup':'quick_race');
     official.cancel();
     client.current?.dispose();client.current=null;neutral();setNotice('');setRoom(null);setSeat(null);setResult(null);setPaused(false);setTutorial(teach);setLesson(0);
     bot.current=createPracticeRival({playerVehicle:vehicle,previous:bot.current,teaching:teach});setBotProfile(bot.current);
@@ -111,6 +115,7 @@ export default function WenLambo(){
   };
   const startOfficial=async()=>{
     const attempt=await official.start();if(!attempt)return;
+    arcadeGameStart('lambo','official');
     client.current?.dispose();client.current=null;neutral();setNotice('');setRoom(null);setSeat(null);setResult(null);setPaused(false);setTutorial(false);setLesson(0);
     bot.current=attempt.challenge.bot;setBotProfile(bot.current);
     game.current=createChallengeRace(attempt.challenge);setView(game.current);setMode('practice');audio.current?.setPaused(false);audio.current?.unlock();
@@ -126,11 +131,12 @@ export default function WenLambo(){
     const url=endpoint();if(!url){setNotice('Online racing needs the configured Railway server. Practice works now.');return;}
     let action;if(kind==='resume'){if(!resume||resume.url!==url){setNotice('That saved race belongs to a different server.');return;}}
     else if(kind==='create')action={type:'create',game:'wen-lambo',rulesVersion:RACE_RULES_VERSION,name:name.trim()||'ANON',character:vehicle,stage:track};
-    else{const parsed=invitation(invite);if(!parsed){setNotice('Paste the complete race invitation, including its token.');return;}action={type:'join',game:'wen-lambo',rulesVersion:RACE_RULES_VERSION,...parsed,name:name.trim()||'ANON',character:vehicle,spectator:kind==='watch'};}
+    else{const parsed=parseRoomLink(invite,location.origin);if(!parsed){setNotice('Paste the complete race invitation, including its token.');return;}action={type:'join',game:'wen-lambo',rulesVersion:RACE_RULES_VERSION,code:parsed.code,token:parsed.token,name:name.trim()||'ANON',character:vehicle,spectator:kind==='watch'};}
     client.current?.dispose({leave:false});neutral();setNotice('');setRoom(null);setSeat(null);setResult(null);setView(null);setPaused(false);setTutorial(false);setMode('online');
     const next=new RumbleClient(url,receive,{game:'wen-lambo',step:stepRace,phase:'racing',rulesVersion:RACE_RULES_VERSION});client.current=next;if(kind==='resume')next.session=resume;next.connect(action);audio.current?.unlock();
+    if(kind!=='resume')arcadeGameStart('lambo',kind==='create'?'online_create':kind==='watch'?'watch':'online_join');
   };
-  const leave=()=>{official.cancel();client.current?.dispose();client.current=null;game.current=null;neutral();setMode('menu');setRoom(null);setView(null);setSeat(null);setResult(null);setNotice('');setPaused(false);setTutorial(false);};
+  const leave=()=>{official.cancel();client.current?.dispose();client.current=null;game.current=null;neutral();setMode('menu');setRoom(null);setView(null);setSeat(null);setResult(null);setNotice('');setPaused(false);setTutorial(false);setShareOpen(false);};
   const inviteURL=seat?`${location.origin}/os/lambo#room=${seat.code}&token=${seat.token}`:'';
   const me=view?.players[Math.max(0,seat?.slot??0)],done=mode==='practice'?view?.phase==='finished':!!result||room?.phase==='finished',outcome=mode==='practice'?view:result||room?.result;
   const standings=mode==='online'?(client.current?.state||view):view;
@@ -140,10 +146,12 @@ export default function WenLambo(){
   const lastTimes=view?.raceResults.at(-1)?.times,lastRace=lastTimes?lastTimes[mySlot]===null?'DID NOT FINISH':lastTimes[1-mySlot]===null||lastTimes[mySlot]<lastTimes[1-mySlot]?'YOU WON':lastTimes[mySlot]===lastTimes[1-mySlot]?'DEAD HEAT':'YOU FINISHED 2ND':null;
   const lost=standings?.phase==='racing'&&seat?.slot!==-1&&!standing?.wrongWay&&raceLost(standings,Math.max(0,seat?.slot??0));
   const canReconnect=mode==='online'&&['disconnected','unavailable'].includes(connection)&&!!client.current?.canReconnect();
-  return <div ref={shell} className={`${s.shell} ${playing?s.inRace:''}`}>
-    <header className={s.header}><Link href='/os'><b>TERMINL</b><span>ARCADE</span></Link><span className={s.preview}>WEN LAMBO / EXOTICS UPDATE</span><div>{mode!=='menu'&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{neutral();setSettings(true);if(mode==='practice')setPaused(true);}}>SETTINGS</button><button aria-label='Toggle fullscreen' onClick={()=>{if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});else shell.current?.requestFullscreen?.().catch(()=>setNotice('Fullscreen is unavailable.'));}}>⛶</button></div></header>
+  return <div ref={shell} className={`${s.shell} ${playing?s.inRace:mode==='online'?s.lobbyShell:''}`}>
+    <header className={s.header}><Link href='/os'><b>TERMINL</b><span>ARCADE</span></Link><span className={s.preview}>WEN LAMBO / EXOTICS UPDATE</span><div>{mode==='online'&&seat&&<button onClick={()=>{neutral();setShareOpen(true);}}>SHARE LIVE ↗</button>}{mode!=='menu'&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{neutral();setSettings(true);if(mode==='practice')setPaused(true);}}>SETTINGS</button><button aria-label='Toggle fullscreen' onClick={()=>{if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});else shell.current?.requestFullscreen?.().catch(()=>setNotice('Fullscreen is unavailable.'));}}>⛶</button></div></header>
     {notice&&<div className={s.notice} role='status'>{notice}<button aria-label='Dismiss notice' onClick={()=>setNotice('')}>×</button></div>}
+    {mode==='online'&&!playing&&room&&<RoomShare path='/os/lambo' title='Wen Lambo' seat={seat} canJoin={!room.players[0]||!room.players[1]}/>}
     {mode==='menu'?<main className={s.menu}>
+      {incoming&&<IncomingRoomInvite game='Wen Lambo' watch={incoming.watch} onJoin={online}/>}
       <CupPanel official={official} onStart={startOfficial}/>
       <div className={s.hero}><div><span className={s.eyebrow}>PACIFIC COAST. QUESTIONABLE DECISIONS.</span><h1>WEN<br/><em>LAMBO</em><sup>02</sup></h1><p>Finally rich.<br/>Still can&apos;t drive.</p></div><div className={s.heroCar}><VehiclePreview vehicle={vehicle} large/><span>DIAMOND HANDS. HEAVY RIGHT FOOT.</span></div></div>
       <div className={s.garage}><section><div className={s.sectionTitle}><b>01 / YOUR GETAWAY</b><span>EVERY RIDE IS FREE</span></div><div className={s.cars}>{Object.values(VEHICLES).map(v=><button key={v.id} aria-pressed={vehicle===v.id} onClick={()=>setVehicle(v.id)}><VehiclePreview vehicle={v.id}/><small>{v.tag}</small><h2>{v.name}</h2><p>{v.description}</p><small className={s.driverLabel}>DRIVER / {v.driver}</small><span className={s.selected}>{vehicle===v.id?'SELECTED ↗':'SELECT +'}</span></button>)}</div></section>
@@ -168,6 +176,7 @@ export default function WenLambo(){
       <div className={s.controls}><p>↑ GAS · ← → STEER · ↓ BRAKE / REVERSE · SPACE DRIFT · SHIFT BOOST · R RECOVER · ESC PAUSE PRACTICE <small>*Arcade speed display</small></p></div>
       {seat?.slot!==-1&&!(official.attempt&&done)&&<TouchControls racing onSteer={(value,active)=>{touchAxis.current=value;touchActive.current=active;}} resetKey={touchReset} feedback={me?.gear===-1?'REVERSE · steer and hold BRAKE / REV':me?.boosting?'BOOSTING · release to save charge':touch.current&32?me?.offRoad?'BOOST needs tarmac':me?.boost<1?'BOOST empty · drift and release to refill':'':''} disabled={paused||settings||done||view?.phase==='raceOver'||mode==='online'&&connection!=='connected'} onChange={value=>{touch.current=value;applyInput();}}/>}
     </main>}
+    {shareOpen&&seat&&<RoomShareDialog path='/os/lambo' title='Wen Lambo' seat={seat} canJoin={room?.phase==='lobby'&&(!room.players[0]||!room.players[1])} onClose={()=>setShareOpen(false)}/>}
     {settings&&<Settings prefs={prefs} setPrefs={setPrefs} close={()=>setSettings(false)}/>}
   </div>;
 }

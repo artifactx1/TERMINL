@@ -8,6 +8,7 @@ import {useEffect,useState} from 'react';
 import {useGame} from '../../lib/arcade/after-hours/use-game';
 import {createRug,stepRug,WEAPONS} from '../../lib/arcade/after-hours/rug-sim.mjs';
 import {RUG_LEVELS} from '../../lib/arcade/after-hours/rug-world.mjs';
+import {arcadeGameStart} from '../../lib/arcade/campaign-client';
 import s from '../../styles/AfterHours.module.css';
 const amount=n=>Math.round(n||0).toLocaleString('en-US');
 /** Where to go next: the nearest unused wallet terminal, then enemies until the kill
@@ -34,7 +35,7 @@ export default function RugExe(){
  useEffect(()=>{game.runtime.current?.input.autoFire(autoFire);},[autoFire,game.mode,game.runtime]);
  const toggleAutoFire=()=>{const next=!autoFire;setAutoFire(next);try{localStorage.setItem('terminl:rug-autofire',next?'on':'off');}catch{}};
  useEffect(()=>{if(game.mode!=='result'||v?.level!==7||v?.phase!=='complete')return;setEnding(0);const first=setTimeout(()=>setEnding(1),1600),second=setTimeout(()=>setEnding(2),3800);return()=>{clearTimeout(first);clearTimeout(second);};},[game.mode,v?.level,v?.phase]);
- const start=(next=level)=>{setLevel(next);setAllTapes(game.progress?.mall.tapes.length>=9);game.start();};
+ const start=(next=level)=>{arcadeGameStart('rug','solo');setLevel(next);setAllTapes(game.progress?.mall.tapes.length>=9);game.start();};
  const chooseWeapon=i=>{if(game.runtime.current?.state.unlocked.includes(i))game.runtime.current.state.weapon=i;};
  const portfolio=v?.escape?Math.max(4.2,1842993*Math.pow(.992,v.escape)):Math.max(0,(v?.player.hp||0)*1000);
  return <div className={`${s.shell} ${r.rug}`}><header className={s.header}><Link href='/os'><b>TERMINL</b><span>ARCADE</span></Link><span>RUG.EXE / PROTOCOL STILL RUNNING</span><button onClick={()=>game.setMuted(!game.muted)}>{game.muted?'SOUND OFF':'SOUND ON'}</button>{game.mode==='playing'&&<button onClick={game.pause}>PAUSE / HELP</button>}</header><main className={s.viewport}><canvas ref={game.canvas} tabIndex={0} aria-label='RUG.EXE first-person shooter. WASD moves, mouse aims, click fires, Space jumps, Shift dashes, Control slides, E uses controls.'/>

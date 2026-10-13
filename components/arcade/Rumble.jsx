@@ -15,11 +15,13 @@ import {CIRCUIT_KEY,newCircuit,readCircuit,circuitOpponent,circuitStage,circuitI
 import {circuitFight} from '../../lib/arcade/rumble-challenge.mjs';
 import {useOfficialRun} from './use-official-run';
 import {OfficialPanel,OfficialResult} from './OfficialChallenge';
+import {arcadeGameStart} from '../../lib/arcade/campaign-client';
+import {parseRoomLink} from '../../lib/arcade/room-links.mjs';
+import RoomShare,{IncomingRoomInvite,RoomShareDialog} from './RoomShare';
 import s from "../../styles/Rumble.module.css";
 
 const LEVELS=[{id:"dead-mall",name:"Dead Mall Exchange",sub:"Room to breathe. Nowhere to cash out.",rule:"Wide arena · Spacing and corner pressure",image:"/arcade/dead-mall-v1.webp"},{id:"laundromat",name:"Liquidation Laundromat",sub:"Your portfolio is on the spin cycle.",rule:"Telegraphed steam boundaries · Watch your space",image:"/arcade/laundromat-v1.webp"}];
 const FRAME=1000/60;
-function parseInvitation(value){try{const url=new URL(value,window.location.origin);const params=new URLSearchParams(url.hash.slice(1));const code=params.get("room"),token=params.get("token");return code&&token?{code,token}:null;}catch{return null;}}
 function safePrefs(){try{return JSON.parse(localStorage.getItem("terminl:rumble-prefs"))||{};}catch{return {};}}
 function initialEndpoint(){return process.env.NEXT_PUBLIC_ARCADE_WS_URL||(["localhost","127.0.0.1"].includes(window.location.hostname)?"ws://localhost:4010":"");}
 
@@ -29,6 +31,7 @@ export default function Rumble({assetLabEnabled=false}){
   const [name,setName]=useState("ANON"),[invite,setInvite]=useState(""),[connection,setConnection]=useState("offline");
   const [room,setRoom]=useState(null),[view,setView]=useState(null),[joined,setJoined]=useState(null),[result,setResult]=useState(null);
   const [notice,setNotice]=useState(""),[settings,setSettings]=useState(false),[movesOpen,setMovesOpen]=useState(false);
+  const [incoming,setIncoming]=useState(null),[shareOpen,setShareOpen]=useState(false);
   const [paused,setPaused]=useState(false),[training,setTraining]=useState(false),[lesson,setLesson]=useState(0);
   const [touchReset,setTouchReset]=useState(0);
   const [circuit,setCircuit]=useState(null),[circuitSave,setCircuitSave]=useState(null);
@@ -37,7 +40,7 @@ export default function Rumble({assetLabEnabled=false}){
   const [prefsReady,setPrefsReady]=useState(false);
   const [rtt,setRtt]=useState(0),[assetError,setAssetError]=useState(false),[resume,setResume]=useState(null);
   const canvas=useRef(null),arena=useRef(null),images=useRef({}),audio=useRef(null),client=useRef(null),game=useRef(null);
-  const state=useRef({mode,paused,training,lesson,prefs});state.current={mode,paused,training,lesson,prefs,circuit,settings,movesOpen,official};
+  const state=useRef({mode,paused,training,lesson,prefs});state.current={mode,paused,training,lesson,prefs,circuit,settings,movesOpen,shareOpen,official};
   const finisherPulse=useRef(0);
   const input=useRef(0),keyboard=useRef(0),touch=useRef(0),pad=useRef(0),keys=useRef(new Map());
   const metrics=useRef({frames:0,totalMs:0,maxMs:0}),lastUI=useRef(0),lessonStart=useRef(0),matchId=useRef(null);
@@ -48,7 +51,7 @@ export default function Rumble({assetLabEnabled=false}){
     const saved=safePrefs()||{};setPrefs(p=>({...p,...saved,keys:savedRumbleKeys(saved),controlsVersion:CONTROL_VERSION,reducedMotion:saved.reducedMotion??window.matchMedia("(prefers-reduced-motion: reduce)").matches}));
     setPrefsReady(true);
     try{setName(JSON.parse(localStorage.getItem("terminl-os:v2"))?.name||"ANON");const stored=JSON.parse(sessionStorage.getItem("terminl:rumble-session"));if(stored)setResume(stored);}catch{}
-    if(parseInvitation(window.location.href))setInvite(window.location.href);
+    const linked=parseRoomLink(window.location.href,window.location.origin);if(linked){setInvite(window.location.href);setIncoming(linked);}
     try{setCircuitSave(readCircuit(localStorage.getItem(CIRCUIT_KEY)));}catch{}
     let disposed=false;
     const assets=[...LEVELS,...Object.entries(RUMBLE_SPRITES).map(([id,sheet])=>({id,image:sheet.src})),...Object.entries(FINISHER_SPRITES).map(([id,sheet])=>({id:`finisher-${id}`,image:sheet.src}))];
@@ -66,7 +69,7 @@ export default function Rumble({assetLabEnabled=false}){
       if(e.type==='keyup'){keys.current.delete(keyboardIdentity(e));keyboard.current=[...keys.current.values()].reduce((n,bit)=>n|bit,0);updateInputRef.current();return;}
       if(state.current.mode==="menu"||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.metaKey||e.ctrlKey)return;
       if(e.key==="Escape"&&e.type==="keydown"){resetInput();if(state.current.mode==="practice")setPaused(v=>!v);return;}
-      if(state.current.settings||state.current.movesOpen||state.current.mode==='practice'&&state.current.paused)return;
+      if(state.current.settings||state.current.movesOpen||state.current.shareOpen||state.current.mode==='practice'&&state.current.paused)return;
       const mapped=state.current.prefs.keys[e.key]||state.current.prefs.keys[e.key.toLowerCase()];if(!mapped)return;
       e.preventDefault();keys.current.set(keyboardIdentity(e),mapped);
       keyboard.current=[...keys.current.values()].reduce((n,bit)=>n|bit,0);updateInputRef.current();
@@ -139,6 +142,7 @@ export default function Rumble({assetLabEnabled=false}){
     setView(fight);setMode("practice");audio.current?.seen.clear();audio.current?.setVolumes(prefs);audio.current?.setPaused(false);audio.current?.unlock();
   };
   const practice=(teach=false,challenge=null)=>{
+    arcadeGameStart('rumble',teach?'training':challenge?'solo_circuit':'practice');
     setCircuit(challenge);circuitFinished.current=false;
     if(challenge){setCharacter(challenge.character);saveCircuit(challenge);}
     begin(createFight({characters:[challenge?.character||character,challenge?circuitOpponent(challenge):opponent],stage:challenge?circuitStage(challenge):stage}),teach);
@@ -148,7 +152,7 @@ export default function Rumble({assetLabEnabled=false}){
     const {circuit:next,input:rival,state:fight}=circuitFight(challenge,{index,attempts:official.segments()});
     official.restartSegment();setCircuit({...next,official:true,rival});setCharacter(challenge.character);circuitFinished.current=false;begin(fight);
   };
-  const startOfficial=async()=>{const run=await official.start({character});if(run)officialFight(run.challenge,0);};
+  const startOfficial=async()=>{const run=await official.start({character});if(run){arcadeGameStart('rumble','official');officialFight(run.challenge,0);}};
   const continueOfficial=()=>officialFight(official.attempt.challenge,official.progress?.index||0);
   useEffect(()=>{void official.resume();},[]);// eslint-disable-line react-hooks/exhaustive-deps
   const receive=message=>{
@@ -169,13 +173,14 @@ export default function Rumble({assetLabEnabled=false}){
     let action;
     if(kind==="resume"){if(!resume||resume.url!==url){setNotice("That saved room belongs to a different server.");return;}}
     else if(kind==="create")action={type:"create",name:name.trim()||"ANON",character,stage};
-    else {const parsed=parseInvitation(invite);if(!parsed){setNotice("Paste the complete invitation link, including its scoped token.");return;}action={type:"join",...parsed,name:name.trim()||"ANON",character,spectator:kind==="watch"};}
+    else {const parsed=parseRoomLink(invite,window.location.origin);if(!parsed){setNotice("Paste the complete invitation link, including its scoped token.");return;}action={type:"join",code:parsed.code,token:parsed.token,name:name.trim()||"ANON",character,spectator:kind==="watch"};}
     client.current?.dispose({leave:false});resetInput();setView(null);setRoom(null);setResult(null);setJoined(null);setMode("online");
     if(action)action={...action,game:"rekt-rumble",rulesVersion:RUMBLE_RULES_VERSION};
     const next=new RumbleClient(url,receive);client.current=next;if(kind==="resume")next.session=resume;next.connect(action);audio.current?.unlock();
+    if(kind!=="resume")arcadeGameStart('rumble',kind==='create'?'online_create':kind==='watch'?'watch':'online_join');
   };
-  const leave=()=>{if(official.result)official.cancel();client.current?.dispose();client.current=null;resetInput();game.current=null;setMode("menu");setRoom(null);setView(null);setJoined(null);setResult(null);setPaused(false);audio.current?.setVolumes({music:0,sfx:prefs.sfx});};
-  const share=async()=>{if(!joined)return;const url=`${window.location.origin}/os/rumble#room=${joined.code}&token=${joined.token}`;setInvite(url);try{await navigator.clipboard.writeText(url);setNotice("Invitation copied. The other player needs the same running game server.");}catch{setNotice("Copy the invitation from the field below.");}};
+  const leave=()=>{if(official.result)official.cancel();client.current?.dispose();client.current=null;resetInput();game.current=null;setMode("menu");setRoom(null);setView(null);setJoined(null);setResult(null);setPaused(false);setShareOpen(false);audio.current?.setVolumes({music:0,sfx:prefs.sfx});};
+  const share=async()=>{if(!joined)return;const url=`${window.location.origin}/os/rumble#room=${joined.code}&token=${joined.token}`;setInvite(url);try{await navigator.clipboard.writeText(url);setNotice("Invitation copied.");}catch{setNotice("Select and copy the invitation below.");}};
   const fullscreen=()=>{const el=document.querySelector(`.${s.shell}`);if(document.fullscreenElement)document.exitFullscreen?.().catch(()=>{});else el?.requestFullscreen?.().catch(()=>setNotice("Fullscreen is unavailable in this browser."));};
   const finished=mode==="practice"?view?.phase==="finished":!!result||room?.phase==="finished";
   const outcome=mode==="online"?(result||room?.result):view;
@@ -188,9 +193,10 @@ export default function Rumble({assetLabEnabled=false}){
   const finisher=FINISHERS[view?.finisher?.character||character];
   const selectedMoves=Array.isArray(MOVES[character])?MOVES[character]:Object.values(MOVES[character]||{});
   return <div className={`${s.shell} ${mode!=="menu"?s.inGame:""}`}>
-    <header className={s.header}><Link href="/os"><b>TERMINL</b><span>ARCADE</span></Link><span className={s.buildTag}>REKT RUMBLE / SOLO + ONLINE</span><div>{mode!=="menu"&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{resetInput();setSettings(true);if(mode==="practice")setPaused(true);}}>SETTINGS</button><button onClick={fullscreen} aria-label="Toggle fullscreen">⛶</button></div></header>
+    <header className={s.header}><Link href="/os"><b>TERMINL</b><span>ARCADE</span></Link><span className={s.buildTag}>REKT RUMBLE / SOLO + ONLINE</span><div>{mode==="online"&&joined&&<button onClick={()=>{resetInput();setShareOpen(true);}}>SHARE LIVE ↗</button>}{mode!=="menu"&&<button onClick={leave}>← LEAVE</button>}<button onClick={()=>{resetInput();setSettings(true);if(mode==="practice")setPaused(true);}}>SETTINGS</button><button onClick={fullscreen} aria-label="Toggle fullscreen">⛶</button></div></header>
     {notice&&<div className={s.notice} role="status">{notice}<button aria-label="Dismiss notice" onClick={()=>setNotice("")}>×</button></div>}
     {mode==="menu"?<main className={s.menu}>
+      {incoming&&<IncomingRoomInvite game='Rekt Rumble' watch={incoming.watch} onJoin={online}/>}
       <OfficialPanel official={official} portrait={roster.portrait} eyebrow='OFFICIAL / REKT RUMBLE CIRCUIT / FCFS WL'
         title='Six fights. Your FCFS WL spot.' startLabel={`START AS ${roster.name.toUpperCase()} →`} onStart={startOfficial}
         action={official.attempt&&!official.result?<button className={s.primary} onClick={continueOfficial}>CONTINUE · FIGHT {(official.progress?.index||0)+1}/6 →</button>:null}>
@@ -205,6 +211,7 @@ export default function Rumble({assetLabEnabled=false}){
     </main>:<main className={s.gameMain}>
       <div className={s.connectionBar}><b>{mode==="practice"?circuit?`${circuit.official?"OFFICIAL":"SOLO"} CIRCUIT · FIGHT ${circuit.index+1}/6 · BOT`:training?"INTERACTIVE TRAINING · BOT":"PRACTICE · BOT OPPONENT":joined?.slot===-1?"LIVE SPECTATOR":"ONLINE · SERVER AUTHORITATIVE"}</b><span>{mode==="online"?`${connection.toUpperCase()} / ${rtt}ms / ${room?.region||"LOCAL"}`:circuit?.official?"SERVER-VERIFIED · FCFS WL":circuit?"SIX-FIGHT SOLO RUN":"SOLO PLAY"}</span><button onClick={()=>{resetInput();setMovesOpen(true);if(mode==="practice")setPaused(true);}}>MOVE LIST / HELP</button></div>
       {!playing?<div className={s.lobby}>
+        {room&&<RoomShare path='/os/rumble' title='Rekt Rumble' seat={joined} canJoin={!room.players[0]||!room.players[1]}/>}
         <span className={s.eyebrow}>PRIVATE FIGHT CLUB</span><h1>{room?"Your corner is ready.":connection==="unavailable"||connection==="disconnected"?"The room server is offline.":"Connecting to the arcade…"}</h1>
         {!room?<><p>Connecting to your fight. If the server is unavailable, you can play the solo circuit or practice.</p><button className={s.secondary} onClick={leave}>BACK TO FIGHTER SELECT</button></>:<><div className={s.roomCode}><span>ROOM</span><b>{room.code}</b><button onClick={share}>COPY INVITE ↗</button></div><input aria-label="Room invitation" readOnly value={joined?`${window.location.origin}/os/rumble#room=${joined.code}&token=${joined.token}`:""} onFocus={e=>e.target.select()} /><div className={s.lobbyPlayers}>{[0,1].map(i=>{const p=room.players[i];return <article key={i}>{p?<><Image src={`/degens/${ROSTER.find(r=>r.id===p.character)?.portrait||"margin-call-max"}.webp`} width={170} height={280} alt="" /><b>{p.name}</b><span>{p.connected===false?"RECONNECTING":p.ready?"READY ✓":"NOT READY"}</span></>:<><span className={s.emptyPlayer}>?</span><b>Waiting for a real player</b><span>No disguised bots. Invite a friend.</span></>}</article>;})}</div><p>{LEVELS.find(l=>l.id===room.stage)?.name} · {room.spectators||0} spectators</p>{joined?.slot>=0&&<button className={s.primary} onClick={()=>client.current?.send({type:"ready",ready:!room.players[joined.slot]?.ready})}>{room.players[joined.slot]?.ready?"CANCEL READY":"I'M READY →"}</button>}<small>Both players choose Ready. Disconnect grace: 15 seconds. You can decline by leaving.</small></>}
       </div>:<>
@@ -226,6 +233,7 @@ export default function Rumble({assetLabEnabled=false}){
     </main>}
     {settings&&<Panel title="SYSTEM SETTINGS" close={()=>setSettings(false)}><p>Online matches keep running while this panel is open.</p>{[["music","MUSIC"],["sfx","SOUND EFFECTS"]].map(([key,label])=><label key={key}>{label}<input type="range" min="0" max="1" step=".05" value={prefs[key]} onChange={e=>{audio.current?.unlock();setPrefs(p=>({...p,[key]:Number(e.target.value)}));}} /></label>)}<button className={s.secondary} onClick={()=>setPrefs(p=>({...p,music:0,sfx:0}))}>MUTE ALL</button><label><input type="checkbox" checked={prefs.reducedMotion} onChange={e=>setPrefs(p=>({...p,reducedMotion:e.target.checked}))} /> REDUCED MOTION</label><label><input type="checkbox" checked={prefs.shake} onChange={e=>setPrefs(p=>({...p,shake:e.target.checked}))} /> CAMERA SHAKE</label><label>QUALITY<select value={prefs.quality} onChange={e=>setPrefs(p=>({...p,quality:e.target.value}))}><option value="high">High</option><option value="low">Low / mobile</option></select></label><h3>Keyboard controls</h3><KeyboardGuide keys={prefs.keys}/><p>Left hand moves; right hand fights; thumb blocks. Arrow keys also work with the default layout.</p><button className={s.secondary} onClick={()=>{resetInput();setPrefs(p=>({...p,keys:{...DEFAULT_KEYS},controlsVersion:CONTROL_VERSION}));}}>RESET KEYBOARD LAYOUT</button><p>To customize, focus a field and press a key. Duplicate assignments are replaced.</p><div className={s.keyGrid}>{ACTIONS.map(([bit,label])=><label key={bit}>{label}<input aria-label={`Key for ${label}`} readOnly value={bind(bit)} onKeyDown={e=>{if(["Tab","Escape","Meta","Control","Alt"].includes(e.key)||e.metaKey||e.ctrlKey||e.altKey)return;e.preventDefault();e.stopPropagation();const key=e.key.length===1?e.key.toLowerCase():e.key;setPrefs(p=>{const map=Object.fromEntries(Object.entries(p.keys).filter(([k,v])=>v!==bit&&k.toLowerCase()!==key.toLowerCase()));map[key]=bit;return {...p,keys:map,controlsVersion:CONTROL_VERSION};});}} /></label>)}</div><p>Controller: stick/D-pad move; A jump; X punch; Y kick; B special; LB block; RB dash; LT grab; RT super. Hardware validation pending.</p></Panel>}
     {movesOpen&&<Panel title="KNOW YOUR BAD HABITS" close={()=>setMovesOpen(false)}><KeyboardGuide keys={prefs.keys}/><p>{bind(1)} / {bind(2)} move, {bind(4)} jumps, and {bind(8)} crouches. Hold {bind(128)} to block. Crouch-block stops low attacks; standing block stops aerial attacks. {bind(512)} grabs nearby opponents and also escapes a grab during its short escape window.</p><p>Down + PUNCH / KICK gives low attacks; jumping changes them to aerial attacks. Down + SPECIAL gives a rising attack; toward your rival + SPECIAL lunges. {bind(256)} dashes; {bind(1024)} spends a full meter on your super. Missed kicks and specials leave you open.</p><article className={s.finisherHelp}><h3>FINISHER · {FINISHERS[character].name}</h3><p>{FINISHERS[character].description} Win the match by knockout, then press SUPER ({bind(INPUT.SUPER)}) or tap FINISH THEM within four seconds. No meter needed. Let the timer expire to take the win.</p></article><div className={s.moveTable}>{selectedMoves.map((move,i)=><article key={move.id||i}><h3>{move.name||move.id}</h3><p>{move.counterplay||move.description}</p><small>START {move.startup} · ACTIVE {move.active} · RECOVER {move.recovery} · DAMAGE {move.damage}</small></article>)}</div><p>Online: leaving or disconnecting does not pause the fight. Rejoin within 15 seconds. No ranked ladder or ownership advantages in this slice.</p></Panel>}
+    {shareOpen&&joined&&<RoomShareDialog path='/os/rumble' title='Rekt Rumble' seat={joined} canJoin={room?.phase==='lobby'&&(!room.players[0]||!room.players[1])} onClose={()=>setShareOpen(false)}/>}
   </div>;
 }
 

@@ -8,7 +8,7 @@ import s from '../styles/Campaign.module.css';
 export default function LeaderboardPage(){
   return <CampaignShell><ArcadeMeta card='arcade-leaderboard'/>
     <span className={s.eyebrow}>BEAT THE BOTS / SERVER-VERIFIED</span><h1 className={s.title}>Arcade leaderboard.</h1>
-    <p className={s.lede}>Points come only from official runs the server has replayed. Sign in on your Arcade Pass to put your runs on the board.</p>
+    <p className={s.lede}>Points come only from official runs the server has replayed. Race and fight wins count even if you do not clear the whole route. Sign in on your Arcade Pass to put your runs on the board.</p>
     <Leaderboard banner/>
     <section className={s.card} style={{marginTop:28}}><h2>How points work</h2>
       <ul className={s.rules}>

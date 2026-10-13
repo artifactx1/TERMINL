@@ -1,0 +1,16 @@
+.incoming,.share{border:1px solid var(--terminl-accent);background:#101c10;color:var(--terminl-ink);padding:18px;margin:14px 0;text-align:left}
+.incoming{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.incoming small,.share strong{font:bold 9px var(--terminl-font);letter-spacing:.12em;color:var(--terminl-accent)}
+.incoming h2{font:700 22px var(--terminl-font);color:#fff;margin:8px 0}
+.incoming p,.share p{font:11px/1.6 var(--terminl-font);margin:6px 0;color:var(--terminl-dim)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions button{width:auto!important;min-height:42px!important;margin:0!important;padding:10px 14px!important;background:var(--terminl-accent)!important;color:var(--terminl-accent-ink)!important;border:1px solid var(--terminl-accent)!important;font:bold 10px var(--terminl-font)!important;cursor:pointer}
+.actions button+button{background:#142014!important;color:var(--terminl-ink)!important;border-color:var(--terminl-border)!important}
+.share small{display:block;font:10px/1.5 var(--terminl-font);color:var(--terminl-dim);margin-top:10px}
+.share input{display:block;width:100%;margin-top:10px;padding:10px;background:#060d07;border:1px solid var(--terminl-border);color:var(--terminl-ink);font:11px var(--terminl-font)}
+@media(max-width:700px){.incoming{display:block}.incoming .actions{margin-top:14px}}
+.backdrop{position:fixed;inset:0;z-index:1000;background:#000b;display:grid;place-items:center;padding:18px}
+.dialog{position:relative;width:min(100%,440px);background:#0a120b;border:1px solid var(--terminl-border);padding:12px;box-shadow:0 18px 70px #000}
+.dialog .share{margin:26px 0 0}
+.close{position:absolute;top:8px;right:10px;background:transparent;border:0;color:#fff;font-size:26px;cursor:pointer}
+.liveNote{display:block;margin:6px 0 0;color:var(--terminl-dim);font:10px var(--terminl-font)}

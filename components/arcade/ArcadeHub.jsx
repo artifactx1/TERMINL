@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import CampaignInvite from './CampaignInvite';
-import {useEffect,useRef} from 'react';
+import Leaderboard from './Leaderboard';
+import {useEffect,useRef,useState} from 'react';
 import {drawVehicleArt,preloadVehicleArt} from '../../lib/arcade/race-exotics.js';
 import {drawCampaign} from '../../lib/moon-campaign-draw.js';
 import {newCampaignLevel} from '../../lib/moon-campaign.mjs';
@@ -13,11 +14,19 @@ function GameArt({game}){
     if(game==='race')preloadVehicleArt().then(draw);else draw();return()=>{disposed=true;};},[game]);
   return <canvas ref={canvas} width={800} height={450} aria-label={game==='race'?'Inferno X supercar':'Moon Mission sky-island level'}/>;
 }
-export default function ArcadeHub(){return <div className={s.shell}>
-  <header className={s.header}><Link className={s.brand} href='/os'><b>TERMINL</b><span>ARCADE</span></Link><nav aria-label='Arcade navigation'><a href='#games'>THE GAMES</a><Link href='/'>THE COLLECTION ↗</Link></nav></header>
+export default function ArcadeHub(){
+  const [shareStatus,setShareStatus]=useState('');
+  const shareArcade=async()=>{
+    const url=new URL('/os',window.location.origin).toString();
+    if(navigator.share){try{await navigator.share({title:'TERMINL Arcade',text:'Free arcade games. Bring a friend.',url});setShareStatus('Shared.');return;}catch(error){if(error?.name==='AbortError')return;}}
+    try{await navigator.clipboard.writeText(url);setShareStatus('Arcade link copied.');}catch{setShareStatus(url);}
+  };
+  return <div className={s.shell}>
+  <header className={s.header}><Link className={s.brand} href='/os'><b>TERMINL</b><span>ARCADE</span></Link><nav aria-label='Arcade navigation'><a href='#games'>THE GAMES</a><Link href='#leaderboard'>LEADERBOARD</Link><Link href='/'>THE COLLECTION ↗</Link></nav></header>
   <main>
     <CampaignInvite />
-    <section className={s.intro}><div><span className={s.eyebrow}><i/> FREE TO PLAY. EVEN FOR YOU.</span><h1>Your bags<br/><em>can wait.</em></h1></div><p>The chart will still be red.<br/>{' '}Go enjoy something.<br/><span>Free games. No wallet required.</span></p></section>
+    <section className={s.intro}><div><span className={s.eyebrow}><i/> FREE TO PLAY. EVEN FOR YOU.</span><h1>Your bags<br/><em>can wait.</em></h1></div><div className={s.introAside}><p>The chart will still be red.<br/>{' '}Go enjoy something.<br/><span>Free games. No wallet required.</span></p><button onClick={shareArcade}>SHARE THE ARCADE ↗</button>{shareStatus&&<small role='status'>{shareStatus}</small>}</div></section>
+    <section id='leaderboard' className={s.leaderboard} aria-label='Official arcade leaderboard'><div className={s.leaderboardHeading}><div><span className={s.eyebrow}>OFFICIAL CHALLENGES / VERIFIED SCORES</span><h2>THE LEADERBOARD</h2><p>Win races in the Barry Cup or fights in the Rekt Rumble circuit to earn points. Your points count even if you do not clear the whole route. Sign in on your Arcade Pass to post your score.</p></div><Link href='/leaderboard'>FULL LEADERBOARD ↗</Link></div><Leaderboard limit={5}/></section>
     <section id='games' className={s.featured} aria-label='Flagship games'>
       <article className={`${s.card} ${s.race}`}><Link href='/os/lambo' className={s.artLink} aria-label='Play Wen Lambo'><div className={s.raceArt}><span className={s.artTag}>01 / RACING</span><GameArt game='race'/><span className={s.artCaption}>THE LAMBO IS FINALLY IN BUDGET.</span></div></Link><div className={s.cardBody}><div className={s.cardTop}><h2>WEN LAMBO</h2><span>SOLO + ONLINE</span></div><p>You said “wen Lambo” in 2021. Here. Five supercars, six California courses, and one bloke on a bike who might beat you. Race solo or bring a friend.</p><div className={s.cardBottom}><span>6 COURSES · 6 RIDES<br/>QUICK RACE / SIX-COURSE CUP</span><Link href='/os/lambo'>START YOUR ENGINE ↗</Link></div></div></article>
       <article className={`${s.card} ${s.fight}`}><Link href='/os/rumble' className={s.artLink} aria-label='Play Rekt Rumble'><div className={s.fightArt}><span className={s.artTag}>02 / FIGHTING</span><Image src='/degens/margin-call-max.webp' alt='' width={340} height={560} sizes='(max-width: 700px) 45vw, 300px' className={s.fighterLeft}/><b className={s.versus}>VS</b><Image src='/degens/diamond-hands-glorp.webp' alt='' width={340} height={560} sizes='(max-width: 700px) 45vw, 300px' className={s.fighterRight}/><span className={s.artCaption}>HE SAID “EASY 100X.”</span></div></Link><div className={s.cardBody}><div className={s.cardTop}><h2>REKT RUMBLE</h2><span>SOLO + ONLINE</span></div><p>Your friend called it a blue chip. It has four holders now. Pick a degen, learn their finisher, and have a productive conversation. Solo circuit or private fights.</p><div className={s.cardBottom}><span>6 FIGHTERS · 2 ARENAS<br/>SOLO CIRCUIT / PRIVATE FIGHTS</span><Link href='/os/rumble'>STEP INTO THE RING ↗</Link></div></div></article>

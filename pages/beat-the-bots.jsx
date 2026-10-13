@@ -33,7 +33,7 @@ export default function BeatTheBots(){
     </div>
     <div className={s.grid}>
       <section className={s.card}><span className={s.eyebrow}>01 / PLAY</span><h2>Play first.</h2><p>No sign-in needed to start. The server replays every race and fight from your inputs. Scores claimed by the browser count for nothing.</p></section>
-      <section className={s.card}><span className={s.eyebrow}>02 / SAVE</span><h2>Save with X, Farcaster or Discord.</h2><p>Finish a route, then save the spot to your Arcade Pass. Your spot is confirmed when you save it.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>02 / SAVE</span><h2>Save with X, Farcaster or Discord.</h2><p>Sign in to put verified points on the leaderboard, even if Barry takes the cup or you leave the circuit early. Clear a route to claim an FCFS spot.</p></section>
       <section className={s.card}><span className={s.eyebrow}>03 / CHECK</span><h2>Log in any time.</h2><p>Your Arcade Pass shows your FCFS spot, your points, rank and GTD standing, and where to add your mint address.</p><Link className={s.secondary} href='/arcade-pass'>MY ARCADE PASS →</Link></section>
     </div>
     <GtdBanner gtd={campaign?.gtd}/>

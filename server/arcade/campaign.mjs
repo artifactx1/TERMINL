@@ -73,11 +73,18 @@ export function createCampaignService(options){
   }
   const gtdInfo=()=>{const c=config(),closed=gtdClosed();return {slots:c.gtdSlots,endsAt:c.gtdEndsAt,addressEndsAt:c.gtdAddressEndsAt,...gtdWindow(c,closed,now())};};
   function publicRun(code){
-    const row=store.get(`SELECT r.*,u.provider,u.username,u.public_profile,u.status AS user_status,sp.status AS spot_status
-      FROM runs r JOIN users u ON u.id=r.user_id JOIN spots sp ON sp.run_id=r.id WHERE r.code=?
-      AND EXISTS (SELECT 1 FROM spots f WHERE f.user_id=u.id AND f.status='qualified')`,code);
-    if(!row||row.invalidated||row.user_status!=='active'||!['qualified','cleared'].includes(row.spot_status))return null;
-    return {code:row.code,kind:row.kind,player:row.public_profile?publicIdentity(row,row.user_id):'ANON',result:parse(row.result),challenge:parse(row.challenge),createdAt:row.completed_at,qualified:true};
+    const row=store.get(`SELECT r.*,u.provider,u.username,u.public_profile,u.status AS user_status,
+      sp.status AS spot_status,sh.at AS shared_at
+      FROM runs r LEFT JOIN users u ON u.id=r.user_id LEFT JOIN spots sp ON sp.run_id=r.id
+      LEFT JOIN result_cards sh ON sh.run_id=r.id WHERE r.code=?`,code);
+    if(!row||row.invalidated||parse(row.flags).length||row.user_id&&row.user_status!=='active')return null;
+    const confirmed=row.user_id&&store.get("SELECT 1 FROM spots WHERE user_id=? AND status='qualified'",row.user_id);
+    const qualified=['qualified','cleared'].includes(row.spot_status)&&!!confirmed;
+    if(!qualified&&!row.shared_at)return null;
+    return {code:row.code,kind:row.kind,player:row.public_profile?publicIdentity(row,row.user_id):'ANON',
+      result:parse(row.result),character:row.kind==='rumble'?parse(row.challenge).character:null,
+      progress:progressSummary(row),points:row.points,segments:row.segments,
+      createdAt:row.completed_at||row.last_segment_at||row.started_at,qualified};
   }
   function pointsFor(userId){
     return store.get(`SELECT coalesce(sum(r.points),0) AS n FROM runs r WHERE r.user_id=? AND r.invalidated=0 AND r.flags='[]'`,userId).n;
@@ -85,7 +92,7 @@ export function createCampaignService(options){
   function pass(s){
     const u=user(s);if(!u)return null;
     const wallet=store.get('SELECT * FROM wallets WHERE user_id=?',u.id);
-    const spots=store.all('SELECT sp.route,sp.status,sp.created_at,r.code FROM spots sp JOIN runs r ON r.id=sp.run_id WHERE sp.user_id=? ORDER BY sp.created_at',u.id);
+    const spots=store.all('SELECT sp.route,sp.status,sp.created_at,r.code,r.id AS run_id FROM spots sp JOIN runs r ON r.id=sp.run_id WHERE sp.user_id=? ORDER BY sp.created_at',u.id);
     const runs=store.all(`SELECT id,kind,code,result,points,segments,progress,started_at,completed_at,expires_at,invalidated FROM runs
       WHERE user_id=? AND kind<>'sprint' AND (completed_at IS NOT NULL OR segments>0) ORDER BY coalesce(completed_at,last_segment_at) DESC LIMIT 20`,u.id);
     const points=pointsFor(u.id);
@@ -93,11 +100,13 @@ export function createCampaignService(options){
       WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' GROUP BY r.user_id HAVING sum(r.points)>?)`,points).n:null;
     const fcfs=spots.find(sp=>sp.status!=='cleared'),gtd=gtdInfo(),held=gtd.closed&&store.get('SELECT position FROM gtd WHERE user_id=?',u.id);
     const position=points&&!gtd.closed?standings().findIndex(row=>row.id===u.id)+1||null:null;
-    return {provider:u.provider||'x',username:u.username,display:publicIdentity(u,u.id),name:u.name,publicProfile:!!u.public_profile,status:u.status,points,rank,
+    const shareXp=store.get('SELECT coalesce(sum(sh.xp),0) AS n FROM result_cards sh JOIN runs r ON r.id=sh.run_id WHERE r.user_id=? AND r.invalidated=0',u.id).n;
+    return {provider:u.provider||'x',username:u.username,display:publicIdentity(u,u.id),name:u.name,publicProfile:!!u.public_profile,status:u.status,points,shareXp,rank,
       fcfs:fcfs?{route:fcfs.route,status:fcfs.status,at:fcfs.created_at}:null,
       gtd:{...gtd,position,held:held?held.position:null},
-      spots:spots.map(sp=>({route:sp.route,status:sp.status,at:sp.created_at,code:sp.code})),
-      runs:runs.map(r=>({id:r.id,kind:r.kind,code:r.code,result:parse(r.result),points:r.points,progress:progressSummary(r),at:r.completed_at||r.started_at,
+      spots:spots.map(sp=>({route:sp.route,status:sp.status,at:sp.created_at,code:sp.code,runId:sp.run_id})),
+      runs:runs.map(r=>({id:r.id,kind:r.kind,code:r.code,result:parse(r.result),points:r.points,segments:r.segments,progress:progressSummary(r),at:r.completed_at||r.started_at,
+        shareXp:store.get('SELECT xp FROM result_cards WHERE run_id=?',r.id)?.xp??null,
         open:!r.completed_at&&r.expires_at>now(),invalidated:!!r.invalidated})),
       referrals:store.get('SELECT count(*) AS n FROM referrals WHERE referrer_id=?',u.id).n,
       wallet:wallet?{address:wallet.address,chainId:wallet.chain_id,updatedAt:wallet.updated_at}:null};
@@ -176,9 +185,11 @@ export function createCampaignService(options){
         }
         if(path==='/admin'&&request.method==='GET'){
           const funnel=store.all('SELECT name,count(*) AS total,count(DISTINCT anon_id) AS players FROM events WHERE at>=? GROUP BY name',now()-30*DAY);
-          return json(response,200,{config:config(),authReady,providers,funnel,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
+          const gameStarts=store.all("SELECT json_extract(detail,'$.game') AS game,json_extract(detail,'$.mode') AS mode,count(*) AS total,count(DISTINCT anon_id) AS browsers FROM events WHERE name='game_start' AND at>=? GROUP BY game,mode ORDER BY total DESC",now()-30*DAY);
+          return json(response,200,{config:config(),authReady,providers,funnel,gameStarts,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
             users:store.all(`SELECT u.id,u.provider,u.username,u.status,group_concat(sp.route||':'||sp.status,' ') AS spots,
-              (SELECT coalesce(sum(points),0) FROM runs WHERE user_id=u.id AND invalidated=0 AND flags='[]') AS points,w.address
+              (SELECT coalesce(sum(points),0) FROM runs WHERE user_id=u.id AND invalidated=0 AND flags='[]') AS points,
+              (SELECT coalesce(sum(sh.xp),0) FROM result_cards sh JOIN runs r ON r.id=sh.run_id WHERE r.user_id=u.id AND r.invalidated=0) AS share_xp,w.address
               FROM users u LEFT JOIN spots sp ON sp.user_id=u.id LEFT JOIN wallets w ON w.user_id=u.id GROUP BY u.id ORDER BY u.created_at DESC LIMIT 100`),
             audit:store.all('SELECT * FROM audit ORDER BY id DESC LIMIT 60')});
         }
@@ -279,6 +290,25 @@ export function createCampaignService(options){
         if(ref)store.event('referred_player_started',{anonId:s.anon_id,runId:id},now());
         return json(response,201,{id,kind,challenge,expiresAt:expires,startedAt:started});
       }
+      if(path==='/prepare-result'){
+        rate('share:'+s.anon_id,12,DAY);rate('share-net:'+network,120,DAY);
+        const id=typeof body.runId==='string'?body.runId:'';
+        if(!/^[a-f0-9]{32}$/.test(id))fail('Invalid run');
+        const run=store.get('SELECT * FROM runs WHERE id=?',id);
+        if(!run||run.anon_id!==s.anon_id&&(!s.user_id||run.user_id!==s.user_id)||run.invalidated||parse(run.flags).length||run.segments<1||user(s)?.status==='banned')fail('Complete a verified race or fight before preparing a result card.',403);
+        let awarded=0;
+        store.transaction(()=>{
+          const existing=store.get('SELECT run_id FROM result_cards WHERE run_id=?',id);
+          if(!existing){
+            const rewarded=store.get(`SELECT count(*) AS n FROM result_cards sh JOIN runs r ON r.id=sh.run_id
+              WHERE sh.at>=? AND (sh.anon_id=? OR r.user_id=?) AND sh.xp>0`,now()-DAY,s.anon_id,s.user_id||'').n;
+            awarded=rewarded<3?5:0;
+            store.run('INSERT INTO result_cards(run_id,anon_id,at,xp) VALUES(?,?,?,?)',id,s.anon_id,now(),awarded);
+            store.event('result_card_prepared',{anonId:s.anon_id,userId:s.user_id,runId:id,detail:{xp:awarded}},now());
+          }
+        });
+        return json(response,200,{run:publicRun(run.code),xpAwarded:awarded});
+      }
       if(path==='/submit'){
         rate('submit:'+s.anon_id,40,600000);
         // The next race starts the moment this one ends, while this one is still being verified,
@@ -378,6 +408,11 @@ export function createCampaignService(options){
       }
       if(path==='/events'){
         rate('events:'+s.anon_id,45,60000);
+        if(body.name==='game_start'){
+          if(!['rumble','lambo','moon','mall','rug'].includes(body.game)||!['training','solo_circuit','practice','official','online_create','online_join','watch','solo_cup','quick_race','solo','free_skate','timed'].includes(body.mode))fail('Invalid game start');
+          store.event('game_start',{anonId:s.anon_id,userId:s.user_id,detail:{game:body.game,mode:body.mode}},now());
+          return json(response,200,{ok:true});
+        }
         if(!['arcade_view','challenge_view','save_access_click','share_click','challenge_link_opened','leaderboard_view','wallet_submission_view'].includes(body.name))fail('Unknown event');
         store.event(body.name,{anonId:s.anon_id,userId:s.user_id,detail:validCode(body.code)?{code:body.code}:{},once:`${body.name}:${s.anon_id}:${Math.floor(now()/DAY)}:${validCode(body.code)?body.code:''}`},now());
         return json(response,200,{ok:true});

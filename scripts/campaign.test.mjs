@@ -5,6 +5,7 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createCampaignService} from '../server/arcade/campaign.mjs';
+import {openCampaignStore} from '../server/arcade/campaign-store.mjs';
 import {normalizeAddress} from '../server/arcade/campaign-address.mjs';
 import {xAuthorize,xIdentity} from '../server/arcade/campaign-oauth.mjs';
 import {xOAuth1Header,xOAuth1Start,xOAuth1Identity} from '../server/arcade/campaign-oauth1.mjs';
@@ -74,6 +75,71 @@ async function playRumble(api,client,clock,{losses=0}={}){
   assert.equal(last.data.result.qualified,true);return start.data;
 }
 
+test('game starts count attempts and distinct browser IDs by game and mode',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'terminl-game-starts-'));
+  const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test'});
+  const server=http.createServer((req,res)=>void service.handle(req,res));await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`;
+  const clients=[{cookie:''},{cookie:''}];
+  async function call(client,path,body,admin=false){
+    const response=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json',Cookie:client.cookie,'X-Campaign-Client':'test-network',...(admin?{'X-Campaign-Admin':'admin'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    const cookie=response.headers.get('set-cookie');if(cookie)client.cookie=cookie.split(';')[0];
+    return {status:response.status,data:await response.json()};
+  }
+  try{
+    for(const client of clients)assert.equal((await call(client,'/session')).status,200);
+    for(const client of [clients[0],clients[0],clients[1]])assert.equal((await call(client,'/events',{name:'game_start',game:'mall',mode:'timed'})).status,200);
+    assert.equal((await call(clients[0],'/events',{name:'game_start',game:'invalid',mode:'timed'})).status,400);
+    const admin=await call(clients[0],'/admin',null,true);
+    assert.equal(admin.status,200);
+    assert.deepEqual(admin.data.gameStarts,[{game:'mall',mode:'timed',total:3,browsers:2}]);
+  }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(dir,{recursive:true,force:true});}
+});
+
+test('preparing a verified result card awards XP once without an X action',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'terminl-result-share-')),clock={time:1800000000000};
+  const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',now:()=>clock.time,verifyReplay:quickVerify});
+  service.store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify({...DEFAULT_CAMPAIGN,active:true}));
+  const server=http.createServer((req,res)=>void service.handle(req,res));await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`,client={cookie:''},stranger={cookie:''};
+  async function call(who,path,body){
+    const response=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json',Cookie:who.cookie,'X-Campaign-Client':'test-network'},...(body?{body:JSON.stringify(body)}:{})});
+    const cookie=response.headers.get('set-cookie');if(cookie)who.cookie=cookie.split(';')[0];
+    return {status:response.status,data:await response.json()};
+  }
+  try{
+    await call(client,'/session');await call(stranger,'/session');
+    const started=await call(client,'/runs',{kind:'cup'});assert.equal(started.status,201,JSON.stringify(started));
+    assert.equal((await call(client,'/results/'+service.store.get('SELECT code FROM runs WHERE id=?',started.data.id).code)).status,404);
+    assert.equal((await call(client,'/prepare-result',{runId:started.data.id})).status,403);
+    clock.time+=61000;
+    assert.equal((await call(client,'/submit',{runId:started.data.id,segment:0,replay:[[3000,1]]})).status,200);
+    assert.equal((await call(stranger,'/prepare-result',{runId:started.data.id})).status,403);
+    const first=await call(client,'/prepare-result',{runId:started.data.id});
+    assert.equal(first.status,200);assert.equal(first.data.xpAwarded,5);assert.equal(first.data.run.points,POINTS.raceWin);
+    assert.equal(first.data.run.progress.races,1);assert.equal(first.data.run.result,null);
+    assert.equal('challenge' in first.data.run,false,'public cards do not reveal the active bot seed');
+    assert.equal((await call(client,'/prepare-result',{runId:started.data.id})).data.xpAwarded,0);
+    assert.equal((await call(stranger,'/results/'+first.data.run.code)).status,200);
+    assert.equal(service.store.get('SELECT sum(xp) AS n FROM result_cards').n,5);
+    assert.equal(service.store.get("SELECT count(*) AS n FROM events WHERE name='result_card_prepared'").n,1);
+    for(const expected of [5,5,0]){
+      const next=await call(client,'/runs',{kind:'cup'});assert.equal(next.status,201);
+      clock.time+=61000;
+      assert.equal((await call(client,'/submit',{runId:next.data.id,segment:0,replay:[[3001,1]]})).status,200);
+      assert.equal((await call(client,'/prepare-result',{runId:next.data.id})).data.xpAwarded,expected);
+    }
+    assert.equal(service.store.get('SELECT sum(xp) AS n FROM result_cards').n,15,'only three runs earn result XP per day');
+    const anon=service.store.get('SELECT anon_id FROM runs WHERE id=?',started.data.id).anon_id;
+    service.store.run('INSERT INTO users(id,username,name,provider,created_at,last_seen) VALUES(?,?,?,?,?,?)','x:share-test','sharetest','Share Test','x',clock.time,clock.time);
+    service.store.run('UPDATE sessions SET user_id=? WHERE anon_id=?','x:share-test',anon);
+    service.store.run('UPDATE runs SET user_id=? WHERE anon_id=?','x:share-test',anon);
+    assert.equal((await call(client,'/me')).data.pass.shareXp,15,'result XP follows an anonymous run onto its Arcade Pass');
+    clock.time+=8*86400000;service.store.cleanup(clock.time);
+    assert.equal((await call(stranger,'/results/'+first.data.run.code)).status,200,'shared cards outlive an expired attempt');
+  }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(dir,{recursive:true,force:true});}
+});
+
 test('official cup is verified race by race and matches one continuous replay',()=>{
   const challenge=cupSnapshot(DEFAULT_CAMPAIGN,42),win=driveCup(challenge);
   assert.equal(win.segments.length,6);
@@ -136,6 +202,16 @@ test('stored settings gain route defaults and reject a campaign with no route',(
   const migrated=campaignConfig(legacy);assert.equal(migrated.cupEnabled,true);assert.equal(migrated.rumbleEnabled,true);assert.equal('targetSeconds' in migrated,false);
   assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,active:true,cupEnabled:false,rumbleEnabled:false}),/Enable/);
   assert.equal(DEFAULT_CAMPAIGN.capacity,0,'FCFS spots are unlimited by default');assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,capacity:-1}),/Capacity/);
+});
+test('the shipped Barry pace eases on existing installs without overriding custom pace',async()=>{
+  const dir=await mkdtemp(join(tmpdir(),'terminl-pace-migration-'));
+  try{
+    let store=openCampaignStore(dir);
+    store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify({...DEFAULT_CAMPAIGN,botPace:.82}));store.close();
+    store=openCampaignStore(dir);assert.equal(store.config().botPace,.78);
+    store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify({...DEFAULT_CAMPAIGN,botPace:.9}));store.close();
+    store=openCampaignStore(dir);assert.equal(store.config().botPace,.9);store.close();
+  }finally{await rm(dir,{recursive:true,force:true});}
 });
 test('wallet checksum, zero address and non-address inputs',()=>{
   assert.equal(normalizeAddress('0x52908400098527886E0F7030069857D2E4169EE7'),'0x52908400098527886e0f7030069857d2e4169ee7');

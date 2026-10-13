@@ -6,8 +6,8 @@ export const config={runtime:'edge'};
 /** PNG cut-outs that ImageResponse can draw; fighters without one get a text-only card. */
 const FIGURES={max:'/arcade/og/margin-call-max.png',brian:'/arcade/og/buy-high-brian.png',chloe:'/arcade/og/cold-storage-chloe.png',diamond:'/degens/diamond-hands-glorp-share.png'};
 function card(run){
-  if(run.kind==='rumble')return {game:'REKT RUMBLE',claim:'CLEARED THE CIRCUIT.',big:'6 / 6',line:`Six fights as ${rosterFor(run.result.character)?.name||'a free fighter'}.`,figure:FIGURES[run.result.character]};
-  if(run.kind==='cup')return {game:'WEN LAMBO',claim:'TOOK THE BARRY CUP.',big:`${run.result.points[0]}–${run.result.points[1]}`,line:'Barry would like a recount.',figure:FIGURES.diamond};
+  if(run.kind==='rumble')return {game:'REKT RUMBLE',claim:run.result?.qualified?'CLEARED THE CIRCUIT.':'FIGHTING THROUGH IT.',big:`${run.progress?.index??6} / 6`,line:`${run.points||0} verified arcade points · ${rosterFor(run.character)?.name||'free fighter'}.`,figure:FIGURES[run.character]};
+  if(run.kind==='cup')return {game:'WEN LAMBO',claim:run.result?.qualified?'TOOK THE BARRY CUP.':run.result?'BARRY TOOK THE CUP.':'RACING BARRYBOT.',big:run.result?`${run.result.points[0]}–${run.result.points[1]}`:`${run.progress?.races||0} / 6`,line:`${run.points||0} verified arcade points. Your turn.`,figure:FIGURES.diamond};
   return {game:'WEN LAMBO',claim:'BEAT BARRYBOT.',big:raceTime(run.result.playerTicks),line:'Barry would like a recount.',figure:FIGURES.diamond};
 }
 export default async function handler(request){
@@ -27,7 +27,7 @@ export default async function handler(request){
         <div style={{display:'flex',fontSize:54,marginTop:12}}>{c.claim}</div>
         <div style={{display:'flex',fontSize:104,lineHeight:1.3,color:'#b3ef8b'}}>{c.big}</div>
         <div style={{display:'flex',fontSize:20,color:'#a2b39b',marginTop:8}}>{c.line}</div>
-        <div style={{display:'flex',alignItems:'center',fontSize:18,borderTop:'1px solid #49643c',paddingTop:24,marginTop:36}}>SERVER-VERIFIED · FCFS WL SPOT</div>
+        <div style={{display:'flex',alignItems:'center',fontSize:18,borderTop:'1px solid #49643c',paddingTop:24,marginTop:36}}>{run.qualified?'SERVER-VERIFIED · FCFS WL SPOT':'SERVER-VERIFIED ARCADE RESULT'}</div>
         <div style={{display:'flex',fontSize:26,marginTop:20}}>YOUR TURN. →</div>
       </div>
       {c.figure&&<div style={{display:'flex',position:'absolute',right:0,top:0,width:390,height:630,background:'linear-gradient(180deg,#162a16,#080e09)',alignItems:'flex-end',justifyContent:'center'}}>
