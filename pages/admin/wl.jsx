@@ -15,7 +15,7 @@ export default function WlAdmin(){
     const result=await response.json();if(!response.ok)throw new Error(result.error||'Request failed');return result;
   };
   const load=async()=>{setBusy(true);setError('');try{setData(await request(''));}catch(e){setError(e.message);}finally{setBusy(false);}};
-  const decide=async e=>{e.preventDefault();setBusy(true);setError('');try{await request('/review',review);setNotice('Decision saved to the offchain list.');setReview(v=>({...v,id:'',reason:''}));setData(await request(''));}catch(e){setError(e.message);}finally{setBusy(false);}};
+  const decide=async e=>{e.preventDefault();setBusy(true);setError('');try{await request('/review',review);setNotice('Decision saved to the WL.');setReview(v=>({...v,id:'',reason:''}));setData(await request(''));}catch(e){setError(e.message);}finally{setBusy(false);}};
   const change=async e=>{e.preventDefault();setBusy(true);setError('');try{await request('/entry',entry);setNotice('List entry updated.');setEntry(v=>({...v,address:'',reason:''}));setData(await request(''));}catch(e){setError(e.message);}finally{setBusy(false);}};
   const exportContacts=async()=>{setBusy(true);setError('');try{
     const {contacts}=await request('/contacts');
@@ -25,11 +25,11 @@ export default function WlAdmin(){
   }catch(e){setError(e.message);}finally{setBusy(false);}};
   return <CampaignShell><Head><title>WL applications — TERMINL admin</title><meta name='robots' content='noindex,nofollow'/></Head>
     <span className={s.eyebrow}>TERMINL / CAMPAIGN ADMIN</span><h1 className={s.title}>WL applications.</h1>
-    <p className={s.fine}>Review applications, edit the rolling offchain list, and export approved email contacts. <Link href='/admin/campaign'>Arcade campaign controls →</Link></p>
+    <p className={s.fine}>Review applications, update the WL, and export approved email contacts. <Link href='/admin/campaign'>Arcade campaign controls →</Link></p>
     {!data?<form className={s.card} onSubmit={e=>{e.preventDefault();void load();}}><label>CAMPAIGN ADMIN TOKEN<input type='password' value={token} onChange={e=>setToken(e.target.value)} autoComplete='off' required/></label><button className={s.primary} disabled={busy}>OPEN APPLICATIONS</button><p className={s.fine}>The token stays in memory and is never saved in browser storage.</p></form>:<>
       <div className={s.actions}><button className={s.secondary} onClick={load} disabled={busy}>REFRESH</button><button className={s.secondary} onClick={exportContacts} disabled={busy}>EXPORT APPROVED EMAILS</button></div>
       <p className={s.fine}>Master workbook loaded: {data.masterCounts?.find(row=>row.kind==='gtd')?.count||0} GTD and {data.masterCounts?.find(row=>row.kind==='fcfs')?.count||0} FCFS entries. Admin exclusions: {data.excludedCounts?.reduce((total,row)=>total+row.count,0)||0}. These totals are private to this dashboard.</p>
-      <p className={s.fine}>An approved application adds its wallet to the current offchain list. A mint phase and its final terms still need to be published separately. The email export is for sending decision notices before mint.</p>
+      <p className={s.fine}>An approved application adds its wallet to the current WL. Mint phases and their final terms are published separately. The email export is for sending decision notices before mint.</p>
       <div className={s.wlGrid}>
         <form className={s.card} onSubmit={decide}><h2>Review application</h2>
           <label>APPLICATION<select value={review.id} onChange={e=>setReview({...review,id:e.target.value})} required><option value=''>Choose an application</option>{data.applications.map(a=><option key={a.id} value={a.id}>{a.address.slice(0,10)}… · {a.requested_kind.toUpperCase()} · {a.status}</option>)}</select></label>

@@ -100,8 +100,8 @@ function Eligibility({ chainNow, onchain, phasesFailed }) {
 
   return (
     <form className={styles.check} onSubmit={check}>
-      <div className={styles.checkHead}>{onchain ? "AM I ON THE MINT LIST?" : "CHECK THE OFFCHAIN WL"}</div>
-      {!onchain && <p className={styles.checkNote}>GTD and FCFS spots can appear here before mint phases are set. No wallet connection needed.{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>}
+      <div className={styles.checkHead}>{onchain ? "AM I ON THE MINT LIST?" : "CHECK YOUR WL STATUS"}</div>
+      {!onchain && <p className={styles.checkNote}>Check whether your wallet is on the current GTD or FCFS list. No wallet connection needed.{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>}
       <div className={styles.checkRow}>
         <input
           className={styles.checkInput}
@@ -129,13 +129,13 @@ function Eligibility({ chainNow, onchain, phasesFailed }) {
       {state?.address && !state.failed && (
         state.mode === "offchain" ? (
           state.lists?.length ? <div className={styles.checkOk}>
-            <b>{short(state.address)} has an offchain spot</b>
+            <b>{short(state.address)} is on the list</b>
             {state.lists.map((entry) => <div key={entry.kind} className={styles.checkStage}>
               <span>{entry.kind.toUpperCase()}</span>
               <em>{entry.source === "arcade" ? "ARCADE PASS" : "APPROVED"}</em>
             </div>)}
-            <p className={styles.checkNote}>This is a saved WL spot. Mint eligibility starts when its phase is published.</p>
-          </div> : <p className={styles.checkNote}>{short(state.address)} is not on the current offchain list. <Link href="/wl">Apply for a spot →</Link></p>
+            <p className={styles.checkNote}>Mint access follows the published phase and its final terms.</p>
+          </div> : <p className={styles.checkNote}>{short(state.address)} is not on the current list. <Link href="/wl">Apply for WL →</Link></p>
         ) : state.stages.length ? (
           <div className={styles.checkOk}>
             <b>{short(state.address)} is on the list</b>
