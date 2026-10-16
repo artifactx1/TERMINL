@@ -1,8 +1,8 @@
 import {campaignConfigured,campaignFetch,campaignOrigin} from '../../../lib/server/campaign';
 
-const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|admin(?:\/(?:settings|review|addresses|gtd))?)$/;
+const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|wl\/(?:apply|check\/0x[0-9a-fA-F]{40})|admin(?:\/(?:settings|review|addresses|gtd|wl(?:\/(?:contacts|review|entry|import))?))?)$/;
 export const maxDuration=30;
-export const config={api:{bodyParser:{sizeLimit:'400kb'}}};
+export const config={api:{bodyParser:{sizeLimit:'2mb'}}};
 export default async function handler(req,res){
   res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
   const path='/'+(Array.isArray(req.query.path)?req.query.path:[]).join('/');

@@ -6,6 +6,7 @@ import {publicChallenge,campaignOrigin} from '../../lib/server/campaign';
 import {campaignRequest,campaignEvent} from '../../lib/arcade/campaign-client';
 import {ROUTES,resultSummary} from '../../lib/arcade/campaign-rules.mjs';
 import {rosterFor} from '../../lib/arcade/rumble-roster.mjs';
+import {ResultShareActions} from '../../components/arcade/ResultShareButton';
 import s from '../../styles/Campaign.module.css';
 
 /** What the run proved, and where the challenger goes to answer it. */
@@ -27,6 +28,7 @@ export default function Challenge({run,origin,unavailable}){
     <span className={s.eyebrow}>{(ROUTES[run.kind]?.game||'TERMINL ARCADE').toUpperCase()} / SERVER-VERIFIED RUN</span><h1 className={s.title}>{headline}<br/>Now it’s your turn.</h1>
     <p className={s.lede}>{detail} {run.result&&<b>{resultSummary(run.kind,run.result)}</b>}</p>
     <div className={s.actions}>{run.kind!=='sprint'&&<Link className={s.primary} href={play}>ACCEPT CHALLENGE →</Link>}<Link className={run.kind==='sprint'?s.primary:s.secondary} href='/beat-the-bots'>HOW TO EARN A WL SPOT</Link></div>
+    {run.kind!=='sprint'&&<ResultShareActions run={run} origin={origin} publicCard/>}
     <p className={s.fine}>This card shows server-verified progress. Completing a route earns an FCFS WL spot of your own. No wallet or sign-in needed to play.</p>
     {/* A regular image lets players save the exact card that link previews use. */}
     {/* eslint-disable-next-line @next/next/no-img-element */}

@@ -140,6 +140,31 @@ Wen Lambo and Rekt Rumble result screens make up the public flow. The homepage a
 the campaign is open. Public identity labels require opt-in. Public cards omit private
 identities and suspended/reviewed results.
 
+`/wl` accepts a public wallet address, email and GTD/FCFS request. Submissions
+stay pending until an admin reviews them at `/admin/wl`. The admin can also edit
+individual rolling entries and export approved application emails as CSV for
+decision notices. Exporting does not send email. The `/wl/check/<address>` route
+merges approved/manual entries with confirmed Arcade Pass addresses, and the
+mint page uses it until mint phases are published. After phases exist, the mint
+checker uses the published mint allowlist; offchain decisions still have to be
+added to that final allowlist. Public campaign and phase responses expose no
+aggregate WL count, and the public leaderboard does not expose WL membership.
+
+The private `POST /campaign/admin/wl/import` route replaces the master workbook
+snapshot with an array of `{address,kind}` rows, where `kind` is `gtd` or
+`fcfs`. It validates every row before changing the database, deduplicates each
+tier, and records a reason and counts in the audit log. Only the master snapshot
+is replaced: manually approved applications, manual entries, and explicit admin
+exclusions remain. Admin exclusions override a master row until reinstated.
+The master counts appear only in `/admin/wl` after admin authentication.
+Use `scripts/import-wl-master.mjs` to validate a private JSON manifest before
+importing. Its dry run prints tier counts and SHA-256. Applying requires the
+reviewed hash in `WL_IMPORT_EXPECTED_SHA256`, the Railway campaign base URL in
+`WL_IMPORT_URL`, the mint site origin in `WL_IMPORT_ORIGIN`, a credentials JSON
+path in `WL_IMPORT_CREDENTIALS`, and `--apply`. Keep the manifest and credentials
+out of Git. The script checks the live admin route before writing and reads back
+the private master counts after import.
+
 Run backend validation with Node 22:
 
 ```sh

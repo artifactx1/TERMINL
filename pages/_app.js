@@ -3,6 +3,7 @@ import "@farcaster/auth-kit/styles.css";
 import WalletProviders from "../components/WalletProviders";
 import {useEffect} from "react";
 import {useRouter} from "next/router";
+import Head from "next/head";
 import {campaignRequest,campaignEvent} from "../lib/arcade/campaign-client";
 
 export default function App({ Component, pageProps }) {
@@ -12,6 +13,7 @@ export default function App({ Component, pageProps }) {
   },[router.pathname]);
   return (
     <WalletProviders>
+      <Head><link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png"/><link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png"/><link rel="apple-touch-icon" href="/apple-touch-icon.png"/><link rel="manifest" href="/site.webmanifest"/></Head>
       <Component {...pageProps} />
     </WalletProviders>
   );

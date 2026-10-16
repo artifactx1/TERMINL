@@ -1,8 +1,23 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import {useState} from 'react';
 import CampaignShell from '../../components/arcade/CampaignShell';
 import {TRACKS,VEHICLES} from '../../lib/arcade/race-sim.mjs';
 import s from '../../styles/Campaign.module.css';
+const funnelColumns=[
+  ['arcade_view','VISITORS','browsers'],['game_start','GAME STARTS'],['challenge_start','OFFICIAL STARTS'],
+  ['verified','VERIFIED SEGMENTS'],['save_access_click','SAVE CLICKS'],['auth_success','SIGN-INS'],
+  ['leaderboard_entry','NEW SCORES'],['result_card_prepared','CARDS'],['native_share_opened','SHARE SHEETS'],['result_link_copied','LINK COPIES'],['share_click','X DRAFTS'],
+  ['challenge_link_opened','LINK VISITS'],['referred_player_started','INVITED STARTS'],
+];
+function DailyFunnel({days=[]}){
+  const value=(events,key,field='total')=>key==='verified'?['cup_race_complete','rumble_fight_complete'].reduce((n,name)=>n+(events.find(e=>e.name===name)?.[field]||0),0)
+    :key==='auth_success'?['x_oauth_success','discord_oauth_success','farcaster_auth_success'].reduce((n,name)=>n+(events.find(e=>e.name===name)?.[field]||0),0)
+    :events.find(e=>e.name===key)?.[field]||0;
+  return <section className={`${s.card} ${s.dailyFunnel}`}><h2>Daily arcade funnel</h2><p className={s.fine}>UTC days, newest first. Visitors are distinct browser IDs that day; other columns count events. New scores count signed-in players entering the verified leaderboard for the first time from this release onward. Draft clicks do not prove a post was published.</p>
+    <div className={s.tableWrap}><table className={s.table}><thead><tr><th>DAY (UTC)</th>{funnelColumns.map(([,label])=><th key={label}>{label}</th>)}</tr></thead><tbody>{[...days].reverse().map(row=><tr key={row.day}><td>{row.day}</td>{funnelColumns.map(([key,label,field])=><td key={label}>{value(row.events,key,field)}</td>)}</tr>)}</tbody></table></div>
+  </section>;
+}
 export default function CampaignAdmin(){
   const [token,setToken]=useState(''),[data,setData]=useState(null),[draft,setDraft]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[review,setReview]=useState({userId:'',status:'review',reason:''});
   const request=async(path,body)=>{const r=await fetch('/api/campaign/admin'+path,{method:body?'POST':'GET',headers:{'X-Campaign-Admin':token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const result=await r.json();if(!r.ok)throw new Error(result.error);return result;};
@@ -17,7 +32,7 @@ export default function CampaignAdmin(){
     download('terminl-gtd.csv','position,points,provider,handle,user_id,address\n'+result.holders.map(h=>[h.position,h.points,h.provider,h.username,h.id,h.address||''].join(',')).join('\n'));
     setNotice(`${result.holders.length} GTD holders exported; ${result.holders.filter(h=>!h.address).length} have not added an address yet.`);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const reviewUser=async e=>{e.preventDefault();setBusy(true);setError('');try{await request('/review',review);setNotice('Review decision saved and audited.');await load();}catch(e){setError(e.message);}finally{setBusy(false);}};
-  return <CampaignShell><Head><title>Campaign admin — TERMINL</title><meta name='robots' content='noindex,nofollow'/></Head><h1 className={s.title}>Campaign controls.</h1>
+  return <CampaignShell><Head><title>Campaign admin — TERMINL</title><meta name='robots' content='noindex,nofollow'/></Head><h1 className={s.title}>Campaign controls.</h1><p><Link className={s.secondary} href='/admin/wl'>REVIEW WL APPLICATIONS →</Link></p>
     {!data?<form className={s.card} onSubmit={e=>{e.preventDefault();void load();}}><label>CAMPAIGN ADMIN TOKEN<input type='password' value={token} onChange={e=>setToken(e.target.value)} autoComplete='off' required/></label><button className={s.primary} disabled={busy}>OPEN DASHBOARD</button><p className={s.fine}>The token stays in memory for this page. It is not saved in browser storage.</p></form>:<>
       <p className={s.notice}>Identity providers: {Object.entries(data.providers||{}).filter(([,ready])=>ready).map(([provider])=>provider==='x'?'X':provider[0].toUpperCase()+provider.slice(1)).join(', ')||'none configured'}. Dates below use your local timezone. Spots are FCFS (mint while supply lasts), never advertised as GTD.</p>
       <div className={s.grid} aria-label='Arcade activity in the last 30 days'>
@@ -27,10 +42,13 @@ export default function CampaignAdmin(){
       </div><p className={s.fine}>These are 30-day totals, not a live player count. Arcade visits are counted once per browser per day, including direct game links.</p>
       <div className={s.grid} aria-label='Result sharing funnel in the last 30 days'>
         <section className={s.card}><span className={s.eyebrow}>RESULT CARDS PREPARED</span><h2>{data.funnel.find(e=>e.name==='result_card_prepared')?.total||0}</h2><p>Verified result cards created by players.</p></section>
+        <section className={s.card}><span className={s.eyebrow}>NATIVE SHARE OPENS</span><h2>{data.funnel.find(e=>e.name==='native_share_opened')?.total||0}</h2><p>Players who opened their device share sheet. This does not prove a message was sent.</p></section>
+        <section className={s.card}><span className={s.eyebrow}>RESULT LINKS COPIED</span><h2>{data.funnel.find(e=>e.name==='result_link_copied')?.total||0}</h2><p>Result URLs copied to the clipboard.</p></section>
         <section className={s.card}><span className={s.eyebrow}>X COMPOSER CLICKS</span><h2>{data.funnel.find(e=>e.name==='share_click')?.total||0}</h2><p>Players who chose to open an X draft. This does not prove a post was published.</p></section>
         <section className={s.card}><span className={s.eyebrow}>RESULT LINK VISITS</span><h2>{data.funnel.find(e=>e.name==='challenge_link_opened')?.total||0}</h2><p>Visits to player result cards.</p></section>
         <section className={s.card}><span className={s.eyebrow}>INVITED RUNS STARTED</span><h2>{data.funnel.find(e=>e.name==='referred_player_started')?.total||0}</h2><p>Official challenges started through a public result link.</p></section>
       </div>
+      <DailyFunnel days={data.daily}/>
       <div className={s.tableWrap}><table className={s.table}><thead><tr><th>ROUTE</th><th>STATUS</th><th>SPOTS</th></tr></thead><tbody>{data.spots.map(row=><tr key={row.route+row.status}><td>{row.route}</td><td>{row.status}</td><td>{row.n}</td></tr>)}</tbody></table></div>
       <div className={s.adminGrid}><form className={s.card} onSubmit={save}><h2>Campaign and routes</h2><label className={s.check}><input type='checkbox' checked={draft.active} onChange={e=>update('active',e.target.checked)}/>Open official WL challenges</label>
         <label className={s.check}><input type='checkbox' checked={draft.cupEnabled} onChange={e=>update('cupEnabled',e.target.checked)}/>Barry Cup (Wen Lambo, six races)</label>

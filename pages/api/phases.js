@@ -56,7 +56,6 @@ export default async function handler(req, res) {
         maxSupplyForStage: String(s.maxSupplyForStage ?? "0"),
         startTime: Number(s.startTime || 0),
         endTime: Number(s.endTime || 0),
-        walletCount: Number(s.walletCount || 0),
       })),
     });
   } catch (e) {

@@ -89,10 +89,14 @@ test('game starts count attempts and distinct browser IDs by game and mode',asyn
   try{
     for(const client of clients)assert.equal((await call(client,'/session')).status,200);
     for(const client of [clients[0],clients[0],clients[1]])assert.equal((await call(client,'/events',{name:'game_start',game:'mall',mode:'timed'})).status,200);
+    assert.equal((await call(clients[0],'/events',{name:'native_share_opened',code:'AbCdEfGhIjKlMnOp'})).status,200);
+    assert.equal((await call(clients[0],'/events',{name:'result_link_copied',code:'AbCdEfGhIjKlMnOp'})).status,200);
     assert.equal((await call(clients[0],'/events',{name:'game_start',game:'invalid',mode:'timed'})).status,400);
     const admin=await call(clients[0],'/admin',null,true);
     assert.equal(admin.status,200);
     assert.deepEqual(admin.data.gameStarts,[{game:'mall',mode:'timed',total:3,browsers:2}]);
+    assert.equal(admin.data.daily.length,7);
+    assert.equal(admin.data.daily.at(-1).events.find(e=>e.name==='game_start').total,3);
   }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(dir,{recursive:true,force:true});}
 });
 
@@ -114,6 +118,7 @@ test('preparing a verified result card awards XP once without an X action',async
     assert.equal((await call(client,'/prepare-result',{runId:started.data.id})).status,403);
     clock.time+=61000;
     assert.equal((await call(client,'/submit',{runId:started.data.id,segment:0,replay:[[3000,1]]})).status,200);
+    assert.equal((await call(client,'/runs/'+started.data.id)).data.points,POINTS.raceWin);
     assert.equal((await call(stranger,'/prepare-result',{runId:started.data.id})).status,403);
     const first=await call(client,'/prepare-result',{runId:started.data.id});
     assert.equal(first.status,200);assert.equal(first.data.xpAwarded,5);assert.equal(first.data.run.points,POINTS.raceWin);
@@ -337,10 +342,13 @@ test('Farcaster and Discord create namespaced identities without requiring X',as
     assert.equal((await api(attacker,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'})).status,403,'nonce is bound to its initiating session');
     const oldCookie=owner.cookie,complete=await api(owner,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'});
     assert.equal(complete.status,200);assert.notEqual(owner.cookie,oldCookie);assert.ok(complete.data.saved);assert.equal(complete.data.pass.provider,'farcaster');assert.equal(complete.data.pass.spots[0].status,'qualified');
+    assert.equal(service.store.get("SELECT count(*) AS n FROM events WHERE name='leaderboard_entry'").n,1,'the first signed-in score is recorded once');
     assert.equal((await api(owner,'/auth/complete',{provider:'farcaster',nonce:start.data.nonce,message:'signed message',signature:'0xsigned'})).status,403,'nonce is single use');
     assert.equal(complete.data.pass.display,'@degen42','the registry name is the handle');
     fname=null;const again=await api(owner,'/auth/start',{provider:'farcaster'});
     assert.equal((await api(owner,'/auth/complete',{provider:'farcaster',nonce:again.data.nonce,message:'signed message',signature:'0xsigned'})).data.pass.display,'@degen42','a failed lookup keeps the known name');
+    const daily=(await api(admin,'/admin',undefined,{'X-Campaign-Admin':'admin'})).data.daily;
+    assert.equal(daily.at(-1).events.find(e=>e.name==='leaderboard_entry').total,1);
     const discord=guest();await api(discord,'/session');const discordStart=await api(discord,'/auth/start',{provider:'discord'});assert.equal(discordStart.status,200);
     const state=new URL(discordStart.data.url).searchParams.get('state'),discordCallback=await api(discord,'/auth/callback?state='+state+'&code=approved');assert.equal(discordCallback.status,303);
     assert.equal((await api(discord,'/me')).data.pass.provider,'discord');
@@ -390,7 +398,7 @@ test('WL spots per route, segment ordering, points leaderboard, referrals, capac
   try{
     await settings({...DEFAULT_CAMPAIGN,active:true,capacity:4});
     const a=guest(),b=guest();await api(a,'/session');await api(b,'/session');
-    const config=(await api(a,'/config')).data;assert.deepEqual(config.routes,{cup:true,rumble:true});assert.equal(config.claimed,0);
+    const config=(await api(a,'/config')).data;assert.deepEqual(config.routes,{cup:true,rumble:true});assert.equal('claimed' in config,false);assert.equal('capacity' in config,false);assert.equal('capacity' in config.config,false);
     assert.equal((await api(a,'/admin')).status,404);
     assert.equal((await api(a,'/runs',{kind:'cup'},{Origin:'https://evil.test'})).status,403);
     assert.equal((await api(a,'/runs',{})).status,400,'a route is required');
@@ -420,7 +428,7 @@ test('WL spots per route, segment ordering, points leaderboard, referrals, capac
     assert.equal(second.status,200);assert.equal(second.data.status,'cleared');assert.deepEqual(routes(second.data.pass),{cup:'qualified',rumble:'cleared'},'one FCFS spot per account; another route is a clear');
     assert.deepEqual(second.data.pass.fcfs.route,'cup');
     const again=await playCup(api,a,clock);assert.equal((await api(a,'/claim',{runId:again.id})).data.already,true,'one spot per route');
-    assert.equal((await api(a,'/config')).data.claimed,1);
+    assert.equal('claimed' in (await api(a,'/config')).data,false,'public config does not reveal the WL total');
     const runB=await playCup(api,b,clock,{ref:code}),passB=await save(b,runB.id,'202',true);
     assert.deepEqual(routes(passB),{cup:'qualified'});assert.equal((await api(a,'/me')).data.pass.referrals,1);
     await api(b,'/claim',{runId:runB.id,publicProfile:true});assert.equal((await api(a,'/me')).data.pass.referrals,1,'repeat claim cannot farm referrals');
@@ -428,7 +436,8 @@ test('WL spots per route, segment ordering, points leaderboard, referrals, capac
     assert.equal((await api(a,'/me')).data.pass.referrals,1,'self referral rejected');
     assert.equal(service.store.get('SELECT count(*) AS n FROM users').n,2,'provider identity is unique');
     const board=(await api(guest(),'/leaderboard')).data.entries;
-    assert.deepEqual(board.map(e=>[e.rank,e.player,e.spots]),[[1,'ANON',['cup','rumble']],[2,'@user202',['cup']]],'public names are opt-in');
+    assert.deepEqual(board.map(e=>[e.rank,e.player]),[[1,'ANON'],[2,'@user202']],'public names are opt-in');
+    assert.equal('spots' in board[0],false,'public scores do not reveal WL membership');
     assert.ok(board[0].points>board[1].points);assert.equal(JSON.stringify(board).includes('101'),false,'leaderboard exposes no account ids');
     const address='0x52908400098527886E0F7030069857D2E4169EE7';
     assert.equal((await api(a,'/wallet',{address:'0x'+'1'.repeat(40),chainId:4663,confirmed:true})).status,200,'blank address window opens immediately');
@@ -504,9 +513,10 @@ test('existing single-race qualifications become honored sprint spots with point
     try{
       const get=path=>fetch(`http://127.0.0.1:${server.address().port}/campaign${path}`,{headers:{Authorization:'Bearer service'}}).then(r=>r.json());
       assert.equal((await get('/results/Yag0FRxedHtQxCPI')).kind,'sprint','legacy challenge pages keep working');
-      assert.deepEqual((await get('/leaderboard')).entries,[{rank:1,player:'FID #8688',points:POINTS.legacySprint,spots:['sprint'],gtd:true}]);
+      assert.deepEqual((await get('/leaderboard')).entries,[{rank:1,player:'FID #8688',points:POINTS.legacySprint}]);
       assert.equal((await get('/config')).config.cupEnabled,true);
-      assert.equal((await get('/config')).config.capacity,0,'the old 2048 default no longer caps FCFS spots');
+      assert.equal(service.store.config().capacity,0,'the old 2048 default no longer caps FCFS spots');
+      assert.equal('capacity' in (await get('/config')).config,false,'the private FCFS limit is not exposed');
     }finally{await new Promise(r=>server.close(r));}
   }finally{service.close();await rm(dir,{recursive:true,force:true});}
 });
@@ -529,7 +539,7 @@ test('the leaderboard top closes into GTD spots that holders can submit an addre
     for(const [id,wins] of [['1',6],['2',3],['3',2]]){const p=guest();await api(p,'/session');await playCup(api,p,clock,{wins});players.push({client:p,pass:await signIn(p,id)});}
     const [first,second,third]=players;
     assert.equal(first.pass.gtd.position,1);assert.equal(second.pass.gtd.position,2);assert.equal(third.pass.gtd.position,3);
-    assert.deepEqual((await api(guest(),'/leaderboard')).data.entries.map(e=>e.gtd),[true,true,false],'the GTD range is marked before close');
+    assert.deepEqual((await api(guest(),'/leaderboard')).data.entries.map(e=>e.rank),[1,2,3],'the leaderboard still shows rank without WL membership');
     assert.equal((await api(second.client,'/wallet',{address:'0x'+'2'.repeat(40),chainId:4663,confirmed:true})).status,403,'no address before a spot is held');
     clock.time=closesAt+1000;
     await playCup(api,third.client,clock);

@@ -7,6 +7,7 @@ import {xOAuth1Start,xOAuth1Identity} from './campaign-oauth1.mjs';
 import {discordAuthorize,discordIdentity} from './campaign-discord.mjs';
 import {farcasterIdentity,farcasterLabel,farcasterUsername} from './campaign-farcaster.mjs';
 import {normalizeAddress} from './campaign-address.mjs';
+import {createWlService} from './wl.mjs';
 import {campaignConfig} from './campaign-config.mjs';
 import {BARRY,OPEN_ROUTES,addressWindow,canonicalReplay,campaignOpen,gtdWindow,poolFull,routeOpen} from '../../lib/arcade/campaign-rules.mjs';
 import {CUP_SEGMENT_TICKS,cupSnapshot,cupProgress} from '../../lib/arcade/bot-challenge.mjs';
@@ -23,6 +24,7 @@ const validCode=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{16}$/.test(value
 
 export function createCampaignService(options){
   const store=openCampaignStore(options.dataDir),now=options.now||Date.now;
+  const wl=createWlService(store,now);
   const serviceToken=options.serviceToken,adminToken=options.adminToken;
   const origin=new URL(options.siteOrigin||'https://terminl.net').origin;
   const secure=origin.startsWith('https:'),redirectUri=origin+'/api/campaign/auth/callback';
@@ -89,6 +91,9 @@ export function createCampaignService(options){
   function pointsFor(userId){
     return store.get(`SELECT coalesce(sum(r.points),0) AS n FROM runs r WHERE r.user_id=? AND r.invalidated=0 AND r.flags='[]'`,userId).n;
   }
+  function recordLeaderboardEntry(userId,anonId,runId){
+    if(userId&&store.get("SELECT 1 FROM users WHERE id=? AND status='active'",userId)&&pointsFor(userId)>0)store.event('leaderboard_entry',{anonId,userId,runId,once:'leaderboard_entry:'+userId},now());
+  }
   function pass(s){
     const u=user(s);if(!u)return null;
     const wallet=store.get('SELECT * FROM wallets WHERE user_id=?',u.id);
@@ -96,10 +101,11 @@ export function createCampaignService(options){
     const runs=store.all(`SELECT id,kind,code,result,points,segments,progress,started_at,completed_at,expires_at,invalidated FROM runs
       WHERE user_id=? AND kind<>'sprint' AND (completed_at IS NOT NULL OR segments>0) ORDER BY coalesce(completed_at,last_segment_at) DESC LIMIT 20`,u.id);
     const points=pointsFor(u.id);
-    const rank=points?store.get(`SELECT count(*)+1 AS n FROM (SELECT r.user_id FROM runs r JOIN users u ON u.id=r.user_id
-      WHERE r.invalidated=0 AND r.flags='[]' AND u.status='active' GROUP BY r.user_id HAVING sum(r.points)>?)`,points).n:null;
+    const ordered=points?standings():[];
+    const rankIndex=ordered.findIndex(row=>row.id===u.id);
+    const rank=rankIndex>=0?rankIndex+1:null;
     const fcfs=spots.find(sp=>sp.status!=='cleared'),gtd=gtdInfo(),held=gtd.closed&&store.get('SELECT position FROM gtd WHERE user_id=?',u.id);
-    const position=points&&!gtd.closed?standings().findIndex(row=>row.id===u.id)+1||null:null;
+    const position=points&&!gtd.closed?rank:null;
     const shareXp=store.get('SELECT coalesce(sum(sh.xp),0) AS n FROM result_cards sh JOIN runs r ON r.id=sh.run_id WHERE r.user_id=? AND r.invalidated=0',u.id).n;
     return {provider:u.provider||'x',username:u.username,display:publicIdentity(u,u.id),name:u.name,publicProfile:!!u.public_profile,status:u.status,points,shareXp,rank,
       fcfs:fcfs?{route:fcfs.route,status:fcfs.status,at:fcfs.created_at}:null,
@@ -143,6 +149,7 @@ export function createCampaignService(options){
   }
   function signedInSession(s,provider,identity){
     const id=accountId(provider,identity.id),fresh=token();
+    const hadPoints=pointsFor(id)>0;
     store.transaction(()=>{
       store.run(`INSERT INTO users(id,username,name,provider,created_at,last_seen) VALUES(?,?,?,?,?,?)
         ON CONFLICT(id) DO UPDATE SET provider=excluded.provider,last_seen=excluded.last_seen,
@@ -153,6 +160,7 @@ export function createCampaignService(options){
       store.run('DELETE FROM sessions WHERE token_hash=?',s.token_hash);
       // Official runs played before signing in count toward this account's points.
       store.run('UPDATE runs SET user_id=? WHERE anon_id=? AND user_id IS NULL',id,s.anon_id);
+      if(!hadPoints)recordLeaderboardEntry(id,s.anon_id,null);
     });
     return {fresh,session:{...s,user_id:id,token_hash:hash(fresh)},userId:id};
   }
@@ -169,6 +177,11 @@ export function createCampaignService(options){
       if(path.startsWith('/admin')){
         rate('admin:'+network,20,60000);
         if(!adminToken||!equal(request.headers['x-campaign-admin'],adminToken))fail('Not found',404);
+        if(path==='/admin/wl'&&request.method==='GET')return json(response,200,wl.admin());
+        if(path==='/admin/wl/contacts'&&request.method==='GET'){
+          const result=wl.contacts();store.audit('admin','wl_contacts_export',{count:result.contacts.length},now());
+          return json(response,200,result);
+        }
         if(path==='/admin/addresses'&&request.method==='GET'){
           const addresses=store.all(`SELECT w.address,w.chain_id,w.updated_at,sp.route FROM wallets w
             JOIN spots sp ON sp.user_id=w.user_id JOIN users u ON u.id=w.user_id JOIN runs r ON r.id=sp.run_id
@@ -186,14 +199,20 @@ export function createCampaignService(options){
         if(path==='/admin'&&request.method==='GET'){
           const funnel=store.all('SELECT name,count(*) AS total,count(DISTINCT anon_id) AS players FROM events WHERE at>=? GROUP BY name',now()-30*DAY);
           const gameStarts=store.all("SELECT json_extract(detail,'$.game') AS game,json_extract(detail,'$.mode') AS mode,count(*) AS total,count(DISTINCT anon_id) AS browsers FROM events WHERE name='game_start' AND at>=? GROUP BY game,mode ORDER BY total DESC",now()-30*DAY);
-          return json(response,200,{config:config(),authReady,providers,funnel,gameStarts,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
+          const dayStart=Math.floor(now()/DAY)*DAY-6*DAY;
+          const dailyEvents=store.all("SELECT date(at/1000,'unixepoch') AS day,name,count(*) AS total,count(DISTINCT anon_id) AS browsers FROM events WHERE at>=? GROUP BY day,name",dayStart);
+          const daily=Array.from({length:7},(_,index)=>({day:new Date(dayStart+index*DAY).toISOString().slice(0,10),events:dailyEvents.filter(row=>row.day===new Date(dayStart+index*DAY).toISOString().slice(0,10))}));
+          return json(response,200,{config:config(),authReady,providers,funnel,gameStarts,daily,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
             users:store.all(`SELECT u.id,u.provider,u.username,u.status,group_concat(sp.route||':'||sp.status,' ') AS spots,
               (SELECT coalesce(sum(points),0) FROM runs WHERE user_id=u.id AND invalidated=0 AND flags='[]') AS points,
               (SELECT coalesce(sum(sh.xp),0) FROM result_cards sh JOIN runs r ON r.id=sh.run_id WHERE r.user_id=u.id AND r.invalidated=0) AS share_xp,w.address
               FROM users u LEFT JOIN spots sp ON sp.user_id=u.id LEFT JOIN wallets w ON w.user_id=u.id GROUP BY u.id ORDER BY u.created_at DESC LIMIT 100`),
             audit:store.all('SELECT * FROM audit ORDER BY id DESC LIMIT 60')});
         }
-        const body=await readJson(request,16000);
+        const body=await readJson(request,path==='/admin/wl/import'?2000000:16000);
+        if(path==='/admin/wl/review'&&request.method==='POST')return json(response,200,wl.review(body));
+        if(path==='/admin/wl/entry'&&request.method==='POST')return json(response,200,wl.setEntry(body));
+        if(path==='/admin/wl/import'&&request.method==='POST')return json(response,200,wl.importMaster(body));
         if(path==='/admin/settings'&&request.method==='POST'){
           let next;try{next=campaignConfig(body.config);}catch(error){fail(error.message);}if(next.active&&!authReady)fail('Configure at least one sign-in provider before opening WL challenges.',409);
           store.transaction(()=>{const previous=config();store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify(next));store.audit('admin','settings',{previous,next},now());});
@@ -215,7 +234,18 @@ export function createCampaignService(options){
       }
       if(path==='/config'&&request.method==='GET'){
         const c=config(),open=campaignOpen(c,now())&&authReady;
-        return json(response,200,{config:c,open,routes:Object.fromEntries(OPEN_ROUTES.map(route=>[route,open&&routeOpen(c,route,now())])),authReady,providers,bot:BARRY,serverTime:now(),claimed:qualifiedSpots(),capacity:c.capacity,gtd:gtdInfo()});
+        const {capacity:privateCapacity,...publicConfig}=c;
+        return json(response,200,{config:publicConfig,open,routes:Object.fromEntries(OPEN_ROUTES.map(route=>[route,open&&routeOpen(c,route,now())])),authReady,providers,bot:BARRY,serverTime:now(),gtd:gtdInfo()});
+      }
+      if(path.startsWith('/wl/check/')&&request.method==='GET'){
+        rate('wl-check:'+network,90,60000);
+        return json(response,200,wl.check(path.slice('/wl/check/'.length)));
+      }
+      if(path==='/wl/apply'&&request.method==='POST'){
+        rate('wl-apply:'+network,4,3600000);
+        const body=await readJson(request,4000);
+        if(body.website) return json(response,200,{received:true});
+        return json(response,200,wl.submit(body));
       }
       if(path.startsWith('/results/')&&request.method==='GET'){
         const code=path.slice(9);if(!validCode(code))fail('Challenge not found',404);
@@ -223,14 +253,9 @@ export function createCampaignService(options){
       }
       if(path==='/leaderboard'&&request.method==='GET'){
         const gtd=gtdInfo(),rows=standings(Math.max(100,gtd.slots));
-        const ids=rows.map(row=>row.id),marks=ids.length?`(${ids.map(()=>'?').join(',')})`:'(NULL)';
-        const spots=store.all(`SELECT user_id,route FROM spots WHERE status IN ('qualified','cleared') AND user_id IN ${marks}`,...ids);
-        const holders=new Set(gtd.closed?store.all(`SELECT user_id FROM gtd WHERE user_id IN ${marks}`,...ids).map(row=>row.user_id):[]);
-        // Ties share a rank; earlier scoring breaks display order and the GTD cut.
-        let rank=0;
-        const entries=rows.map((row,index)=>{if(!index||row.points<rows[index-1].points)rank=index+1;
-          return {rank,player:row.public_profile?publicIdentity(row,row.id):'ANON',points:row.points,
-            spots:spots.filter(sp=>sp.user_id===row.id).map(sp=>sp.route).sort(),gtd:gtd.closed?holders.has(row.id):index<gtd.slots};});
+        // Equal point totals are ordered by who reached them first, then ID.
+        const entries=rows.map((row,index)=>{
+          return {rank:index+1,player:row.public_profile?publicIdentity(row,row.id):'ANON',points:row.points};});
         return json(response,200,{entries,gtd});
       }
       let s=session(request,response,path==='/session');
@@ -269,7 +294,7 @@ export function createCampaignService(options){
       if(path.startsWith('/runs/')&&request.method==='GET'){
         const row=store.get('SELECT * FROM runs WHERE id=?',path.slice(6));if(!row||row.anon_id!==s.anon_id&&(!s.user_id||row.user_id!==s.user_id))fail('Run not found',404);
         const spot=row.user_id&&store.get('SELECT status FROM spots WHERE run_id=?',row.id);
-        return json(response,200,{id:row.id,kind:row.kind,result:parse(row.result),challenge:parse(row.challenge),progress:progressSummary(row),segments:row.segments,
+        return json(response,200,{id:row.id,kind:row.kind,result:parse(row.result),challenge:parse(row.challenge),progress:progressSummary(row),points:row.points,segments:row.segments,
           open:!row.completed_at&&row.expires_at>now(),code:spot?row.code:null,saved:!!spot});
       }
       if(request.method!=='POST')fail('Not found',404);
@@ -332,6 +357,7 @@ export function createCampaignService(options){
         const saved=store.transaction(()=>{
           const current=store.get('SELECT * FROM runs WHERE id=?',row.id);
           if(current.segments!==row.segments)return current;
+          const hadPoints=current.user_id&&pointsFor(current.user_id)>0;
           const flags=parse(current.flags);if(duplicate&&!flags.includes('repeated_inputs'))flags.push('repeated_inputs');
           const at=now(),done=!!out.result;
           store.run(`UPDATE runs SET progress=?,segments=segments+1,points=points+?,last_segment_at=?,expires_at=?,flags=?,
@@ -339,6 +365,7 @@ export function createCampaignService(options){
             done?at:null,done?JSON.stringify(out.result):null,replayHash,row.id);
           if(out.segment.won)store.run('INSERT OR IGNORE INTO replay_hashes(hash,anon_id,run_id) VALUES(?,?,?)',replayHash,s.anon_id,row.id);
           store.event(row.kind==='cup'?'cup_race_complete':'rumble_fight_complete',{anonId:s.anon_id,userId:current.user_id,runId:row.id,detail:{won:out.segment.won}},at);
+          if(current.user_id&&!hadPoints)recordLeaderboardEntry(current.user_id,s.anon_id,row.id);
           if(done)store.event(out.result.qualified?'qualification_earned':'challenge_fail',{anonId:s.anon_id,userId:current.user_id,runId:row.id,detail:{route:row.kind}},at);
           return store.get('SELECT * FROM runs WHERE id=?',row.id);
         });
@@ -413,7 +440,7 @@ export function createCampaignService(options){
           store.event('game_start',{anonId:s.anon_id,userId:s.user_id,detail:{game:body.game,mode:body.mode}},now());
           return json(response,200,{ok:true});
         }
-        if(!['arcade_view','challenge_view','save_access_click','share_click','challenge_link_opened','leaderboard_view','wallet_submission_view'].includes(body.name))fail('Unknown event');
+        if(!['arcade_view','challenge_view','save_access_click','share_click','native_share_opened','result_link_copied','challenge_link_opened','leaderboard_view','wallet_submission_view'].includes(body.name))fail('Unknown event');
         store.event(body.name,{anonId:s.anon_id,userId:s.user_id,detail:validCode(body.code)?{code:body.code}:{},once:`${body.name}:${s.anon_id}:${Math.floor(now()/DAY)}:${validCode(body.code)?body.code:''}`},now());
         return json(response,200,{ok:true});
       }

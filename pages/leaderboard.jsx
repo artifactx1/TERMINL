@@ -15,10 +15,10 @@ export default function LeaderboardPage(){
         <li>Barry Cup: <b>{POINTS.raceWin}</b> per race you win, <b>+{POINTS.cupWin}</b> for taking the cup.</li>
         <li>Rekt Rumble circuit: <b>{POINTS.fightWin}</b> per fight you win, <b>+{POINTS.circuitClear}</b> for clearing all six.</li>
         <li>The original single-race Barry Sprint win counts <b>{POINTS.legacySprint}</b>.</li>
-        <li>The top 100 when the campaign closes get GTD spots. Points don’t change FCFS spots, which come from clearing either route (one per person). CUP and RUMBLE show which routes a player has cleared.</li>
+        <li>The top 100 when the campaign closes get GTD spots. Points don’t change FCFS spots, which come from clearing either route (one per person). The leaderboard shows scores without revealing WL membership.</li>
       </ul>
       <p className={s.fine}>Players appear as ANON unless they choose to show their handle. Runs under review and suspended accounts are left off.</p>
-      <div className={s.actions}><Link className={s.primary} href='/beat-the-bots'>EARN POINTS →</Link><Link className={s.secondary} href='/arcade-pass'>MY ARCADE PASS</Link></div>
+      <div className={s.actions}><Link className={s.primary} href='/beat-the-bots'>EARN POINTS →</Link><Link className={s.secondary} href='/arcade-pass'>POST MY SCORE ON X →</Link></div>
     </section>
   </CampaignShell>;
 }

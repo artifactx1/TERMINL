@@ -20,6 +20,18 @@
 .resultTimes>p{grid-column:1/-1;margin:0;font-size:13px}.card a:not(.primary):not(.secondary):not(.textButton){color:#d1fabb}
 @media(max-width:700px){.routes{grid-template-columns:1fr}}
 .card+.card,.tableWrap+.card,.spotGrid+.fine+.card{margin-top:20px}
+.wlGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start;margin:28px 0}
+.header nav{flex-wrap:wrap;justify-content:flex-end}
+.wlGrid>.card{margin-top:0}
+.wlTextarea{box-sizing:border-box;width:100%;min-height:110px;padding:12px;background:#050b05;border:1px solid #405340;color:#eefcec;font:14px monospace;resize:vertical}
+.wlTextarea:focus-visible{outline:2px solid #b3ef8b;outline-offset:2px}
+.wlHoneypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+@media(max-width:700px){.wlGrid{grid-template-columns:1fr}}
 .grid>.card,.spotGrid>.card,.routes>.card{margin-top:0}
 .resultShare{display:inline-flex;flex-direction:column;align-items:flex-start;gap:7px;max-width:520px}
 .resultShare small{font:10px/1.5 var(--terminl-font);color:var(--terminl-dim)}
+.savePointsPrompt{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px;margin:10px 0;border:1px solid #8bce67;background:#132314;color:#edfbe7}.savePointsPrompt>div{display:grid;gap:4px}.savePointsPrompt strong{font-size:12px;color:#c9ff9f}.savePointsPrompt span{font-size:10px;line-height:1.5;color:#b7c9b2}.savePointsPrompt .primary{white-space:nowrap;min-height:42px;padding:10px 12px;font-size:10px}
+.officialChoices{display:flex;flex-direction:column;gap:8px;min-width:200px}.officialChoices a{white-space:nowrap}.raceChallenge{scroll-margin-top:76px}
+.verifiedSegmentActions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0}.verifiedSegmentActions .savePointsPrompt{flex:1 1 320px;margin:0}.verifiedSegmentActions .resultShare{flex:0 1 auto}
+.dailyFunnel{margin:28px 0}
+@media(max-width:700px){.savePointsPrompt{align-items:stretch;flex-direction:column}.savePointsPrompt .primary{width:100%}.officialChoices{width:100%}}

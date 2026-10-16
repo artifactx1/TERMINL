@@ -51,6 +51,24 @@ export function openCampaignStore(directory){
     CREATE TABLE IF NOT EXISTS wallets (
       user_id TEXT PRIMARY KEY REFERENCES users(id), address TEXT UNIQUE NOT NULL,
       chain_id INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS wl_applications (
+      id TEXT PRIMARY KEY, address TEXT NOT NULL UNIQUE, email TEXT NOT NULL,
+      requested_kind TEXT NOT NULL CHECK(requested_kind IN ('gtd','fcfs','both')),
+      note TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'pending'
+        CHECK(status IN ('pending','approved','rejected')),
+      awarded_kind TEXT CHECK(awarded_kind IN ('gtd','fcfs','both')),
+      created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, reviewed_at INTEGER);
+    CREATE INDEX IF NOT EXISTS wl_applications_status ON wl_applications(status,created_at);
+    CREATE TABLE IF NOT EXISTS wl_entries (
+      address TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('gtd','fcfs')),
+      source TEXT NOT NULL CHECK(source IN ('manual','application')),
+      created_at INTEGER NOT NULL, PRIMARY KEY(address,kind));
+    CREATE TABLE IF NOT EXISTS wl_master_entries (
+      address TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('gtd','fcfs')),
+      imported_at INTEGER NOT NULL, PRIMARY KEY(address,kind));
+    CREATE TABLE IF NOT EXISTS wl_exclusions (
+      address TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('gtd','fcfs')),
+      created_at INTEGER NOT NULL, PRIMARY KEY(address,kind));
     CREATE TABLE IF NOT EXISTS audit (
       id INTEGER PRIMARY KEY, at INTEGER NOT NULL, actor TEXT NOT NULL,
       action TEXT NOT NULL, detail TEXT NOT NULL);

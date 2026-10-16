@@ -23,7 +23,6 @@ export default function BeatTheBots(){
     <section className={s.hero}><div><span className={s.eyebrow}>TERMINL VS. THE BOTS / FCFS WL</span><h1>The bots take your allocation.<br/><em>Take it back.</em></h1>
       <p>Two ways in. Beat BarryBot across a full six-race cup, or fight your way through all six opponents in the Rekt Rumble circuit. Clear either one for your FCFS WL spot (one per person). Every win scores points, and the top 100 on the leaderboard when the campaign closes get GTD spots.</p>
       {!campaign?<p className={s.notice}>Checking the starting grid…</p>:!campaign.open&&<p className={s.notice}>WL challenges aren’t open right now. The arcade is, and practice is free.</p>}
-      {campaign?.open&&<p className={s.fine}>{campaign.claimed} FCFS WL spots saved so far{campaign.capacity?` (limit ${campaign.capacity})`:''}.</p>}
       <small className={s.fine}>No wallet connection, signature, follow or repost required. {FCFS_NOTE}</small>
     </div><div className={s.portrait}><Image src={`/degens/${BARRY.portrait}.webp`} alt='BarryBot, represented by Diamond Hands Glorp' width={340} height={560} priority/><span>“{BARRY.taunt}”</span></div></section>
     {error&&<p role='alert' className={s.error}>{error}</p>}

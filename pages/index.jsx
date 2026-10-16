@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
 import CampaignInvite from "../components/arcade/CampaignInvite";
+import Leaderboard from "../components/arcade/Leaderboard";
 import { loreFor } from "../data/degen-lore";
 import ChainBadge from "../components/ChainBadge";
 import WalletButton from "../components/WalletButton";
@@ -150,10 +151,6 @@ function Site({ data }) {
         <meta name="twitter:image" content={OG_IMAGE} />
         <meta name="twitter:image:alt" content="TERMINL — pixel art terminals" />
 
-        <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
-        <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/site.webmanifest" />
       </Head>
 
       <main className={viewing !== null ? `${styles.shell} ${styles.frozen}` : styles.shell}>
@@ -242,6 +239,20 @@ function Site({ data }) {
           <CampaignInvite />
           <p>If you&rsquo;ve ever called a loss &ldquo;tuition,&rdquo;<br />you&rsquo;re among friends.</p>
           <Link className={styles.osLaunch} href="/os">PLAY THE ARCADE <span>Something to do while your long-term hold gets longer. ↗</span></Link>
+        </section>
+
+        <section className={styles.section} id="leaderboard">
+          <div className={styles.sectionHead}>
+            <h2>Show us your score.</h2>
+            <p>Official Arcade runs are replay-verified. Sign in to save your points, then put your result card on X and challenge someone to beat it.</p>
+          </div>
+          <div className={styles.leaderboardPanel}>
+            <Leaderboard limit={5} compact quietOnError />
+            <div className={styles.leaderboardActions}>
+              <Link href="/arcade-pass">POST MY VERIFIED SCORE ↗</Link>
+              <Link href="/beat-the-bots">PLAY FOR A SPOT ↗</Link>
+            </div>
+          </div>
         </section>
 
         <Story data={data} />

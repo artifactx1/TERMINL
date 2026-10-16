@@ -1,8 +1,10 @@
 import { useState } from "react";
+import Link from "next/link";
 import styles from "../styles/Terminl.module.css";
 import { formatEth } from "../lib/mint";
 import { buildSchedule, whenLabel, windowStatus } from "../lib/phases";
 import { fetchAllowlist } from "../lib/allowlist";
+import { campaignRequest } from "../lib/arcade/campaign-client";
 
 const STATUS = {
   upcoming: "UPCOMING",
@@ -13,16 +15,14 @@ const STATUS = {
 
 /**
  * The mint schedule, under the mint control: every allowlist stage and the
- * public phase, soonest first, each with its terms and a live status. Renders
- * nothing until there is a phase to show — an empty list beside "MINT OPENS
- * SOON" would only restate it.
+ * public phase, soonest first, each with its terms and a live status. The
+ * wallet checker stays available before any mint phase is published.
  */
 export default function Phases({ drop, phases, chainNow }) {
   const rows = buildSchedule({ drop, phases, chainNowMs: chainNow });
-  if (rows.length === 0) return null;
-
   return (
-    <div className={styles.phases} aria-label="Mint schedule">
+    <div className={styles.phases} aria-label="Mint schedule and wallet checker">
+      {rows.length > 0 && <>
       <div className={styles.phasesHead}>SCHEDULE</div>
       {rows.map((r) => {
         const terms = [
@@ -52,7 +52,8 @@ export default function Phases({ drop, phases, chainNow }) {
           </div>
         );
       })}
-      {(phases?.stages?.length ?? 0) > 0 && <Eligibility chainNow={chainNow} />}
+      </>}
+      <Eligibility chainNow={chainNow} onchain={(phases?.stages?.length ?? 0) > 0} phasesFailed={!!phases?.failed} />
     </div>
   );
 }
@@ -63,19 +64,14 @@ const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 /**
  * Check any address against the allowlist, without connecting anything.
  *
- * Eligibility is per wallet and lives in the backend, so before this the only
- * way to learn you were on the list was to connect — which is a lot to ask of
- * someone who just wants to know whether it is worth setting an alarm. Nothing
- * here needs a wallet: the proof route is public and a proof is useless to
- * anyone but the address it was cut for, because the contract hashes the
- * caller into the leaf it verifies.
+ * Before phases are published, the campaign backend reports saved offchain
+ * spots. Once phases exist, the mint backend checks actual phase eligibility.
+ * Neither lookup connects a wallet.
  *
  * It answers about ONE address at a time, typed deliberately. That is a
- * question someone asks about their own wallet, not a way to enumerate a list —
- * and the stage summary already publishes the wallet COUNTS without the
- * wallets, which is the part that is nobody else's business.
+ * question someone asks about their own wallet, not a way to enumerate a list.
  */
-function Eligibility({ chainNow }) {
+function Eligibility({ chainNow, onchain, phasesFailed }) {
   const [value, setValue] = useState("");
   const [state, setState] = useState(null); // { checking } | { address, stages, reason, failed }
 
@@ -87,15 +83,25 @@ function Eligibility({ chainNow }) {
       return;
     }
     setState({ checking: true });
-    const result = await fetchAllowlist(address);
-    setState({ address, ...result });
+    if (onchain) {
+      const result = await fetchAllowlist(address);
+      setState({ address, ...result, mode: "mint" });
+    } else {
+      try {
+        const result = await campaignRequest(`/wl/check/${address}`);
+        setState({ address, ...result, mode: "offchain" });
+      } catch {
+        setState({ address, failed: true, mode: "offchain" });
+      }
+    }
   };
 
   const nowSec = Math.floor(chainNow / 1000);
 
   return (
     <form className={styles.check} onSubmit={check}>
-      <div className={styles.checkHead}>AM I ON THE LIST?</div>
+      <div className={styles.checkHead}>{onchain ? "AM I ON THE MINT LIST?" : "CHECK THE OFFCHAIN WL"}</div>
+      {!onchain && <p className={styles.checkNote}>GTD and FCFS spots can appear here before mint phases are set. No wallet connection needed.{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>}
       <div className={styles.checkRow}>
         <input
           className={styles.checkInput}
@@ -117,11 +123,20 @@ function Eligibility({ chainNow }) {
 
       {/* A failed lookup is not a "no". Say which it is. */}
       {state?.failed && (
-        <p className={styles.checkNote}>could not reach the allowlist — try again in a moment</p>
+        <p className={styles.checkNote}>could not check the list — try again in a moment</p>
       )}
 
       {state?.address && !state.failed && (
-        state.stages.length ? (
+        state.mode === "offchain" ? (
+          state.lists?.length ? <div className={styles.checkOk}>
+            <b>{short(state.address)} has an offchain spot</b>
+            {state.lists.map((entry) => <div key={entry.kind} className={styles.checkStage}>
+              <span>{entry.kind.toUpperCase()}</span>
+              <em>{entry.source === "arcade" ? "ARCADE PASS" : "APPROVED"}</em>
+            </div>)}
+            <p className={styles.checkNote}>This is a saved WL spot. Mint eligibility starts when its phase is published.</p>
+          </div> : <p className={styles.checkNote}>{short(state.address)} is not on the current offchain list. <Link href="/wl">Apply for a spot →</Link></p>
+        ) : state.stages.length ? (
           <div className={styles.checkOk}>
             <b>{short(state.address)} is on the list</b>
             {state.stages.map((s) => {

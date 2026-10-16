@@ -70,7 +70,7 @@ function Runs({runs,onPrompt}){
 }
 
 export default function ArcadePass(){
-  const [pass,setPass]=useState(null),[campaign,setCampaign]=useState(null),[loaded,setLoaded]=useState(false),[pending,setPending]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[publicProfile,setPublicProfile]=useState(false),[address,setAddress]=useState(''),[confirmed,setConfirmed]=useState(false),[notice,setNotice]=useState('');
+  const [pass,setPass]=useState(null),[campaign,setCampaign]=useState(null),[loaded,setLoaded]=useState(false),[pending,setPending]=useState(null),[readyScore,setReadyScore]=useState(0),[error,setError]=useState(''),[busy,setBusy]=useState(false),[publicProfile,setPublicProfile]=useState(false),[address,setAddress]=useState(''),[confirmed,setConfirmed]=useState(false),[notice,setNotice]=useState('');
   const [clock,setClock]=useState(Date.now);
   useEffect(()=>{const timer=setInterval(()=>setClock(Date.now()),15000);return()=>clearInterval(timer);},[]);
   const loadPass=next=>{setPass(next);setPublicProfile(!!next?.publicProfile);setAddress(next?.wallet?.address||'');};
@@ -87,7 +87,7 @@ export default function ArcadePass(){
         if(saved)setNotice(saved.status==='qualified'?`${ROUTES[saved.route].name} FCFS WL spot saved.${session.pass.wallet?'':' Add your mint address below to finish setup.'}`:saved.status==='cleared'?`${ROUTES[saved.route].name} cleared. You already hold your FCFS spot; the points count toward GTD.`:`${ROUTES[saved.route].name} result saved: ${spotLabel(saved.status).toLowerCase()}.`);
         try{sessionStorage.removeItem(PENDING_KEY);}catch{}
       }
-      if(runId&&/^[a-f0-9]{32}$/.test(runId)){const run=await campaignRequest('/runs/'+runId).catch(()=>null);if(alive&&run?.result?.qualified&&!run.saved)setPending(run);}
+      if(runId&&/^[a-f0-9]{32}$/.test(runId)){const run=await campaignRequest('/runs/'+runId).catch(()=>null);if(alive&&run?.result?.qualified&&!run.saved)setPending(run);else if(alive&&!session.pass&&run?.points>0)setReadyScore(run.points);}
     }catch(e){if(alive)setError(e.message);}finally{if(alive)setLoaded(true);}})();return()=>{alive=false;};
   },[]);
   const signIn=async provider=>{setBusy(true);setError('');try{
@@ -101,6 +101,7 @@ export default function ArcadePass(){
   const privacy=async value=>{setBusy(true);try{const result=await campaignRequest('/profile',{publicProfile:value});loadPass(result.pass);}catch(e){setError(e.message);}finally{setBusy(false);}};
   const shareSpot=pass?.fcfs?.status==='qualified'?pass.spots.filter(sp=>sp.route!=='sprint').at(-1):null;
   const shareRun=shareSpot&&pass.runs.find(run=>run.code===shareSpot.code);
+  const latestScore=pass?.runs?.find(run=>!run.invalidated&&run.segments>0&&run.points>0);
   const recordShare=(runId,xp)=>setPass(current=>current?{...current,shareXp:(current.shareXp||0)+xp,runs:current.runs.map(run=>run.id===runId?{...run,shareXp:run.shareXp??xp}:run)}:current);
   const copy=async spot=>{try{await navigator.clipboard.writeText(location.origin+'/challenge/'+spot.code);setNotice('Challenge link copied. Send it to your loudest friend.');}catch{setNotice('Open your challenge card and copy its address.');}};
   const gtdOpen=!!pass?.gtd?.held&&pass.gtd.submitOpen,qualified=pass?.fcfs?.status==='qualified'||!!pass?.gtd?.held;
@@ -109,8 +110,9 @@ export default function ArcadePass(){
     <span className={s.eyebrow}>TERMINL ARCADE PASS</span><h1 className={s.title}>{pass?pass.display:'Your Arcade Pass.'}</h1>
     {!loaded&&<p>Finding your pass…</p>}{error&&<p role='alert' className={s.error}>{error}</p>}{notice&&<p role='status' className={s.notice}>{notice}</p>}
     {pending&&<section className={`${s.card} ${s.nextStep}`}><span className={s.badge}>{ROUTES[pending.kind].name.toUpperCase()} COMPLETE</span><h2>{resultSummary(pending.kind,pending.result)}</h2><p>Your run is verified. Save it to claim its FCFS WL spot.</p><label className={s.check}><input type='checkbox' checked={publicProfile} onChange={e=>setPublicProfile(e.target.checked)}/>Show my handle or account ID on public cards and the leaderboard</label>{pass?<button className={s.primary} disabled={busy} onClick={()=>signIn()}>SAVE TO MY ARCADE PASS →</button>:<SignInChoices campaign={campaign} runId={pending.id} publicProfile={publicProfile} busy={busy} onSignIn={signIn} onError={setError}/>}<p className={s.fine}>We request identity only. No wallet connection and nothing is posted on your behalf. {FCFS_NOTE}</p></section>}
-    {loaded&&!pass&&!pending&&<section className={s.card}><h2>Sign in to save your points.</h2><p>Verified race and fight wins from this browser count even without a full route clear. Sign in to add those points to your Arcade Pass and the leaderboard, or to see spots you already saved.</p><SignInChoices campaign={campaign} publicProfile={false} busy={busy} onSignIn={signIn} onError={setError}/><div className={s.actions}><Link className={s.secondary} href='/beat-the-bots'>HOW TO EARN POINTS →</Link></div><p className={s.fine}>Identity is used to recover your Arcade Pass and stop duplicate claims. We request no email and never post for you.</p></section>}
+    {loaded&&!pass&&!pending&&<section className={`${s.card} ${readyScore?s.nextStep:''}`}><h2>{readyScore?`${readyScore} verified points ready to save.`:'Sign in to save your points.'}</h2><p>Verified race and fight wins from this browser count even without a full route clear. Sign in to add those points to your Arcade Pass and the leaderboard, or to see spots you already saved.</p><SignInChoices campaign={campaign} publicProfile={false} busy={busy} onSignIn={signIn} onError={setError}/><div className={s.actions}><Link className={s.secondary} href='/beat-the-bots'>HOW TO EARN POINTS →</Link></div><p className={s.fine}>Identity is used to recover your Arcade Pass and stop duplicate claims. We request no email and never post for you.</p></section>}
     {pass&&<>
+      {latestScore&&<section className={`${s.card} ${s.nextStep}`}><span className={s.eyebrow}>YOUR SCORE DESERVES A RECEIPT</span><h2>Share your {pass.points} verified points.</h2><p>Make a result card for your latest official run, then post it on X or send the link to a friend.</p><ResultShareButton runId={latestScore.id} shared={latestScore.shareXp!==null} label='MAKE MY SCORE CARD →' onPrompt={recordShare}/></section>}
       <div className={s.grid}>
         <section className={s.card}><span className={s.eyebrow}>ACCOUNT</span><h2>{pass.status==='banned'?'SUSPENDED':pass.status==='review'?'UNDER REVIEW':'ACTIVE'}</h2><p>Signed in with {providerName(pass.provider)}.</p></section>
         <section className={s.card}><span className={s.eyebrow}>ARCADE POINTS</span><h2>{pass.points}</h2><p>{pass.rank?`Rank #${pass.rank} on the `:'Not on the '}<Link href='/leaderboard'>leaderboard</Link>. <b>{pass.shareXp||0} result XP</b> earned from preparing verified result cards; XP does not affect rank or WL spots.</p></section>

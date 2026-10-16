@@ -14,7 +14,7 @@ import {DEFAULT_KEYS,ACTIONS,CONTROL_VERSION,savedRumbleKeys,keyLabel,keyboardId
 import {CIRCUIT_KEY,newCircuit,readCircuit,circuitOpponent,circuitStage,circuitInput,advanceCircuit} from '../../lib/arcade/rumble-circuit.mjs';
 import {circuitFight} from '../../lib/arcade/rumble-challenge.mjs';
 import {useOfficialRun} from './use-official-run';
-import {OfficialPanel,OfficialResult} from './OfficialChallenge';
+import {OfficialPanel,OfficialResult,VerifiedSegmentActions} from './OfficialChallenge';
 import {arcadeGameStart} from '../../lib/arcade/campaign-client';
 import {parseRoomLink} from '../../lib/arcade/room-links.mjs';
 import RoomShare,{IncomingRoomInvite,RoomShareDialog} from './RoomShare';
@@ -210,6 +210,7 @@ export default function Rumble({assetLabEnabled=false}){
       <footer className={s.menuFooter}><p>Six free fighters. Solo circuit, practice, and online fights.</p>{assetLabEnabled&&<Link href="/os/asset-lab">OPEN ASSET / ANIMATION LAB ↗</Link>}<Link href="/os">BACK TO THE ARCADE ↗</Link></footer>
     </main>:<main className={s.gameMain}>
       <div className={s.connectionBar}><b>{mode==="practice"?circuit?`${circuit.official?"OFFICIAL":"SOLO"} CIRCUIT · FIGHT ${circuit.index+1}/6 · BOT`:training?"INTERACTIVE TRAINING · BOT":"PRACTICE · BOT OPPONENT":joined?.slot===-1?"LIVE SPECTATOR":"ONLINE · SERVER AUTHORITATIVE"}</b><span>{mode==="online"?`${connection.toUpperCase()} / ${rtt}ms / ${room?.region||"LOCAL"}`:circuit?.official?"SERVER-VERIFIED · FCFS WL":circuit?"SIX-FIGHT SOLO RUN":"SOLO PLAY"}</span><button onClick={()=>{resetInput();setMovesOpen(true);if(mode==="practice")setPaused(true);}}>MOVE LIST / HELP</button></div>
+      {circuit?.official&&finished&&<VerifiedSegmentActions official={official}/>}
       {!playing?<div className={s.lobby}>
         {room&&<RoomShare path='/os/rumble' title='Rekt Rumble' seat={joined} canJoin={!room.players[0]||!room.players[1]}/>}
         <span className={s.eyebrow}>PRIVATE FIGHT CLUB</span><h1>{room?"Your corner is ready.":connection==="unavailable"||connection==="disconnected"?"The room server is offline.":"Connecting to the arcade…"}</h1>
