@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start -p 4000",
     "lint": "next lint",
+    "test:campaign:invite:browser": "node scripts/campaign-invite-browser.mjs",
     "test:mint": "node --test scripts/mint-quantity.test.mjs scripts/mint-reliability.test.mjs",
     "test:mint:browser": "node scripts/mint-quantity-browser.mjs",
     "test:mint:flow": "node scripts/mint-flow-browser.mjs",

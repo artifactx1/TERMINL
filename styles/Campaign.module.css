@@ -35,3 +35,5 @@
 .verifiedSegmentActions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0}.verifiedSegmentActions .savePointsPrompt{flex:1 1 320px;margin:0}.verifiedSegmentActions .resultShare{flex:0 1 auto}
 .dailyFunnel{margin:28px 0}
 @media(max-width:700px){.savePointsPrompt{align-items:stretch;flex-direction:column}.savePointsPrompt .primary{width:100%}.officialChoices{width:100%}}
+/* Give the invite actions their own row instead of sharing flex:1 with the copy. */
+@media(max-width:700px){.raceChallenge>.officialChoices{flex:0 0 100%;min-width:0}}
