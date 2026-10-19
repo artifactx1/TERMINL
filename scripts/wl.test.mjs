@@ -101,3 +101,31 @@ test('public WL routes stay pending until review and tied leaderboard scores get
     assert.deepEqual(board.slice(0,2).map(row=>row.points),[50,50]);
   }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(directory,{recursive:true,force:true});}
 });
+
+test('wallet checks count distinct browsers and searched wallets only in private admin metrics',async()=>{
+  const directory=await mkdtemp(join(tmpdir(),'terminl-wl-tracking-'));
+  const service=createCampaignService({dataDir:directory,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',now:()=>1800000000000});
+  const server=http.createServer((request,response)=>void service.handle(request,response));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`;
+  const call=async(path,{body,cookie,admin=false}={})=>{
+    const response=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json','X-Campaign-Client':'checker-test',...(cookie?{Cookie:cookie}:{}),...(admin?{'X-Campaign-Admin':'admin'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    return {status:response.status,cookie:response.headers.get('set-cookie')?.split(';')[0],data:await response.json()};
+  };
+  try{
+    assert.equal((await call('/admin/wl/import',{admin:true,body:{entries:[{address:WALLET,kind:'gtd'}],reason:'Checker tracking fixture'}})).status,200);
+    const first=await call('/wl/check/'+WALLET+'?source=mint');
+    assert.equal(first.data.eligible,true);
+    assert.ok(first.cookie?.startsWith('btb_session='));
+    assert.equal((await call('/wl/check/'+WALLET+'?source=wl',{cookie:first.cookie})).status,200);
+    assert.equal((await call('/wl/check-event',{cookie:first.cookie,body:{address:SECOND,source:'mint',outcome:'not_listed'}})).status,200);
+    assert.equal((await call('/wl/check-event',{cookie:first.cookie,body:{address:SECOND,source:'mint',outcome:'failed'}})).status,200);
+    assert.equal((await call('/admin')).status,404,'checker metrics stay private');
+    const metrics=(await call('/admin',{admin:true})).data.wlChecker;
+    assert.deepEqual(metrics.summary,{attempts:4,completed:3,browsers:1,wallets:2,listed:2,notListed:1,failed:1});
+    assert.equal(metrics.daily[0].completed,3);
+    assert.deepEqual(metrics.sources.map(row=>[row.source,row.mode,row.completed].join(':')).sort(),['mint:published:1','mint:rolling:1','wl:rolling:1']);
+    const details=service.store.all("SELECT detail FROM events WHERE name='wl_check'").map(row=>row.detail).join(' ');
+    assert.ok(!details.includes(WALLET)&&!details.includes(SECOND),'events never store searched wallet addresses');
+  }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(directory,{recursive:true,force:true});}
+});

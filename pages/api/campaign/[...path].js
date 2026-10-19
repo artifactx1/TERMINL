@@ -1,6 +1,6 @@
 import {campaignConfigured,campaignFetch,campaignOrigin} from '../../../lib/server/campaign';
 
-const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|wl\/(?:apply|check\/0x[0-9a-fA-F]{40})|admin(?:\/(?:settings|review|addresses|gtd|wl(?:\/(?:contacts|review|entry|import))?))?)$/;
+const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|wl\/(?:apply|check-event|check\/0x[0-9a-fA-F]{40})|admin(?:\/(?:settings|review|addresses|gtd|wl(?:\/(?:contacts|review|entry|import|merge))?))?)$/;
 export const maxDuration=30;
 export const config={api:{bodyParser:{sizeLimit:'2mb'}}};
 export default async function handler(req,res){
@@ -14,7 +14,7 @@ export default async function handler(req,res){
     return res.status(503).json({error:'Official challenges are not open yet. The free arcade is still playable.'});
   }
   const query=new URLSearchParams();
-  for(const key of path==='/auth/callback'?['code','state','error','oauth_token','oauth_verifier','denied']:[]){if(typeof req.query[key]==='string')query.set(key,req.query[key]);}
+  for(const key of path==='/auth/callback'?['code','state','error','oauth_token','oauth_verifier','denied']:path.startsWith('/wl/check/')?['source']:[]){if(typeof req.query[key]==='string')query.set(key,req.query[key]);}
   // Forward only the campaign cookie; never wallet sessions or unrelated credentials.
   const cookie=(req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>/^btb_session=[A-Za-z0-9_-]+$/.test(v));
   try{

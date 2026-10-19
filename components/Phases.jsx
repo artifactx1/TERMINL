@@ -86,9 +86,12 @@ function Eligibility({ chainNow, onchain, phasesFailed }) {
     if (onchain) {
       const result = await fetchAllowlist(address);
       setState({ address, ...result, mode: "mint" });
+      void campaignRequest('/wl/check-event',{
+        address,source:'mint',outcome:result.failed?'failed':result.stages.length?'listed':'not_listed',
+      }).catch(()=>{});
     } else {
       try {
-        const result = await campaignRequest(`/wl/check/${address}`);
+        const result = await campaignRequest(`/wl/check/${address}?source=mint`);
         setState({ address, ...result, mode: "offchain" });
       } catch {
         setState({ address, failed: true, mode: "offchain" });

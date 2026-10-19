@@ -1,4 +1,4 @@
-import {randomBytes} from 'node:crypto';
+import {createHmac,randomBytes} from 'node:crypto';
 import {serialize,deserialize} from 'node:v8';
 import {openCampaignStore} from './campaign-store.mjs';
 import {token,hash,equal,fingerprint,cookieValue,sessionCookie,readJson,verifyReplay} from './campaign-security.mjs';
@@ -54,6 +54,10 @@ export function createCampaignService(options){
   const accountId=(provider,id)=>provider==='x'?String(id):provider+':'+id;
   const publicIdentity=(row,userId)=>(row.provider||'x')==='farcaster'?farcasterLabel(Number(userId.replace(/^farcaster:/,'')),row.username):'@'+row.username;
   const rate=(key,limit,windowMs)=>{if(!store.rate(key,limit,windowMs,now()))fail('Too many attempts. Please try again shortly.',429);};
+  function recordWlCheck(s,address,source,mode,outcome){
+    const walletHash=createHmac('sha256',serviceToken).update(address).digest('hex');
+    store.event('wl_check',{anonId:s.anon_id,userId:s.user_id,detail:{walletHash,source,mode,outcome}},now());
+  }
   const progressSummary=row=>{const progress=row.progress?deserialize(row.progress):null;return row.kind==='cup'?cupProgress(progress):row.kind==='rumble'?rumbleProgress(progress):null;};
   const qualifiedSpots=()=>store.get("SELECT count(*) AS n FROM spots WHERE status='qualified'").n;
   /** Leaderboard order: points, then whoever reached their total first. */
@@ -198,11 +202,31 @@ export function createCampaignService(options){
         }
         if(path==='/admin'&&request.method==='GET'){
           const funnel=store.all('SELECT name,count(*) AS total,count(DISTINCT anon_id) AS players FROM events WHERE at>=? GROUP BY name',now()-30*DAY);
+          const checkerCutoff=now()-30*DAY;
+          const wlChecker={
+            summary:store.get(`SELECT count(*) AS attempts,
+              count(CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN 1 END) AS completed,
+              count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN anon_id END) AS browsers,
+              count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN json_extract(detail,'$.walletHash') END) AS wallets,
+              count(CASE WHEN json_extract(detail,'$.outcome')='listed' THEN 1 END) AS listed,
+              count(CASE WHEN json_extract(detail,'$.outcome')='not_listed' THEN 1 END) AS notListed,
+              count(CASE WHEN json_extract(detail,'$.outcome')='failed' THEN 1 END) AS failed
+              FROM events WHERE name='wl_check' AND at>=?`,checkerCutoff),
+            daily:store.all(`SELECT date(at/1000,'unixepoch') AS day,count(*) AS attempts,
+              count(CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN 1 END) AS completed,
+              count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN anon_id END) AS browsers,
+              count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN json_extract(detail,'$.walletHash') END) AS wallets
+              FROM events WHERE name='wl_check' AND at>=? GROUP BY day ORDER BY day DESC`,checkerCutoff),
+            sources:store.all(`SELECT json_extract(detail,'$.source') AS source,json_extract(detail,'$.mode') AS mode,
+              count(*) AS attempts,count(CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN 1 END) AS completed,
+              count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN anon_id END) AS browsers
+              FROM events WHERE name='wl_check' AND at>=? GROUP BY source,mode ORDER BY completed DESC`,checkerCutoff),
+          };
           const gameStarts=store.all("SELECT json_extract(detail,'$.game') AS game,json_extract(detail,'$.mode') AS mode,count(*) AS total,count(DISTINCT anon_id) AS browsers FROM events WHERE name='game_start' AND at>=? GROUP BY game,mode ORDER BY total DESC",now()-30*DAY);
           const dayStart=Math.floor(now()/DAY)*DAY-6*DAY;
           const dailyEvents=store.all("SELECT date(at/1000,'unixepoch') AS day,name,count(*) AS total,count(DISTINCT anon_id) AS browsers FROM events WHERE at>=? GROUP BY day,name",dayStart);
           const daily=Array.from({length:7},(_,index)=>({day:new Date(dayStart+index*DAY).toISOString().slice(0,10),events:dailyEvents.filter(row=>row.day===new Date(dayStart+index*DAY).toISOString().slice(0,10))}));
-          return json(response,200,{config:config(),authReady,providers,funnel,gameStarts,daily,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
+          return json(response,200,{config:config(),authReady,providers,funnel,wlChecker,gameStarts,daily,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
             users:store.all(`SELECT u.id,u.provider,u.username,u.status,group_concat(sp.route||':'||sp.status,' ') AS spots,
               (SELECT coalesce(sum(points),0) FROM runs WHERE user_id=u.id AND invalidated=0 AND flags='[]') AS points,
               (SELECT coalesce(sum(sh.xp),0) FROM result_cards sh JOIN runs r ON r.id=sh.run_id WHERE r.user_id=u.id AND r.invalidated=0) AS share_xp,w.address
@@ -240,7 +264,19 @@ export function createCampaignService(options){
       }
       if(path.startsWith('/wl/check/')&&request.method==='GET'){
         rate('wl-check:'+network,90,60000);
-        return json(response,200,wl.check(path.slice('/wl/check/'.length)));
+        const result=wl.check(path.slice('/wl/check/'.length));
+        const s=session(request,response,true);
+        recordWlCheck(s,result.address,['mint','wl'].includes(url.searchParams.get('source'))?url.searchParams.get('source'):'direct','rolling',result.eligible?'listed':'not_listed');
+        return json(response,200,result);
+      }
+      if(path==='/wl/check-event'&&request.method==='POST'){
+        const body=await readJson(request,1000);
+        if(body.source!=='mint'||!['listed','not_listed','failed'].includes(body.outcome))fail('Invalid checker event.');
+        let address;try{address=normalizeAddress(body.address);}catch(error){fail(error.message);}
+        const s=session(request,response,true);
+        rate('wl-check-event:'+s.anon_id,30,60000);
+        recordWlCheck(s,address,'mint','published',body.outcome);
+        return json(response,200,{ok:true});
       }
       if(path==='/wl/apply'&&request.method==='POST'){
         rate('wl-apply:'+network,4,3600000);

@@ -18,6 +18,20 @@ function DailyFunnel({days=[]}){
     <div className={s.tableWrap}><table className={s.table}><thead><tr><th>DAY (UTC)</th>{funnelColumns.map(([,label])=><th key={label}>{label}</th>)}</tr></thead><tbody>{[...days].reverse().map(row=><tr key={row.day}><td>{row.day}</td>{funnelColumns.map(([key,label,field])=><td key={label}>{value(row.events,key,field)}</td>)}</tr>)}</tbody></table></div>
   </section>;
 }
+function WlChecker({data}){
+  const summary=data?.summary||{},daily=data?.daily||[],sources=data?.sources||[];
+  return <>
+    <div className={s.sectionHeading}><h2>Allowlist checker</h2></div>
+    <div className={s.grid} aria-label='Private allowlist checker activity in the last 30 days'>
+      <section className={s.card}><span className={s.eyebrow}>COMPLETED CHECKS / 30 DAYS</span><h2>{summary.completed||0}</h2><p>Successful lookups, including repeat checks.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>BROWSERS CHECKING / 30 DAYS</span><h2>{summary.browsers||0}</h2><p>Distinct anonymous browser cookies.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>WALLETS SEARCHED / 30 DAYS</span><h2>{summary.wallets||0}</h2><p>Distinct wallet hashes; the addresses are not saved with these events.</p></section>
+    </div>
+    <p className={s.fine}>Tracking starts with this release. Of {summary.attempts||0} attempts, {summary.listed||0} returned listed, {summary.notListed||0} returned not listed and {summary.failed||0} failed. Browsers and wallets are estimates of interest, not a count of people or WL members. These figures are admin only.</p>
+    <div className={s.tableWrap}><table className={s.table}><thead><tr><th>SOURCE</th><th>LIST</th><th>ATTEMPTS</th><th>COMPLETED</th><th>BROWSERS</th></tr></thead><tbody>{sources.map(row=><tr key={`${row.source}:${row.mode}`}><td>{row.source==='mint'?'Mint page':row.source==='wl'?'WL page':'Direct check'}</td><td>{row.mode==='published'?'Published mint list':'Rolling WL'}</td><td>{row.attempts}</td><td>{row.completed}</td><td>{row.browsers}</td></tr>)}</tbody></table></div>
+    <div className={s.tableWrap}><table className={s.table}><thead><tr><th>DAY (UTC)</th><th>ATTEMPTS</th><th>COMPLETED</th><th>BROWSERS</th><th>WALLETS</th></tr></thead><tbody>{daily.map(row=><tr key={row.day}><td>{row.day}</td><td>{row.attempts}</td><td>{row.completed}</td><td>{row.browsers}</td><td>{row.wallets}</td></tr>)}</tbody></table></div>
+  </>;
+}
 export default function CampaignAdmin(){
   const [token,setToken]=useState(''),[data,setData]=useState(null),[draft,setDraft]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[review,setReview]=useState({userId:'',status:'review',reason:''});
   const request=async(path,body)=>{const r=await fetch('/api/campaign/admin'+path,{method:body?'POST':'GET',headers:{'X-Campaign-Admin':token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const result=await r.json();if(!r.ok)throw new Error(result.error);return result;};
@@ -35,6 +49,7 @@ export default function CampaignAdmin(){
   return <CampaignShell><Head><title>Campaign admin — TERMINL</title><meta name='robots' content='noindex,nofollow'/></Head><h1 className={s.title}>Campaign controls.</h1><p><Link className={s.secondary} href='/admin/wl'>REVIEW WL APPLICATIONS →</Link></p>
     {!data?<form className={s.card} onSubmit={e=>{e.preventDefault();void load();}}><label>CAMPAIGN ADMIN TOKEN<input type='password' value={token} onChange={e=>setToken(e.target.value)} autoComplete='off' required/></label><button className={s.primary} disabled={busy}>OPEN DASHBOARD</button><p className={s.fine}>The token stays in memory for this page. It is not saved in browser storage.</p></form>:<>
       <p className={s.notice}>Identity providers: {Object.entries(data.providers||{}).filter(([,ready])=>ready).map(([provider])=>provider==='x'?'X':provider[0].toUpperCase()+provider.slice(1)).join(', ')||'none configured'}. Dates below use your local timezone. Spots are FCFS (mint while supply lasts), never advertised as GTD.</p>
+      <WlChecker data={data.wlChecker}/>
       <div className={s.grid} aria-label='Arcade activity in the last 30 days'>
         <section className={s.card}><span className={s.eyebrow}>ARCADE / LAST 30 DAYS</span><h2>{data.funnel.find(e=>e.name==='arcade_view')?.players||0}</h2><p>Browsers that opened the arcade or a game.</p></section>
         <section className={s.card}><span className={s.eyebrow}>OFFICIAL CHALLENGES</span><h2>{data.funnel.find(e=>e.name==='challenge_start')?.total||0}</h2><p>Runs started against the bots.</p></section>

@@ -17,7 +17,7 @@ export default function WlApplication(){
     e.preventDefault();setError('');setLookup(null);
     if(!ADDRESS.test(address.trim())){setError('Paste a public 0x wallet address.');return;}
     setLookupBusy(true);
-    try{setLookup(await campaignRequest('/wl/check/'+address.trim()));}
+    try{setLookup(await campaignRequest('/wl/check/'+address.trim()+'?source=wl'));}
     catch(e){setError(e.message);}
     finally{setLookupBusy(false);}
   };
