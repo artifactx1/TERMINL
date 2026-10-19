@@ -60,6 +60,7 @@
 .wlFormSection>p{font-size:12px;line-height:1.7;margin:0 0 16px}
 .wlFormSection .check{display:flex;align-items:flex-start;margin:18px 0}
 .wlFormSection .check input{width:auto;min-height:0;margin:4px 0 0;accent-color:var(--terminl-accent)}
+.wlFormSection textarea{box-sizing:border-box;display:block;width:100%;min-height:94px;margin-top:8px;padding:12px;background:#050b05;border:1px solid #405340;color:#eefcec;font:14px monospace;resize:vertical}
 .wlSocialLinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .wlSocialLinks>a{text-align:center;font-size:10px;padding:12px 8px}
 .wlFormSection>button.primary{width:100%}

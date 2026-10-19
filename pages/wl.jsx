@@ -14,7 +14,7 @@ const SHARE_IMAGE='https://terminl.net/wl-og.png?v=2026-10-19';
 
 export default function WlApplication(){
   const {address:connectedAddress}=useAccount();
-  const [address,setAddress]=useState(''),[email,setEmail]=useState('');
+  const [address,setAddress]=useState(''),[email,setEmail]=useState(''),[note,setNote]=useState('');
   const [website,setWebsite]=useState(''),[postUrl,setPostUrl]=useState(DEFAULT_POST);
   const [openedFollow,setOpenedFollow]=useState(false),[openedPost,setOpenedPost]=useState(false);
   const [applyBusy,setApplyBusy]=useState(false),[error,setError]=useState(''),[received,setReceived]=useState(false);
@@ -33,7 +33,7 @@ export default function WlApplication(){
     if(!socialReady){setError('Open both X links before applying.');return;}
     if(!ADDRESS.test(address.trim())){setError('Paste a public 0x wallet address.');return;}
     setApplyBusy(true);
-    try{await campaignRequest('/wl/apply',{address:address.trim(),email,requestedKind:'both',socialConfirmed:socialReady,website});setReceived(true);}
+    try{await campaignRequest('/wl/apply',{address:address.trim(),email,note,requestedKind:'both',socialConfirmed:socialReady,website});setReceived(true);}
     catch(e){setError(e.message);}
     finally{setApplyBusy(false);}
   };
@@ -80,6 +80,7 @@ export default function WlApplication(){
       </div>
       <div className={s.wlFormSection}><h3>3. Add your email</h3>
         <label>EMAIL ADDRESS<input type='email' value={email} onChange={e=>setEmail(e.target.value)} maxLength={254} autoComplete='email' placeholder='you@example.com' required/></label>
+        <label>WHY DO YOU LOVE THE COLLECTION? (OPTIONAL)<textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={500} rows={3} placeholder='Tell us what you like about TERMINL.'/></label>
         <label className={s.wlHoneypot} aria-hidden='true'>Website<input tabIndex={-1} autoComplete='off' value={website} onChange={e=>setWebsite(e.target.value)}/></label>
         <button className={s.primary} disabled={applyBusy||!socialReady}>{applyBusy?'SENDING…':'SUBMIT APPLICATION →'}</button>
         {!socialReady&&<p className={s.fine}>Open both X links to submit.</p>}
