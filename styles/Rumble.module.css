@@ -81,7 +81,7 @@
 .hud > div:not(.clock) > div:first-child { display:flex; justify-content:space-between; gap:10px; font-size:10px; margin-bottom:8px; }
 .hud > div > div > span { color:var(--terminl-dim); font-size:8px; }
 .health { background:#322c23; border:1px solid #697657; height:17px; padding:2px; }
-.health i { display:block; height:100%; background:linear-gradient(90deg,#7fbb59,#c1f189); transition:width .08s; }
+.health i { display:block; height:100%; background:linear-gradient(90deg,var(--terminl-accent-border),var(--terminl-accent)); transition:width .08s; }
 .p2 .health i { background:linear-gradient(90deg,#e1c075,#d68658); margin-left:auto; }
 .meter { height:12px; margin-top:5px; background:#172d26; position:relative; }
 .meter > i { display:block; height:100%; background:#477d70; }
@@ -100,13 +100,13 @@
 .touchControls { display:flex; justify-content:space-between; gap:14px; background:var(--terminl-bg); padding:10px 20px max(10px,env(safe-area-inset-bottom)); flex-shrink:0; touch-action:none; }
 .touchControls > div { display:flex; gap:6px; }
 .touchControls button { min-width:43px; min-height:39px; padding:8px 12px; background:var(--terminl-panel-hover); color:var(--terminl-ink); border:1px solid var(--terminl-border); font-size:8px; touch-action:none; user-select:none; }
-.touchControls button:active { background:#648246; }
+.touchControls button:active { background:var(--terminl-accent); }
 .gameOverlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#08100ce8; padding:20px; text-align:center; }
 .gameOverlay h2 { font-size:clamp(32px,5vw,66px); letter-spacing:-3px; margin:15px 0; color:var(--terminl-accent); }
 .gameOverlay p { font-size:11px; color:var(--terminl-dim); line-height:1.8; max-width:460px; }
 .gameOverlay .primary { max-width:310px; margin-top:15px; }
 .lesson { position:absolute; left:22px; top:18px; max-width:315px; background:#0b130be8; border-left:3px solid var(--green); padding:12px 17px; pointer-events:none; }
-.lesson b { font-size:7px; color:#a5c38c; letter-spacing:1.4px; }
+.lesson b { font-size:7px; color:var(--terminl-accent); letter-spacing:1.4px; }
 .lesson h3 { font-size:19px; margin:8px 0; letter-spacing:-.7px; }
 .lesson p { font-size:9px; line-height:1.8; color:var(--terminl-dim); margin:6px 0; }
 .lesson button { pointer-events:auto; background:transparent; border:0; color:var(--green); font-size:8px; padding:7px 0; }

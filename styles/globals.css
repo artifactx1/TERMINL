@@ -11,7 +11,9 @@
   --terminl-muted: #78857d;
   --terminl-line: #1c231e;
   --terminl-border: #2e3b33;
+  /* One phosphor green for links, buttons, progress, and active controls sitewide. */
   --terminl-accent: #7dff5c;
+  --terminl-accent-border: #2f5c28;
   --terminl-accent-ink: #061003;
   --terminl-amber: #ffc65c;
   --terminl-red: #ff6a5e;

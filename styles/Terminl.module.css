@@ -462,8 +462,8 @@
 .check { margin-top: 10px; padding: 10px; border: 1px solid var(--line); background: var(--panel); scroll-margin-top: 70px; }
 .leaderboardPanel{border:1px solid var(--line);background:#0a110c;padding:22px;max-width:920px;margin:0 auto}
 .leaderboardActions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
-.leaderboardActions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;border:1px solid #315c30;color:#b8ff94;text-decoration:none;font:700 11px ui-monospace,monospace;letter-spacing:.07em}
-.leaderboardActions a:first-child{background:#b3ef8b;color:#0b1507}
+.leaderboardActions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;border:1px solid var(--terminl-accent-border);color:var(--terminl-accent);text-decoration:none;font:700 11px ui-monospace,monospace;letter-spacing:.07em}
+.leaderboardActions a:first-child{background:var(--terminl-accent);color:var(--terminl-accent-ink)}
 @media(max-width:600px){.leaderboardPanel{padding:12px}.leaderboardActions a{width:100%}}
 .checkHead { font: 800 8.5px/1 ui-monospace, monospace; letter-spacing: .2em; color: var(--muted); }
 .checkRow { display: grid; grid-template-columns: 1fr auto; gap: 6px; margin-top: 8px; }
@@ -513,7 +513,7 @@
  * The bottom padding clears the iOS home indicator; on everything else
  * safe-area-inset-bottom is 0 and it collapses to the base padding.
  */
-.bar { --accent: #7dff5c; --muted: #78857d; --line: #1c231e; --panel: #0a0e0c;
+.bar { --accent: var(--terminl-accent); --muted: var(--terminl-muted); --line: var(--terminl-line); --panel: var(--terminl-panel);
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 55;
   display: block;
   padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));

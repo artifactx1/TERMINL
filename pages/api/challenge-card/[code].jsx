@@ -22,10 +22,10 @@ export default async function handler(request){
     const font=await fetch(origin+'/fonts/SpaceMono-Bold.ttf').then(r=>{if(!r.ok)throw new Error('Font unavailable');return r.arrayBuffer();});
     return new ImageResponse(<div style={{display:'flex',width:'100%',height:'100%',background:'#080e09',color:'#f0ffe9',fontFamily:'Space Mono',padding:48,position:'relative'}}>
       <div style={{display:'flex',flexDirection:'column',width:780,position:'relative'}}>
-        <div style={{display:'flex',fontSize:22,letterSpacing:7,color:'#b3ef8b'}}>TERMINL / {c.game}</div>
+        <div style={{display:'flex',fontSize:22,letterSpacing:7,color:'#7dff5c'}}>TERMINL / {c.game}</div>
         <div style={{display:'flex',fontSize:30,marginTop:45}}>{run.player}</div>
         <div style={{display:'flex',fontSize:54,marginTop:12}}>{c.claim}</div>
-        <div style={{display:'flex',fontSize:104,lineHeight:1.3,color:'#b3ef8b'}}>{c.big}</div>
+        <div style={{display:'flex',fontSize:104,lineHeight:1.3,color:'#7dff5c'}}>{c.big}</div>
         <div style={{display:'flex',fontSize:20,color:'#a2b39b',marginTop:8}}>{c.line}</div>
         <div style={{display:'flex',alignItems:'center',fontSize:18,borderTop:'1px solid #49643c',paddingTop:24,marginTop:36}}>{run.qualified?'SERVER-VERIFIED · FCFS WL SPOT':'SERVER-VERIFIED ARCADE RESULT'}</div>
         <div style={{display:'flex',fontSize:26,marginTop:20}}>YOUR TURN. →</div>
