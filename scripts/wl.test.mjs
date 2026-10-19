@@ -37,11 +37,17 @@ test('applications stay pending until review; rolling entries and Arcade Pass sp
     const firstImport=wl.importMaster({entries:[{address:WALLET,kind:'gtd'},{address:SECOND,kind:'fcfs'},{address:WALLET,kind:'gtd'}],reason:'Master workbook sync'});
     assert.equal(firstImport.deduplicated,2);
     assert.equal(wl.admin().masterDigest,firstImport.digest,'private readback identifies the exact imported snapshot');
+    const merged=wl.mergeMaster({entries:[{address:SECOND,kind:'gtd'},{address:SECOND,kind:'fcfs'},{address:SECOND,kind:'gtd'}],reason:'New partner winners'});
+    assert.equal(merged.added,1,'merge only inserts new tier pairs');
+    assert.equal(merged.deduplicated,2);
+    assert.deepEqual(wl.check(SECOND).lists.map(row=>row.kind),['fcfs','gtd']);
+    assert.throws(()=>wl.mergeMaster({entries:[{address:'invalid',kind:'gtd'}],reason:'Bad partner row'}),/row 1/);
+    assert.equal(wl.admin().masterDigest,merged.digest,'invalid merge preserves existing master rows');
     assert.deepEqual(wl.check(WALLET).lists.map(row=>row.kind),['fcfs'],'an earlier admin exclusion overrides the imported entry');
     wl.setEntry({address:WALLET,kind:'gtd',action:'add',reason:'Reinstate master address'});
     assert.deepEqual(wl.check(WALLET).lists.map(row=>row.kind),['fcfs','gtd']);
     assert.throws(()=>wl.importMaster({entries:[{address:'invalid',kind:'gtd'}],reason:'Bad workbook row'}),/row 1/);
-    assert.equal(wl.admin().masterCounts.reduce((total,row)=>total+row.count,0),2,'invalid imports preserve the prior master snapshot');
+    assert.equal(wl.admin().masterCounts.reduce((total,row)=>total+row.count,0),3,'invalid imports preserve the prior master snapshot');
     wl.setEntry({address:WALLET,kind:'gtd',action:'remove',reason:'Corrected master exception'});
     assert.deepEqual(wl.check(WALLET).lists.map(row=>row.kind),['fcfs'],'admin exclusions override a master entry');
     wl.importMaster({entries:[{address:WALLET,kind:'gtd'}],reason:'New master workbook'});
@@ -82,6 +88,8 @@ test('public WL routes stay pending until review and tied leaderboard scores get
     assert.deepEqual((await call('/wl/check/'+WALLET)).data.lists,[{kind:'fcfs',source:'application'}]);
     assert.equal((await call('/admin/wl/import',{entries:[{address:SECOND,kind:'gtd'}],reason:'Master workbook sync'},true)).status,200);
     assert.deepEqual((await call('/wl/check/'+SECOND)).data.lists,[{kind:'gtd',source:'master'}]);
+    assert.equal((await call('/admin/wl/merge',{entries:[{address:WALLET,kind:'gtd'}],reason:'New partner winners'},true)).status,200);
+    assert.deepEqual((await call('/wl/check/'+SECOND)).data.lists,[{kind:'gtd',source:'master'}],'merge retains prior master entries');
 
     for(const [id,last] of [['first',100],['second',200]]){
       service.store.run('INSERT INTO users(id,username,name,created_at,last_seen) VALUES(?,?,?,?,?)',id,id,id,1,1);

@@ -165,6 +165,13 @@ path in `WL_IMPORT_CREDENTIALS`, and `--apply`. Keep the manifest and credential
 out of Git. The script checks the live admin route before writing and reads back
 the private master counts after import.
 
+For rolling partner allocations, use `POST /campaign/admin/wl/merge` or pass
+`--merge --apply` to the same script. Merge validates the full submitted batch,
+inserts only new wallet and tier pairs, and preserves every existing master row.
+The response includes the number added, tier counts, and a digest; the script
+checks those values against a private readback. Keep source sheets, provenance,
+and manifests in `private/`.
+
 Run backend validation with Node 22:
 
 ```sh

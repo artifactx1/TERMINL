@@ -209,10 +209,11 @@ export function createCampaignService(options){
               FROM users u LEFT JOIN spots sp ON sp.user_id=u.id LEFT JOIN wallets w ON w.user_id=u.id GROUP BY u.id ORDER BY u.created_at DESC LIMIT 100`),
             audit:store.all('SELECT * FROM audit ORDER BY id DESC LIMIT 60')});
         }
-        const body=await readJson(request,path==='/admin/wl/import'?2000000:16000);
+        const body=await readJson(request,['/admin/wl/import','/admin/wl/merge'].includes(path)?2000000:16000);
         if(path==='/admin/wl/review'&&request.method==='POST')return json(response,200,wl.review(body));
         if(path==='/admin/wl/entry'&&request.method==='POST')return json(response,200,wl.setEntry(body));
         if(path==='/admin/wl/import'&&request.method==='POST')return json(response,200,wl.importMaster(body));
+        if(path==='/admin/wl/merge'&&request.method==='POST')return json(response,200,wl.mergeMaster(body));
         if(path==='/admin/settings'&&request.method==='POST'){
           let next;try{next=campaignConfig(body.config);}catch(error){fail(error.message);}if(next.active&&!authReady)fail('Configure at least one sign-in provider before opening WL challenges.',409);
           store.transaction(()=>{const previous=config();store.run('UPDATE settings SET value=? WHERE id=1',JSON.stringify(next));store.audit('admin','settings',{previous,next},now());});

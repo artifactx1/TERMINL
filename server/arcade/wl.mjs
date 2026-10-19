@@ -110,6 +110,29 @@ export function createWlService(store,now=Date.now){
     });
   }
 
+  function mergeMaster(body){
+    if(!Array.isArray(body.entries)||body.entries.length<1||body.entries.length>20000)fail('Provide 1–20,000 master entries.');
+    const reason=typeof body.reason==='string'?body.reason.trim():'';
+    if(reason.length<5||reason.length>300)fail('Give a merge reason (5–300 characters).');
+    const normalized=new Map();
+    for(const [index,row] of body.entries.entries()){
+      if(!row||!['gtd','fcfs'].includes(row.kind))fail(`Invalid list at master row ${index+1}.`);
+      let address;try{address=walletAddress(row.address);}catch{fail(`Invalid wallet at master row ${index+1}.`);}
+      normalized.set(address+':'+row.kind,{address,kind:row.kind});
+    }
+    const at=now();
+    return store.transaction(()=>{
+      let added=0;
+      for(const row of normalized.values())added+=store.run(
+        'INSERT OR IGNORE INTO wl_master_entries(address,kind,imported_at) VALUES(?,?,?)',
+        row.address,row.kind,at).changes;
+      const counts=store.all('SELECT kind,count(*) AS count FROM wl_master_entries GROUP BY kind ORDER BY kind');
+      const digest=masterDigest(store.all('SELECT address,kind FROM wl_master_entries'));
+      store.audit('admin','wl_master_merge',{counts,digest,reason,submitted:body.entries.length,deduplicated:normalized.size,added},at);
+      return {ok:true,counts,digest,submitted:body.entries.length,deduplicated:normalized.size,added};
+    });
+  }
+
   function admin(){
     return {applications:store.all(`SELECT id,address,email,requested_kind,note,status,awarded_kind,
       created_at,updated_at,reviewed_at FROM wl_applications
@@ -129,5 +152,5 @@ export function createWlService(store,now=Date.now){
       ORDER BY a.reviewed_at DESC`)};
   }
 
-  return {check,submit,review,setEntry,importMaster,admin,contacts};
+  return {check,submit,review,setEntry,importMaster,mergeMaster,admin,contacts};
 }
