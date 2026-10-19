@@ -211,12 +211,12 @@ export function createCampaignService(options){
               count(CASE WHEN json_extract(detail,'$.outcome')='listed' THEN 1 END) AS listed,
               count(CASE WHEN json_extract(detail,'$.outcome')='not_listed' THEN 1 END) AS notListed,
               count(CASE WHEN json_extract(detail,'$.outcome')='failed' THEN 1 END) AS failed
-              FROM events WHERE name='wl_check' AND at>=?`,checkerCutoff),
+              FROM events WHERE name='wl_check' AND at>=? AND coalesce(json_extract(detail,'$.source'),'direct')<>'connected'`,checkerCutoff),
             daily:store.all(`SELECT date(at/1000,'unixepoch') AS day,count(*) AS attempts,
               count(CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN 1 END) AS completed,
               count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN anon_id END) AS browsers,
               count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN json_extract(detail,'$.walletHash') END) AS wallets
-              FROM events WHERE name='wl_check' AND at>=? GROUP BY day ORDER BY day DESC`,checkerCutoff),
+              FROM events WHERE name='wl_check' AND at>=? AND coalesce(json_extract(detail,'$.source'),'direct')<>'connected' GROUP BY day ORDER BY day DESC`,checkerCutoff),
             sources:store.all(`SELECT json_extract(detail,'$.source') AS source,json_extract(detail,'$.mode') AS mode,
               count(*) AS attempts,count(CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN 1 END) AS completed,
               count(DISTINCT CASE WHEN json_extract(detail,'$.outcome')<>'failed' THEN anon_id END) AS browsers
@@ -266,16 +266,16 @@ export function createCampaignService(options){
         rate('wl-check:'+network,90,60000);
         const result=wl.check(path.slice('/wl/check/'.length));
         const s=session(request,response,true);
-        recordWlCheck(s,result.address,['mint','wl'].includes(url.searchParams.get('source'))?url.searchParams.get('source'):'direct','rolling',result.eligible?'listed':'not_listed');
+        recordWlCheck(s,result.address,['mint','wl','connected'].includes(url.searchParams.get('source'))?url.searchParams.get('source'):'direct','rolling',result.eligible?'listed':'not_listed');
         return json(response,200,result);
       }
       if(path==='/wl/check-event'&&request.method==='POST'){
         const body=await readJson(request,1000);
-        if(body.source!=='mint'||!['listed','not_listed','failed'].includes(body.outcome))fail('Invalid checker event.');
+        if(!['mint','connected'].includes(body.source)||!['listed','not_listed','failed'].includes(body.outcome))fail('Invalid checker event.');
         let address;try{address=normalizeAddress(body.address);}catch(error){fail(error.message);}
         const s=session(request,response,true);
         rate('wl-check-event:'+s.anon_id,30,60000);
-        recordWlCheck(s,address,'mint','published',body.outcome);
+        recordWlCheck(s,address,body.source,'published',body.outcome);
         return json(response,200,{ok:true});
       }
       if(path==='/wl/apply'&&request.method==='POST'){

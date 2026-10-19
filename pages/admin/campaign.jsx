@@ -23,12 +23,12 @@ function WlChecker({data}){
   return <>
     <div className={s.sectionHeading}><h2>Allowlist checker</h2></div>
     <div className={s.grid} aria-label='Private allowlist checker activity in the last 30 days'>
-      <section className={s.card}><span className={s.eyebrow}>COMPLETED CHECKS / 30 DAYS</span><h2>{summary.completed||0}</h2><p>Successful lookups, including repeat checks.</p></section>
-      <section className={s.card}><span className={s.eyebrow}>BROWSERS CHECKING / 30 DAYS</span><h2>{summary.browsers||0}</h2><p>Distinct anonymous browser cookies.</p></section>
-      <section className={s.card}><span className={s.eyebrow}>WALLETS SEARCHED / 30 DAYS</span><h2>{summary.wallets||0}</h2><p>Distinct wallet hashes; the addresses are not saved with these events.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>MANUAL CHECKS / 30 DAYS</span><h2>{summary.completed||0}</h2><p>Successful lookups, including repeat checks.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>BROWSERS CHECKING / 30 DAYS</span><h2>{summary.browsers||0}</h2><p>Distinct anonymous browser cookies from manual checks.</p></section>
+      <section className={s.card}><span className={s.eyebrow}>WALLETS SEARCHED / 30 DAYS</span><h2>{summary.wallets||0}</h2><p>Distinct wallet hashes from manual checks; addresses are not saved with these events.</p></section>
     </div>
-    <p className={s.fine}>Tracking starts with this release. Of {summary.attempts||0} attempts, {summary.listed||0} returned listed, {summary.notListed||0} returned not listed and {summary.failed||0} failed. Browsers and wallets are estimates of interest, not a count of people or WL members. These figures are admin only.</p>
-    <div className={s.tableWrap}><table className={s.table}><thead><tr><th>SOURCE</th><th>LIST</th><th>ATTEMPTS</th><th>COMPLETED</th><th>BROWSERS</th></tr></thead><tbody>{sources.map(row=><tr key={`${row.source}:${row.mode}`}><td>{row.source==='mint'?'Mint page':row.source==='wl'?'WL page':'Direct check'}</td><td>{row.mode==='published'?'Published mint list':'Rolling WL'}</td><td>{row.attempts}</td><td>{row.completed}</td><td>{row.browsers}</td></tr>)}</tbody></table></div>
+    <p className={s.fine}>Of {summary.attempts||0} manual attempts, {summary.listed||0} returned listed, {summary.notListed||0} returned not listed and {summary.failed||0} failed. Automatic connected-wallet lookups appear separately below. Browsers and wallets are estimates of interest, not a count of people or WL members. These figures are admin only.</p>
+    <div className={s.tableWrap}><table className={s.table}><thead><tr><th>SOURCE</th><th>LIST</th><th>ATTEMPTS</th><th>COMPLETED</th><th>BROWSERS</th></tr></thead><tbody>{sources.map(row=><tr key={`${row.source}:${row.mode}`}><td>{row.source==='connected'?'Connected wallet (automatic)':row.source==='mint'?'Mint page':row.source==='wl'?'WL page':'Direct check'}</td><td>{row.mode==='published'?'Published mint list':'Rolling WL'}</td><td>{row.attempts}</td><td>{row.completed}</td><td>{row.browsers}</td></tr>)}</tbody></table></div>
     <div className={s.tableWrap}><table className={s.table}><thead><tr><th>DAY (UTC)</th><th>ATTEMPTS</th><th>COMPLETED</th><th>BROWSERS</th><th>WALLETS</th></tr></thead><tbody>{daily.map(row=><tr key={row.day}><td>{row.day}</td><td>{row.attempts}</td><td>{row.completed}</td><td>{row.browsers}</td><td>{row.wallets}</td></tr>)}</tbody></table></div>
   </>;
 }

@@ -248,7 +248,7 @@ function Site({ data }) {
             <Link href="/wl">
               <span>02 / APPLY</span>
               <b>APPLY FOR GTD / FCFS ↗</b>
-              <small>Submit an application for review. A spot isn&rsquo;t guaranteed.</small>
+              <small>Enter the October 26 draw. Selected applicants will be emailed.</small>
             </Link>
           </div>
           <p className={styles.accessCheck}>Already applied? <a href="#allowlist-checker">Check your wallet</a>. The lists are updated daily.</p>

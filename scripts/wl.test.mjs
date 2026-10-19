@@ -16,10 +16,11 @@ test('applications stay pending until review; rolling entries and Arcade Pass sp
   const store=openCampaignStore(directory),wl=createWlService(store,()=>1800000000000);
   try{
     assert.deepEqual(wl.check(WALLET).lists,[]);
-    assert.throws(()=>wl.submit({address:WALLET,email:'invalid',requestedKind:'gtd',emailConsent:true}),/email/);
-    assert.deepEqual(wl.submit({address:WALLET,email:'Test@Example.com',requestedKind:'both',emailConsent:true,note:'Arcade fan'}),{received:true});
+    assert.throws(()=>wl.submit({address:WALLET,email:'invalid',requestedKind:'gtd',emailConsent:true,socialConfirmed:true}),/email/);
+    assert.throws(()=>wl.submit({address:WALLET,email:'test@example.com',requestedKind:'gtd',emailConsent:true}),/follow, like, and repost/);
+    assert.deepEqual(wl.submit({address:WALLET,email:'Test@Example.com',requestedKind:'both',emailConsent:true,socialConfirmed:true,note:'Arcade fan'}),{received:true});
     assert.deepEqual(wl.check(WALLET).lists,[],'an application does not grant a spot');
-    assert.deepEqual(wl.submit({address:WALLET,email:'other@example.com',requestedKind:'gtd',emailConsent:true}),{received:true},'repeat submissions do not reveal the saved email');
+    assert.deepEqual(wl.submit({address:WALLET,email:'other@example.com',requestedKind:'gtd',emailConsent:true,socialConfirmed:true}),{received:true},'repeat submissions do not reveal the saved email');
     const application=wl.admin().applications[0];
     assert.equal(application.email,'test@example.com');
     assert.deepEqual(wl.contacts().contacts,[]);
@@ -79,7 +80,8 @@ test('public WL routes stay pending until review and tied leaderboard scores get
   };
   try{
     assert.equal((await call('/wl/check/'+WALLET)).data.eligible,false);
-    assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',emailConsent:true})).status,200);
+    assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',emailConsent:true})).status,400);
+    assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',emailConsent:true,socialConfirmed:true})).status,200);
     assert.equal((await call('/wl/check/'+WALLET)).data.eligible,false);
     assert.equal((await call('/admin/wl')).status,404);
     const application=(await call('/admin/wl',null,true)).data.applications[0];
@@ -120,11 +122,13 @@ test('wallet checks count distinct browsers and searched wallets only in private
     assert.equal((await call('/wl/check/'+WALLET+'?source=wl',{cookie:first.cookie})).status,200);
     assert.equal((await call('/wl/check-event',{cookie:first.cookie,body:{address:SECOND,source:'mint',outcome:'not_listed'}})).status,200);
     assert.equal((await call('/wl/check-event',{cookie:first.cookie,body:{address:SECOND,source:'mint',outcome:'failed'}})).status,200);
+    assert.equal((await call('/wl/check/'+WALLET+'?source=connected',{cookie:first.cookie})).status,200);
+    assert.equal((await call('/wl/check-event',{cookie:first.cookie,body:{address:SECOND,source:'connected',outcome:'listed'}})).status,200);
     assert.equal((await call('/admin')).status,404,'checker metrics stay private');
     const metrics=(await call('/admin',{admin:true})).data.wlChecker;
     assert.deepEqual(metrics.summary,{attempts:4,completed:3,browsers:1,wallets:2,listed:2,notListed:1,failed:1});
     assert.equal(metrics.daily[0].completed,3);
-    assert.deepEqual(metrics.sources.map(row=>[row.source,row.mode,row.completed].join(':')).sort(),['mint:published:1','mint:rolling:1','wl:rolling:1']);
+    assert.deepEqual(metrics.sources.map(row=>[row.source,row.mode,row.completed].join(':')).sort(),['connected:published:1','connected:rolling:1','mint:published:1','mint:rolling:1','wl:rolling:1']);
     const details=service.store.all("SELECT detail FROM events WHERE name='wl_check'").map(row=>row.detail).join(' ');
     assert.ok(!details.includes(WALLET)&&!details.includes(SECOND),'events never store searched wallet addresses');
   }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(directory,{recursive:true,force:true});}

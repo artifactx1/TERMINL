@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import styles from "../styles/Terminl.module.css";
 import { formatEth } from "../lib/mint";
@@ -18,7 +18,7 @@ const STATUS = {
  * public phase, soonest first, each with its terms and a live status. The
  * wallet checker stays available before any mint phase is published.
  */
-export default function Phases({ drop, phases, chainNow }) {
+export default function Phases({ drop, phases, chainNow, account }) {
   const rows = buildSchedule({ drop, phases, chainNowMs: chainNow });
   return (
     <div className={styles.phases} aria-label="Mint schedule and wallet checker">
@@ -53,7 +53,7 @@ export default function Phases({ drop, phases, chainNow }) {
         );
       })}
       </>}
-      <Eligibility chainNow={chainNow} onchain={(phases?.stages?.length ?? 0) > 0} phasesFailed={!!phases?.failed} />
+      <Eligibility chainNow={chainNow} onchain={(phases?.stages?.length ?? 0) > 0} phasesFailed={!!phases?.failed} account={account} />
     </div>
   );
 }
@@ -71,32 +71,45 @@ const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
  * It answers about ONE address at a time, typed deliberately. That is a
  * question someone asks about their own wallet, not a way to enumerate a list.
  */
-function Eligibility({ chainNow, onchain, phasesFailed }) {
+function Eligibility({ chainNow, onchain, phasesFailed, account }) {
   const [value, setValue] = useState("");
   const [state, setState] = useState(null); // { checking } | { address, stages, reason, failed }
+  const requestId = useRef(0);
 
-  const check = async (e) => {
-    e.preventDefault();
-    const address = value.trim();
-    if (!ADDRESS.test(address)) {
-      setState({ invalid: true });
-      return;
-    }
-    setState({ checking: true });
+  const lookup = useCallback(async (address, source) => {
+    const currentRequest = ++requestId.current;
+    setState({ checking: true, source });
     if (onchain) {
       const result = await fetchAllowlist(address);
-      setState({ address, ...result, mode: "mint" });
+      if (currentRequest === requestId.current) setState({ address, ...result, mode: "mint", source });
       void campaignRequest('/wl/check-event',{
-        address,source:'mint',outcome:result.failed?'failed':result.stages.length?'listed':'not_listed',
+        address,source,outcome:result.failed?'failed':result.stages.length?'listed':'not_listed',
       }).catch(()=>{});
     } else {
       try {
-        const result = await campaignRequest(`/wl/check/${address}?source=mint`);
-        setState({ address, ...result, mode: "offchain" });
+        const result = await campaignRequest(`/wl/check/${address}?source=${source}`);
+        if (currentRequest === requestId.current) setState({ address, ...result, mode: "offchain", source });
       } catch {
-        setState({ address, failed: true, mode: "offchain" });
+        if (currentRequest === requestId.current) setState({ address, failed: true, mode: "offchain", source });
       }
     }
+  }, [onchain]);
+
+  useEffect(() => {
+    if (!account || !ADDRESS.test(account)) return;
+    setValue(account);
+    void lookup(account, 'connected');
+  }, [account, lookup]);
+
+  const check = (e) => {
+    e.preventDefault();
+    const address = value.trim();
+    if (!ADDRESS.test(address)) {
+      requestId.current++;
+      setState({ invalid: true });
+      return;
+    }
+    void lookup(address, 'mint');
   };
 
   const nowSec = Math.floor(chainNow / 1000);
@@ -109,7 +122,7 @@ function Eligibility({ chainNow, onchain, phasesFailed }) {
         <input
           className={styles.checkInput}
           value={value}
-          onChange={(e) => { setValue(e.target.value); setState(null); }}
+          onChange={(e) => { requestId.current++; setValue(e.target.value); setState(null); }}
           placeholder="0x…"
           aria-label="Wallet address"
           spellCheck={false}
@@ -119,6 +132,9 @@ function Eligibility({ chainNow, onchain, phasesFailed }) {
           {state?.checking ? "…" : "CHECK"}
         </button>
       </div>
+      {state?.checking && state.source === 'connected' && (
+        <p className={styles.checkNote}>Checking your connected wallet…</p>
+      )}
 
       {state?.invalid && (
         <p className={styles.checkNote}>that is not a wallet address — paste the 0x… one</p>

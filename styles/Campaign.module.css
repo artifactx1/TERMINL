@@ -37,3 +37,38 @@
 @media(max-width:700px){.savePointsPrompt{align-items:stretch;flex-direction:column}.savePointsPrompt .primary{width:100%}.officialChoices{width:100%}}
 /* Give the invite actions their own row instead of sharing flex:1 with the copy. */
 @media(max-width:700px){.raceChallenge>.officialChoices{flex:0 0 100%;min-width:0}}
+.wlHero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:46px;align-items:center;margin-bottom:32px}
+.wlHeroCopy h1{color:#f5fff7;font-size:clamp(42px,5.5vw,74px);line-height:1.02;letter-spacing:-.055em;margin:16px 0 24px}
+.wlHeroCopy h1 em{color:var(--terminl-accent);font-style:normal}
+.wlHeroCopy>p{max-width:510px;font-size:16px;line-height:1.75;margin:0 0 24px}
+.wlHeroCopy>.primary{margin-top:26px}
+.wlDate{display:grid;gap:7px;padding:16px 18px;border-left:3px solid var(--terminl-accent);background:#101b10}
+.wlDate strong{color:#f2ffe9;font-size:19px;letter-spacing:.08em}
+.wlDate span{font-size:11px;line-height:1.5;text-transform:uppercase;letter-spacing:.05em}
+.wlArt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+.wlArt figure{position:relative;overflow:hidden;margin:0;border:1px solid #345034;background:#0b130b;min-width:0;aspect-ratio:1}
+.wlArt .wlArtMain{grid-column:1/-1;aspect-ratio:1.7}
+.wlArt img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+.wlArt .wlArtMain img{object-fit:contain}
+.wlArt figcaption{position:absolute;left:0;right:0;bottom:0;padding:19px 10px 9px;background:linear-gradient(transparent,#030903ed);color:#f0ffed;font-size:10px;font-weight:700;letter-spacing:.08em}
+.wlFactStrip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#355032;border:1px solid #355032;margin-bottom:64px}
+.wlFactStrip span{background:#101910;padding:15px 18px;color:#e4f8de;font-size:11px;line-height:1.5;letter-spacing:.07em}
+.wlFactStrip b{color:var(--terminl-accent);margin-right:9px}
+.wlApply{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:52px;align-items:start;scroll-margin-top:28px}
+.wlApplyIntro h2{color:#f5fff7;font-size:clamp(32px,4vw,48px);line-height:1.1;letter-spacing:-.035em;margin:15px 0 20px}
+.wlApplyIntro>p:not(.fine){font-size:15px;line-height:1.8;max-width:420px}
+.wlApplyIntro strong{color:var(--terminl-accent)}
+.wlApplyIntro>.secondary{margin-top:20px;max-width:100%;text-align:center}
+.wlFormCard{margin-top:0;padding:28px}
+.wlFormSection{padding:24px 0;border-bottom:1px solid #294029}
+.wlFormSection:last-child{border-bottom:0;padding-bottom:0}
+.wlFormSection h3{font-size:17px;margin:0 0 12px;color:#f1ffeb}
+.wlFormSection>p{font-size:12px;line-height:1.7;margin:0 0 16px}
+.wlFormSection .check{display:flex;align-items:flex-start;margin:18px 0}
+.wlFormSection .check input{width:auto;min-height:0;margin:4px 0 0;accent-color:var(--terminl-accent)}
+.wlSocialLinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.wlSocialLinks>a{text-align:center;font-size:10px;padding:12px 8px}
+.wlFormSection>button.primary{width:100%}
+.wlFormCard .primary:disabled{cursor:not-allowed}
+@media(max-width:900px){.wlHero{gap:24px}.wlApply{gap:25px}}
+@media(max-width:700px){.wlHero,.wlApply{grid-template-columns:1fr}.wlHero{gap:30px}.wlHeroCopy h1{font-size:clamp(42px,10vw,58px)}.wlArt{max-width:580px}.wlFactStrip{grid-template-columns:1fr;margin-bottom:48px}.wlFactStrip span{padding:11px 14px}.wlApply{gap:26px}.wlFormCard{padding:21px}.wlSocialLinks{grid-template-columns:1fr}}

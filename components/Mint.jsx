@@ -810,7 +810,7 @@ export default function Mint() {
       {transactionStatus}
       {note && <p className={styles.note}>{note}</p>}
       <Progress drop={progress} />
-      <Phases drop={drop} phases={phases} chainNow={chainNow} />
+      <Phases drop={drop} phases={phases} chainNow={chainNow} account={account} />
     </div>
   );
 
@@ -824,7 +824,7 @@ export default function Mint() {
       {note && <p className={styles.note}>{note}</p>}
       <Progress drop={progress} />
       <button type="button" className={styles.cta} onClick={connect}>CONNECT WALLET</button>
-      <Phases drop={drop} phases={phases} chainNow={chainNow} />
+      <Phases drop={drop} phases={phases} chainNow={chainNow} account={account} />
     </div>
   );
 
@@ -978,7 +978,7 @@ export default function Mint() {
           : (endsIn ? `ends in ${endsIn} · ` : "")}
         on {CHAIN.name} · art on Arweave, forever
       </p>
-      <Phases drop={drop} phases={phases} chainNow={chainNow} />
+      <Phases drop={drop} phases={phases} chainNow={chainNow} account={account} />
 
       {/* The same handlers as the control above — not a second implementation
           of the mint, just a second place to reach it. In particular it calls
