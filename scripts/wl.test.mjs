@@ -79,6 +79,11 @@ test('public WL routes stay pending until review and tied leaderboard scores get
     return {status:response.status,data:await response.json()};
   };
   try{
+    const post='https://x.com/TERMINLnet/status/123456789';
+    assert.equal((await call('/admin/settings',{config:{wlPostUrl:post}},true)).status,200);
+    assert.equal((await call('/config')).data.config.wlPostUrl,post,'the application receives the current admin-selected post');
+    assert.equal((await call('/admin/settings',{config:{wlPostUrl:'https://x.com/TERMINLnet/status/987654321'}},true)).status,200);
+    assert.equal((await call('/config')).data.config.wlPostUrl,'https://x.com/TERMINLnet/status/987654321','the post can change without a site build');
     assert.equal((await call('/wl/check/'+WALLET)).data.eligible,false);
     assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',emailConsent:true})).status,400);
     assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',emailConsent:true,socialConfirmed:true})).status,200);

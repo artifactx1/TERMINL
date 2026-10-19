@@ -207,6 +207,9 @@ test('stored settings gain route defaults and reject a campaign with no route',(
   const migrated=campaignConfig(legacy);assert.equal(migrated.cupEnabled,true);assert.equal(migrated.rumbleEnabled,true);assert.equal('targetSeconds' in migrated,false);
   assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,active:true,cupEnabled:false,rumbleEnabled:false}),/Enable/);
   assert.equal(DEFAULT_CAMPAIGN.capacity,0,'FCFS spots are unlimited by default');assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,capacity:-1}),/Capacity/);
+  assert.equal(campaignConfig({...DEFAULT_CAMPAIGN,wlPostUrl:'https://x.com/TERMINLnet/status/123456789'}).wlPostUrl,'https://x.com/TERMINLnet/status/123456789');
+  assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,wlPostUrl:'https://example.com/TERMINLnet/status/123456789'}),/direct X post URL/);
+  assert.throws(()=>campaignConfig({...DEFAULT_CAMPAIGN,wlPostUrl:'https://x.com/TERMINLnet'}),/direct X post URL/);
 });
 test('the shipped Barry pace eases on existing installs without overriding custom pace',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'terminl-pace-migration-'));

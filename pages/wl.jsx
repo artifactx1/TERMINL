@@ -9,24 +9,29 @@ import s from '../styles/Campaign.module.css';
 
 const ADDRESS=/^0x[0-9a-fA-F]{40}$/;
 const X_PROFILE='https://x.com/TERMINLnet';
-const X_POST=process.env.NEXT_PUBLIC_WL_X_POST_URL||X_PROFILE;
 
 export default function WlApplication(){
   const {address:connectedAddress}=useAccount();
   const [address,setAddress]=useState(''),[email,setEmail]=useState(''),[requestedKind,setRequestedKind]=useState('fcfs');
-  const [note,setNote]=useState(''),[emailConsent,setEmailConsent]=useState(false),[website,setWebsite]=useState('');
+  const [emailConsent,setEmailConsent]=useState(false),[website,setWebsite]=useState(''),[postUrl,setPostUrl]=useState(X_PROFILE);
   const [openedFollow,setOpenedFollow]=useState(false),[openedPost,setOpenedPost]=useState(false),[socialConfirmed,setSocialConfirmed]=useState(false);
   const [applyBusy,setApplyBusy]=useState(false),[error,setError]=useState(''),[received,setReceived]=useState(false);
   useEffect(()=>{
     if(ADDRESS.test(connectedAddress||'')){setAddress(connectedAddress);setReceived(false);}
   },[connectedAddress]);
+  useEffect(()=>{
+    let active=true;
+    void campaignRequest('/config').then(({config})=>{if(active&&config?.wlPostUrl)setPostUrl(config.wlPostUrl);}).catch(()=>{});
+    return ()=>{active=false;};
+  },[]);
+  useEffect(()=>{setOpenedPost(false);setSocialConfirmed(false);},[postUrl]);
   const socialReady=openedFollow&&openedPost&&socialConfirmed;
   const apply=async e=>{
     e.preventDefault();setError('');setReceived(false);
     if(!socialReady){setError('Open both X links and confirm the follow, like, and repost steps.');return;}
     if(!ADDRESS.test(address.trim())){setError('Paste a public 0x wallet address.');return;}
     setApplyBusy(true);
-    try{await campaignRequest('/wl/apply',{address:address.trim(),email,requestedKind,note,emailConsent,socialConfirmed,website});setReceived(true);}
+    try{await campaignRequest('/wl/apply',{address:address.trim(),email,requestedKind,emailConsent,socialConfirmed,website});setReceived(true);}
     catch(e){setError(e.message);}
     finally{setApplyBusy(false);}
   };
@@ -53,14 +58,13 @@ export default function WlApplication(){
     <div className={`${s.card} ${s.wlFormCard}`}><span className={s.eyebrow}>APPLICATION / 01—03</span><form onSubmit={apply}>
       <div className={s.wlFormSection}><h3>01 / Show some love on X</h3><p>Open both links, then confirm you completed the steps. We can&apos;t verify X actions automatically.</p>
         <div className={s.wlSocialLinks}><a href={X_PROFILE} target='_blank' rel='noopener noreferrer' className={s.secondary} onClick={()=>setOpenedFollow(true)}>FOLLOW @TERMINLNET ↗</a>
-          <a href={X_POST} target='_blank' rel='noopener noreferrer' className={s.secondary} onClick={()=>setOpenedPost(true)}>{X_POST===X_PROFILE?'FIND THE WL POST ↗':'OPEN THE WL POST ↗'}</a></div>
-        {X_POST===X_PROFILE&&<p className={s.fine}>On the @TERMINLnet profile, find the WL post, like it, and repost it.</p>}
+          <a href={postUrl} target='_blank' rel='noopener noreferrer' className={s.secondary} onClick={()=>setOpenedPost(true)}>{postUrl===X_PROFILE?'FIND THE WL POST ↗':'OPEN THE WL POST ↗'}</a></div>
+        {postUrl===X_PROFILE&&<p className={s.fine}>On the @TERMINLnet profile, find the WL post, like it, and repost it.</p>}
         <label className={s.check}><input type='checkbox' checked={socialConfirmed} onChange={e=>setSocialConfirmed(e.target.checked)} disabled={!openedFollow||!openedPost}/>I followed @TERMINLnet and liked and reposted the WL post.</label>
       </div>
       <div className={s.wlFormSection}><h3>02 / Choose your shot</h3>
         <label>PUBLIC WALLET ADDRESS<input value={address} onChange={e=>{setAddress(e.target.value);setReceived(false);}} placeholder='0x…' autoComplete='off' spellCheck={false} required/></label>
         <label>APPLY FOR<select value={requestedKind} onChange={e=>setRequestedKind(e.target.value)}><option value='fcfs'>FCFS WL</option><option value='gtd'>GTD WL</option><option value='both'>Either / both</option></select></label>
-        <label>WHY YOU? <span className={s.fine}>Optional · 500 characters max</span><textarea className={s.wlTextarea} value={note} onChange={e=>setNote(e.target.value)} maxLength={500} placeholder='Tell us why you belong in the TERMINL mix.'/></label>
       </div>
       <div className={s.wlFormSection}><h3>03 / Where should we send the news?</h3>
         <label>EMAIL FOR WINNER NOTICE<input type='email' value={email} onChange={e=>setEmail(e.target.value)} maxLength={254} autoComplete='email' placeholder='you@example.com' required/></label>
@@ -71,7 +75,7 @@ export default function WlApplication(){
       </div></form>
       {received&&<p className={s.notice} role='status'>Entry received. If your wallet is selected on October 26, we&apos;ll email you at the address you provided.</p>}
       {error&&<p role='alert' className={s.error}>{error}</p>}
-      <p className={s.fine}>Your email and note are private to the review team. Use a wallet you control; no seed phrase, signature, or transaction is needed. <Link href='/arcade-privacy'>Privacy and WL rules →</Link></p>
+      <p className={s.fine}>Your email is private to the review team. Use a wallet you control; no seed phrase, signature, or transaction is needed. <Link href='/arcade-privacy'>Privacy and WL rules →</Link></p>
     </div></section>
   </CampaignShell>;
 }

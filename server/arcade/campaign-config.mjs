@@ -16,5 +16,6 @@ export function campaignConfig(input){
   if(c.gtdAddressEndsAt&&c.gtdEndsAt&&c.gtdAddressEndsAt<=c.gtdEndsAt)throw new Error('GTD submissions must close after the leaderboard closes');
   if(c.chainId!==4663)throw new Error('This campaign accepts Robinhood Chain mainnet addresses');
   if(c.announcementUrl){let url;try{url=new URL(c.announcementUrl);}catch{throw new Error('Invalid announcement URL');}if(url.protocol!=='https:'||!['x.com','www.x.com','terminl.net','www.terminl.net'].includes(url.hostname))throw new Error('Use a TERMINL or X announcement URL');}
+  if(c.wlPostUrl){let url;try{url=new URL(c.wlPostUrl);}catch{throw new Error('Invalid WL post URL');}if(url.protocol!=='https:'||!['x.com','www.x.com','twitter.com','www.twitter.com'].includes(url.hostname)||!/^\/[A-Za-z0-9_]+\/status\/\d+\/?$/.test(url.pathname))throw new Error('Use a direct X post URL for the WL application');}
   return Object.fromEntries(Object.keys(DEFAULT_CAMPAIGN).map(k=>[k,c[k]]));
 }
