@@ -238,7 +238,7 @@ function Site({ data }) {
         <section className={styles.access} id="access">
           <span className={styles.accessEyebrow}>THE ALLOWLIST</span>
           <h2>Pick your way in.</h2>
-          <p className={styles.accessIntro}>Play the official Arcade challenges for a shot at FCFS, or apply for GTD or FCFS if you don&rsquo;t have time to grind.</p>
+          <p className={styles.accessIntro}>Play the official Arcade challenges for a shot at FCFS, or apply for a WL spot if you don&rsquo;t have time to grind.</p>
           <div className={styles.accessRoutes}>
             <Link href="/beat-the-bots">
               <span>01 / PLAY</span>
@@ -247,7 +247,7 @@ function Site({ data }) {
             </Link>
             <Link href="/wl">
               <span>02 / APPLY</span>
-              <b>APPLY FOR GTD / FCFS ↗</b>
+              <b>APPLY FOR WL ↗</b>
               <small>Enter the October 26 draw. Selected applicants will be emailed.</small>
             </Link>
           </div>

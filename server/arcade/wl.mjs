@@ -39,7 +39,7 @@ export function createWlService(store,now=Date.now){
     const requested=body.requestedKind;
     if(!KINDS.has(requested))fail('Choose GTD, FCFS, or both.');
     if(body.emailConsent!==true)fail('Confirm that we may email you about your WL application.');
-    if(body.socialConfirmed!==true)fail('Confirm the X follow, like, and repost steps.');
+    if(body.socialConfirmed!==true)fail('Open the X links before applying.');
     const note=typeof body.note==='string'?body.note.trim():'';
     if(note.length>500)fail('Keep your application note under 500 characters.');
     const id=randomBytes(16).toString('hex'),at=now();

@@ -5,6 +5,7 @@ import CampaignShell from '../../components/arcade/CampaignShell';
 import s from '../../styles/Campaign.module.css';
 
 const date=value=>value?new Date(value).toLocaleString():'—';
+const requestLabel=kind=>kind==='both'?'ANY':kind.toUpperCase();
 
 export default function WlAdmin(){
   const [token,setToken]=useState(''),[data,setData]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
@@ -32,7 +33,7 @@ export default function WlAdmin(){
       <p className={s.fine}>The WL draw is October 26, 2026. Review and approve selected applications, then export approved contacts and send winner emails. Exporting the CSV does not send email. An approved application adds its wallet to the current WL; mint phases and final terms are published separately.</p>
       <div className={s.wlGrid}>
         <form className={s.card} onSubmit={decide}><h2>Review application</h2>
-          <label>APPLICATION<select value={review.id} onChange={e=>setReview({...review,id:e.target.value})} required><option value=''>Choose an application</option>{data.applications.map(a=><option key={a.id} value={a.id}>{a.address.slice(0,10)}… · {a.requested_kind.toUpperCase()} · {a.status}</option>)}</select></label>
+          <label>APPLICATION<select value={review.id} onChange={e=>setReview({...review,id:e.target.value})} required><option value=''>Choose an application</option>{data.applications.map(a=><option key={a.id} value={a.id}>{a.address.slice(0,10)}… · {requestLabel(a.requested_kind)} · {a.status}</option>)}</select></label>
           <label>DECISION<select value={review.status} onChange={e=>setReview({...review,status:e.target.value})}><option value='approved'>Approve</option><option value='rejected'>Reject</option></select></label>
           {review.status==='approved'&&<label>AWARDED LIST<select value={review.awardedKind} onChange={e=>setReview({...review,awardedKind:e.target.value})}><option value='fcfs'>FCFS</option><option value='gtd'>GTD</option><option value='both'>Both</option></select></label>}
           <label>AUDIT REASON<input value={review.reason} onChange={e=>setReview({...review,reason:e.target.value})} minLength={5} maxLength={300} required/></label><button className={s.primary} disabled={busy}>SAVE DECISION</button>
@@ -45,7 +46,7 @@ export default function WlAdmin(){
         </form>
       </div>
       <div className={s.sectionHeading}><h2>Applications ({data.applications.length})</h2></div>
-      <div className={s.tableWrap}><table className={s.table}><thead><tr><th>RECEIVED</th><th>WALLET</th><th>EMAIL</th><th>REQUEST</th><th>STATUS</th><th>AWARDED</th><th>NOTE</th></tr></thead><tbody>{data.applications.map(a=><tr key={a.id}><td>{date(a.created_at)}</td><td>{a.address}</td><td>{a.email}</td><td>{a.requested_kind.toUpperCase()}</td><td>{a.status.toUpperCase()}</td><td>{a.awarded_kind?.toUpperCase()||'—'}</td><td><details><summary>VIEW</summary><p>{a.note||'No note'}</p></details></td></tr>)}</tbody></table></div>
+      <div className={s.tableWrap}><table className={s.table}><thead><tr><th>RECEIVED</th><th>WALLET</th><th>EMAIL</th><th>REQUEST</th><th>STATUS</th><th>AWARDED</th><th>NOTE</th></tr></thead><tbody>{data.applications.map(a=><tr key={a.id}><td>{date(a.created_at)}</td><td>{a.address}</td><td>{a.email}</td><td>{requestLabel(a.requested_kind)}</td><td>{a.status.toUpperCase()}</td><td>{a.awarded_kind?.toUpperCase()||'—'}</td><td><details><summary>VIEW</summary><p>{a.note||'No note'}</p></details></td></tr>)}</tbody></table></div>
       <div className={s.sectionHeading}><h2>Manual and approved entries</h2></div>
       <div className={s.tableWrap}><table className={s.table}><thead><tr><th>WALLET</th><th>LIST</th><th>SOURCE</th><th>ADDED</th></tr></thead><tbody>{data.entries.map(row=><tr key={row.address+row.kind}><td>{row.address}</td><td>{row.kind.toUpperCase()}</td><td>{row.source}</td><td>{date(row.created_at)}</td></tr>)}</tbody></table></div>
       <button className={s.textButton} onClick={()=>{setToken('');setData(null);}}>LOCK DASHBOARD</button>

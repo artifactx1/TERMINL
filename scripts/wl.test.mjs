@@ -17,7 +17,7 @@ test('applications stay pending until review; rolling entries and Arcade Pass sp
   try{
     assert.deepEqual(wl.check(WALLET).lists,[]);
     assert.throws(()=>wl.submit({address:WALLET,email:'invalid',requestedKind:'gtd',emailConsent:true,socialConfirmed:true}),/email/);
-    assert.throws(()=>wl.submit({address:WALLET,email:'test@example.com',requestedKind:'gtd',emailConsent:true}),/follow, like, and repost/);
+    assert.throws(()=>wl.submit({address:WALLET,email:'test@example.com',requestedKind:'gtd',emailConsent:true}),/Open the X links/);
     assert.deepEqual(wl.submit({address:WALLET,email:'Test@Example.com',requestedKind:'both',emailConsent:true,socialConfirmed:true,note:'Arcade fan'}),{received:true});
     assert.deepEqual(wl.check(WALLET).lists,[],'an application does not grant a spot');
     assert.deepEqual(wl.submit({address:WALLET,email:'other@example.com',requestedKind:'gtd',emailConsent:true,socialConfirmed:true}),{received:true},'repeat submissions do not reveal the saved email');
