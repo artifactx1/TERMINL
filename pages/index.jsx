@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
 import MintLaunch from "../components/MintLaunch";
+import SiteNavMenu from "../components/SiteNavMenu";
 import Leaderboard from "../components/arcade/Leaderboard";
 import { loreFor } from "../data/degen-lore";
 import ChainBadge from "../components/ChainBadge";
@@ -159,19 +160,12 @@ function Site({ data }) {
         <nav className={styles.nav}>
           <a className={styles.wordmark} href="#top"><b>TERMINL</b><span>{data.supply}</span></a>
           <div className={styles.navRight}>
-            <a href="#story">STORY</a>
-            <a href="#art">ART</a>
-            <a href="#degens">DEGENS</a>
-            <a href="#tape">TAPE</a>
-            <Link className={styles.os} href="/os">ARCADE ↗</Link>
-            {CONTRACT ? (
-              <a className={`${styles.os} ${styles.contractNav}`} href={`${CHAIN.explorer}/address/${CONTRACT}`} target="_blank" rel="noreferrer">CONTRACT ↗</a>
-            ) : (
-              <a className={`${styles.os} ${styles.contractNav}`} href="#top">MINT</a>
-            )}
+            <Link className={`${styles.os} ${styles.arcadeNav}`} href="/os">ARCADE ↗</Link>
             <WalletButton />
+            <SiteNavMenu contractUrl={CONTRACT ? `${CHAIN.explorer}/address/${CONTRACT}` : null} />
           </div>
         </nav>
+        <MintLaunch date="2026-10-29" />
 
         <section className={styles.hero} id="top">
           <div
@@ -206,7 +200,6 @@ function Site({ data }) {
               {data.supply.toLocaleString('en-US')} pixel machines for people who deleted the exchange app,
               then checked the price in Safari.
             </p>
-            <MintLaunch date="2026-10-29" />
             <a className={styles.accessJump} href="#access">PLAY OR APPLY FOR THE ALLOWLIST ↓</a>
 
             <div className={styles.score}>

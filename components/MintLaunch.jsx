@@ -20,10 +20,25 @@ export default function MintLaunch({date}){
   if(!target)return null;
   const eastern=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(target);
   const local=now===null?null:new Intl.DateTimeFormat(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(target);
-  return <section className={styles.mintLaunch} aria-label='Scheduled mint opening'>
-    <span className={styles.mintLaunchLabel}>MINT OPENS</span>
-    <strong>{eastern}</strong>
-    <span className={styles.mintLaunchLocal}>YOUR TIME: {local||'Loading…'}</span>
-    {now!==null&&<span className={styles.mintLaunchCountdown}>{now<target?<>COUNTDOWN <b>{timeLeft(target-now)}</b></>:<>SCHEDULED TIME REACHED <b>CHECK MINT STATUS BELOW</b></>}</span>}
-  </section>;
+  const items=<>
+    <span className={styles.mintTickerLead}>MINT OPENS</span>
+    <span>{eastern.toUpperCase()}</span>
+    <span className={styles.mintTickerSep}>✳</span>
+    <span>YOUR TIME · {local||'LOADING…'}</span>
+    <span className={styles.mintTickerSep}>✳</span>
+    <span>{now===null?'COUNTDOWN LOADING…':now<target?`OPENS IN · ${timeLeft(target-now)}`:'SCHEDULED TIME REACHED · CHECK MINT STATUS BELOW'}</span>
+    <span className={styles.mintTickerSep}>✳</span>
+    <span className={styles.mintTickerJoke}>BUY HIGH BRIAN SET AN ALARM FOR 9:59</span>
+    <span className={styles.mintTickerSep}>✳</span>
+    <span className={styles.mintTickerJoke}>MARGIN CALL MAX IS WATCHING HIS LIQUIDATION PRICE</span>
+    <span className={styles.mintTickerSep}>✳</span>
+    <span className={styles.mintTickerJoke}>EXIT LIQUIDITY ARRIVES FASHIONABLY EARLY</span>
+    <span className={styles.mintTickerSep}>✳</span>
+  </>;
+  return <div className={styles.mintTicker} role='region' aria-label={`Mint opens ${eastern}. ${local?`Your local time is ${local}. `:''}${now!==null&&now<target?`Countdown: ${timeLeft(target-now)}.`:''}`}>
+    <div className={styles.mintTickerTrack}>
+      <div className={styles.mintTickerGroup} aria-hidden='true'>{items}</div>
+      <div className={styles.mintTickerGroup} aria-hidden='true'>{items}</div>
+    </div>
+  </div>;
 }
