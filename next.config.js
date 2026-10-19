@@ -1,7 +1,8 @@
 const { cspHeaders } = require('./lib/security/csp.cjs');
+const { withBotId } = require('botid/next/config');
 
 /** @type {import('next').NextConfig} */
-module.exports = {
+module.exports = withBotId({
   distDir: process.env.TERMINL_NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   productionBrowserSourceMaps: false,
@@ -70,4 +71,4 @@ module.exports = {
     formats: ["image/webp"],
     minimumCacheTTL: 31536000,
   },
-};
+});
