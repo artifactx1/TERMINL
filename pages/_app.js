@@ -9,8 +9,11 @@ import {campaignRequest,campaignEvent} from "../lib/arcade/campaign-client";
 
 export default function App({ Component, pageProps }) {
   const router=useRouter();
-  useEffect(()=>{if(router.pathname!=='/os'&&!router.pathname.startsWith('/os/'))return;
-    campaignRequest('/session').then(()=>campaignEvent('arcade_view')).catch(()=>{});
+  useEffect(()=>{
+    campaignRequest('/session').then(()=>{
+      void campaignRequest('/events',{name:'site_view',path:router.pathname}).catch(()=>{});
+      if(router.pathname==='/os'||router.pathname.startsWith('/os/'))campaignEvent('arcade_view');
+    }).catch(()=>{});
   },[router.pathname]);
   return (
     <WalletProviders>

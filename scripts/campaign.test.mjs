@@ -75,19 +75,22 @@ async function playRumble(api,client,clock,{losses=0}={}){
   assert.equal(last.data.result.qualified,true);return start.data;
 }
 
-test('game starts count attempts and distinct browser IDs by game and mode',async()=>{
+test('site visitors and game starts count browsers by country',async()=>{
   const dir=await mkdtemp(join(tmpdir(),'terminl-game-starts-'));
   const service=createCampaignService({dataDir:dir,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test'});
   const server=http.createServer((req,res)=>void service.handle(req,res));await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const base=`http://127.0.0.1:${server.address().port}/campaign`;
-  const clients=[{cookie:''},{cookie:''}];
+  const clients=[{cookie:'',country:'US'},{cookie:'',country:'GB'}];
   async function call(client,path,body,admin=false){
-    const response=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json',Cookie:client.cookie,'X-Campaign-Client':'test-network',...(admin?{'X-Campaign-Admin':'admin'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    const response=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json',Cookie:client.cookie,'X-Campaign-Client':'test-network',...(client.country?{'X-Campaign-Country':client.country}:{}),...(admin?{'X-Campaign-Admin':'admin'}:{})},...(body?{body:JSON.stringify(body)}:{})});
     const cookie=response.headers.get('set-cookie');if(cookie)client.cookie=cookie.split(';')[0];
     return {status:response.status,data:await response.json()};
   }
   try{
     for(const client of clients)assert.equal((await call(client,'/session')).status,200);
+    for(const path of ['/','/','/os'])assert.equal((await call(clients[0],'/events',{name:'site_view',path})).status,200);
+    assert.equal((await call(clients[1],'/events',{name:'site_view',path:'/mint'})).status,200);
+    assert.equal((await call(clients[1],'/events',{name:'site_view',path:'/mint?wallet=secret'})).status,400);
     for(const client of [clients[0],clients[0],clients[1]])assert.equal((await call(client,'/events',{name:'game_start',game:'mall',mode:'timed'})).status,200);
     assert.equal((await call(clients[0],'/events',{name:'native_share_opened',code:'AbCdEfGhIjKlMnOp'})).status,200);
     assert.equal((await call(clients[0],'/events',{name:'result_link_copied',code:'AbCdEfGhIjKlMnOp'})).status,200);
@@ -95,6 +98,8 @@ test('game starts count attempts and distinct browser IDs by game and mode',asyn
     const admin=await call(clients[0],'/admin',null,true);
     assert.equal(admin.status,200);
     assert.deepEqual(admin.data.gameStarts,[{game:'mall',mode:'timed',total:3,browsers:2}]);
+    assert.deepEqual(admin.data.visitorCountries,[{country:'GB',visitors:1,pageViews:1},{country:'US',visitors:1,pageViews:2}]);
+    assert.deepEqual(admin.data.playerCountries,[{country:'GB',players:1,gameStarts:1},{country:'US',players:1,gameStarts:2}]);
     assert.equal(admin.data.daily.length,7);
     assert.equal(admin.data.daily.at(-1).events.find(e=>e.name==='game_start').total,3);
   }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(dir,{recursive:true,force:true});}

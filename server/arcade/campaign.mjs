@@ -21,6 +21,11 @@ const SEGMENT_TICKS={cup:CUP_SEGMENT_TICKS,rumble:FIGHT_SEGMENT_TICKS};
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 const parse=value=>value?JSON.parse(value):null;
 const validCode=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{16}$/.test(value);
+const requestGeo=request=>{
+  const country=request.headers['x-campaign-country'],region=request.headers['x-campaign-region'];
+  if(typeof country!=='string'||! /^[A-Z]{2}$/.test(country))return {};
+  return {country,...(typeof region==='string'&&/^[A-Za-z0-9-]{1,3}$/.test(region)?{region}:{})};
+};
 
 export function createCampaignService(options){
   const store=openCampaignStore(options.dataDir),now=options.now||Date.now;
@@ -202,6 +207,12 @@ export function createCampaignService(options){
         }
         if(path==='/admin'&&request.method==='GET'){
           const funnel=store.all('SELECT name,count(*) AS total,count(DISTINCT anon_id) AS players FROM events WHERE at>=? GROUP BY name',now()-30*DAY);
+          const visitorCountries=store.all(`SELECT coalesce(json_extract(detail,'$.country'),'Unknown') AS country,
+            count(DISTINCT anon_id) AS visitors,count(*) AS pageViews
+            FROM events WHERE name='site_view' AND at>=? GROUP BY country ORDER BY visitors DESC,country`,now()-30*DAY);
+          const playerCountries=store.all(`SELECT coalesce(json_extract(detail,'$.country'),'Unknown') AS country,
+            count(DISTINCT anon_id) AS players,count(*) AS gameStarts
+            FROM events WHERE name='game_start' AND at>=? GROUP BY country ORDER BY players DESC,country`,now()-30*DAY);
           const checkerCutoff=now()-30*DAY;
           const wlChecker={
             summary:store.get(`SELECT count(*) AS attempts,
@@ -226,7 +237,7 @@ export function createCampaignService(options){
           const dayStart=Math.floor(now()/DAY)*DAY-6*DAY;
           const dailyEvents=store.all("SELECT date(at/1000,'unixepoch') AS day,name,count(*) AS total,count(DISTINCT anon_id) AS browsers FROM events WHERE at>=? GROUP BY day,name",dayStart);
           const daily=Array.from({length:7},(_,index)=>({day:new Date(dayStart+index*DAY).toISOString().slice(0,10),events:dailyEvents.filter(row=>row.day===new Date(dayStart+index*DAY).toISOString().slice(0,10))}));
-          return json(response,200,{config:config(),authReady,providers,funnel,wlChecker,gameStarts,daily,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
+          return json(response,200,{config:config(),authReady,providers,funnel,visitorCountries,playerCountries,wlChecker,gameStarts,daily,spots:store.all('SELECT route,status,count(*) AS n FROM spots GROUP BY route,status'),
             users:store.all(`SELECT u.id,u.provider,u.username,u.status,group_concat(sp.route||':'||sp.status,' ') AS spots,
               (SELECT coalesce(sum(points),0) FROM runs WHERE user_id=u.id AND invalidated=0 AND flags='[]') AS points,
               (SELECT coalesce(sum(sh.xp),0) FROM result_cards sh JOIN runs r ON r.id=sh.run_id WHERE r.user_id=u.id AND r.invalidated=0) AS share_xp,w.address
@@ -472,9 +483,15 @@ export function createCampaignService(options){
       }
       if(path==='/events'){
         rate('events:'+s.anon_id,45,60000);
+        const geo=requestGeo(request);
+        if(body.name==='site_view'){
+          if(typeof body.path!=='string'||!/^\/[A-Za-z0-9_/[\]-]{0,159}$/.test(body.path))fail('Invalid page path');
+          store.event('site_view',{anonId:s.anon_id,userId:s.user_id,detail:{path:body.path,...geo},once:`site_view:${s.anon_id}:${Math.floor(now()/DAY)}:${body.path}`},now());
+          return json(response,200,{ok:true});
+        }
         if(body.name==='game_start'){
           if(!['rumble','lambo','moon','mall','rug'].includes(body.game)||!['training','solo_circuit','practice','official','online_create','online_join','watch','solo_cup','quick_race','solo','free_skate','timed'].includes(body.mode))fail('Invalid game start');
-          store.event('game_start',{anonId:s.anon_id,userId:s.user_id,detail:{game:body.game,mode:body.mode}},now());
+          store.event('game_start',{anonId:s.anon_id,userId:s.user_id,detail:{game:body.game,mode:body.mode,...geo}},now());
           return json(response,200,{ok:true});
         }
         if(!['arcade_view','challenge_view','save_access_click','share_click','native_share_opened','result_link_copied','challenge_link_opened','leaderboard_view','wallet_submission_view'].includes(body.name))fail('Unknown event');

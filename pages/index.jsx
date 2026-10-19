@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
+import MintLaunch from "../components/MintLaunch";
 import Leaderboard from "../components/arcade/Leaderboard";
 import { loreFor } from "../data/degen-lore";
 import ChainBadge from "../components/ChainBadge";
@@ -205,6 +206,7 @@ function Site({ data }) {
               {data.supply.toLocaleString('en-US')} pixel machines for people who deleted the exchange app,
               then checked the price in Safari.
             </p>
+            <MintLaunch date="2026-10-29" />
             <a className={styles.accessJump} href="#access">PLAY OR APPLY FOR THE ALLOWLIST ↓</a>
 
             <div className={styles.score}>

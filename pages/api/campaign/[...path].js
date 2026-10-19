@@ -30,6 +30,7 @@ export default async function handler(req,res){
   try{
     const upstream=await campaignFetch(path+(query.size?'?'+query:''),{method:req.method,body:req.method==='POST'?req.body:undefined,cookie,
       origin:req.headers.origin,admin:req.headers['x-campaign-admin'],
+      geo:process.env.VERCEL?{country:req.headers['x-vercel-ip-country'],region:req.headers['x-vercel-ip-country-region']}:undefined,
       client:process.env.VERCEL?req.headers['x-vercel-forwarded-for']||req.headers['x-forwarded-for']||'unknown':req.socket.remoteAddress||'local'});
     const setCookie=upstream.headers.get('set-cookie');if(setCookie)res.setHeader('Set-Cookie',setCookie);
     const location=upstream.headers.get('location');

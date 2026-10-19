@@ -5,7 +5,7 @@ import CampaignShell from '../../components/arcade/CampaignShell';
 import {TRACKS,VEHICLES} from '../../lib/arcade/race-sim.mjs';
 import s from '../../styles/Campaign.module.css';
 const funnelColumns=[
-  ['arcade_view','VISITORS','browsers'],['game_start','GAME STARTS'],['challenge_start','OFFICIAL STARTS'],
+  ['site_view','SITE VISITORS','browsers'],['arcade_view','ARCADE VISITORS','browsers'],['game_start','GAME STARTS'],['challenge_start','OFFICIAL STARTS'],
   ['verified','VERIFIED SEGMENTS'],['save_access_click','SAVE CLICKS'],['auth_success','SIGN-INS'],
   ['leaderboard_entry','NEW SCORES'],['result_card_prepared','CARDS'],['native_share_opened','SHARE SHEETS'],['result_link_copied','LINK COPIES'],['share_click','X DRAFTS'],
   ['challenge_link_opened','LINK VISITS'],['referred_player_started','INVITED STARTS'],
@@ -32,6 +32,11 @@ function WlChecker({data}){
     <div className={s.tableWrap}><table className={s.table}><thead><tr><th>DAY (UTC)</th><th>ATTEMPTS</th><th>COMPLETED</th><th>BROWSERS</th><th>WALLETS</th></tr></thead><tbody>{daily.map(row=><tr key={row.day}><td>{row.day}</td><td>{row.attempts}</td><td>{row.completed}</td><td>{row.browsers}</td><td>{row.wallets}</td></tr>)}</tbody></table></div>
   </>;
 }
+function CountryTable({title,rows=[],personLabel,eventLabel}){
+  return <section className={s.card}><h2>{title}</h2><p className={s.fine}>Last 30 days. Locations come from the visitor’s network and may be affected by VPNs. Unknown includes visits before location tracking began.</p>
+    <div className={s.tableWrap}><table className={s.table}><thead><tr><th>COUNTRY</th><th>{personLabel}</th><th>{eventLabel}</th></tr></thead><tbody>{rows.length?rows.map(row=><tr key={row.country}><td>{row.country}</td><td>{row.visitors??row.players}</td><td>{row.pageViews??row.gameStarts}</td></tr>):<tr><td colSpan={3}>No visits recorded yet.</td></tr>}</tbody></table></div>
+  </section>;
+}
 export default function CampaignAdmin(){
   const [token,setToken]=useState(''),[data,setData]=useState(null),[draft,setDraft]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[review,setReview]=useState({userId:'',status:'review',reason:''});
   const request=async(path,body)=>{const r=await fetch('/api/campaign/admin'+path,{method:body?'POST':'GET',headers:{'X-Campaign-Admin':token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const result=await r.json();if(!r.ok)throw new Error(result.error);return result;};
@@ -50,6 +55,14 @@ export default function CampaignAdmin(){
     {!data?<form className={s.card} onSubmit={e=>{e.preventDefault();void load();}}><label>CAMPAIGN ADMIN TOKEN<input type='password' value={token} onChange={e=>setToken(e.target.value)} autoComplete='off' required/></label><button className={s.primary} disabled={busy}>OPEN DASHBOARD</button><p className={s.fine}>The token stays in memory for this page. It is not saved in browser storage.</p></form>:<>
       <p className={s.notice}>Identity providers: {Object.entries(data.providers||{}).filter(([,ready])=>ready).map(([provider])=>provider==='x'?'X':provider[0].toUpperCase()+provider.slice(1)).join(', ')||'none configured'}. Dates below use your local timezone. Spots are FCFS (mint while supply lasts), never advertised as GTD.</p>
       <WlChecker data={data.wlChecker}/>
+      <div className={s.grid} aria-label='Site and game audience in the last 30 days'>
+        <section className={s.card}><span className={s.eyebrow}>SITE VISITORS / LAST 30 DAYS</span><h2>{data.funnel.find(e=>e.name==='site_view')?.players||0}</h2><p>Distinct browser IDs that opened any site page.</p></section>
+        <section className={s.card}><span className={s.eyebrow}>GAME PLAYERS / LAST 30 DAYS</span><h2>{data.funnel.find(e=>e.name==='game_start')?.players||0}</h2><p>Distinct browser IDs that started a game.</p></section>
+      </div>
+      <div className={s.grid} aria-label='Audience by country in the last 30 days'>
+        <CountryTable title='All site visitors by country' rows={data.visitorCountries} personLabel='BROWSERS' eventLabel='PAGES OPENED'/>
+        <CountryTable title='Game players by country' rows={data.playerCountries} personLabel='BROWSERS' eventLabel='GAME STARTS'/>
+      </div>
       <div className={s.grid} aria-label='Arcade activity in the last 30 days'>
         <section className={s.card}><span className={s.eyebrow}>ARCADE / LAST 30 DAYS</span><h2>{data.funnel.find(e=>e.name==='arcade_view')?.players||0}</h2><p>Browsers that opened the arcade or a game.</p></section>
         <section className={s.card}><span className={s.eyebrow}>OFFICIAL CHALLENGES</span><h2>{data.funnel.find(e=>e.name==='challenge_start')?.total||0}</h2><p>Runs started against the bots.</p></section>
