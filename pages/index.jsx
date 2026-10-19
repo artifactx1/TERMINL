@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
-import CampaignInvite from "../components/arcade/CampaignInvite";
 import Leaderboard from "../components/arcade/Leaderboard";
 import { loreFor } from "../data/degen-lore";
 import ChainBadge from "../components/ChainBadge";
@@ -174,10 +173,6 @@ function Site({ data }) {
         </nav>
 
         <section className={styles.hero} id="top">
-          <Link className={styles.mobileWlLink} href="/wl">
-            <span>NO TIME TO GRIND?</span>
-            <strong>APPLY FOR GTD / FCFS ↗</strong>
-          </Link>
           <div
             className={styles.stageWrap}
             onMouseEnter={() => { paused.current = true; }}
@@ -210,14 +205,7 @@ function Site({ data }) {
               {data.supply.toLocaleString('en-US')} pixel machines for people who deleted the exchange app,
               then checked the price in Safari.
             </p>
-
-            <div className={styles.wlInvite}>
-              <span className={styles.wlInviteLabel}>ANOTHER WAY IN / GTD + FCFS</span>
-              <h2>NO TIME TO GRIND?</h2>
-              <p>Skip the high score. Apply for a GTD or FCFS allowlist spot instead.</p>
-              <Link href="/wl">APPLY FOR A SPOT <span aria-hidden="true">↗</span></Link>
-              <small>Applications are reviewed; a spot is not guaranteed.</small>
-            </div>
+            <a className={styles.accessJump} href="#access">PLAY OR APPLY FOR THE ALLOWLIST ↓</a>
 
             <div className={styles.score}>
               <div><b>{data.outcomes.winner}</b><span>MADE IT</span></div>
@@ -247,10 +235,23 @@ function Site({ data }) {
           </div>
         </div>
 
-        <section className={styles.motto}>
-          <CampaignInvite />
-          <p>If you&rsquo;ve ever called a loss &ldquo;tuition,&rdquo;<br />you&rsquo;re among friends.</p>
-          <Link className={styles.osLaunch} href="/os">PLAY THE ARCADE <span>Something to do while your long-term hold gets longer. ↗</span></Link>
+        <section className={styles.access} id="access">
+          <span className={styles.accessEyebrow}>THE ALLOWLIST</span>
+          <h2>Pick your way in.</h2>
+          <p className={styles.accessIntro}>Play the official Arcade challenges for a shot at FCFS, or apply for GTD or FCFS if you don&rsquo;t have time to grind.</p>
+          <div className={styles.accessRoutes}>
+            <Link href="/beat-the-bots">
+              <span>01 / PLAY</span>
+              <b>PLAY FOR A SPOT ↗</b>
+              <small>See the verified challenges and how Arcade spots work.</small>
+            </Link>
+            <Link href="/wl">
+              <span>02 / APPLY</span>
+              <b>APPLY FOR GTD / FCFS ↗</b>
+              <small>Submit an application for review. A spot isn&rsquo;t guaranteed.</small>
+            </Link>
+          </div>
+          <p className={styles.accessCheck}>Already applied? <a href="#allowlist-checker">Check your wallet</a>. The lists are updated daily.</p>
         </section>
 
         <section className={styles.section} id="leaderboard">
@@ -262,7 +263,6 @@ function Site({ data }) {
             <Leaderboard limit={5} compact quietOnError />
             <div className={styles.leaderboardActions}>
               <Link href="/arcade-pass">POST MY VERIFIED SCORE ↗</Link>
-              <Link href="/beat-the-bots">PLAY FOR A SPOT ↗</Link>
             </div>
           </div>
         </section>

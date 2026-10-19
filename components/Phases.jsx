@@ -102,7 +102,7 @@ function Eligibility({ chainNow, onchain, phasesFailed }) {
   const nowSec = Math.floor(chainNow / 1000);
 
   return (
-    <form className={styles.check} onSubmit={check}>
+    <form id="allowlist-checker" className={styles.check} onSubmit={check}>
       <div className={styles.checkHead}>{onchain ? "AM I ON THE MINT LIST?" : "CHECK YOUR WL STATUS"}</div>
       {!onchain && <p className={styles.checkNote}>The GTD and FCFS lists are updated daily. Don&apos;t see your wallet yet? Check back tomorrow. No wallet connection needed.{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>}
       <div className={styles.checkRow}>

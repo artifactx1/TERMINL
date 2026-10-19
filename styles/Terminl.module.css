@@ -22,9 +22,6 @@
 .navRight a:hover { color: var(--accent); }
 .os { padding: 7px 13px; border: 1px solid #2e3b33; color: var(--ink) !important; white-space: nowrap; }
 .os:hover { border-color: var(--accent); background: rgba(125,255,92,.08); }
-.osLaunch { display: inline-flex; flex-direction: column; gap: 10px; margin-top: 26px; padding: 17px 22px; border: 1px solid #465b36; background: #111c0e; text-decoration: none; color: var(--accent); font: 12px ui-monospace, monospace; letter-spacing: .12em; }
-.osLaunch span { color: #93a887; font-size: 9px; letter-spacing: 0; }
-.osLaunch:hover { background: #1b2a14; border-color: var(--accent); }
 @media (max-width: 600px) { .navRight .contractNav { display: none; } }
 /* The wallet control shares the CONTRACT link's footprint. Connected, it
    turns green and shows the address — a fact about the visitor, in the same
@@ -49,7 +46,6 @@
  */
 .hero { display: grid; grid-template-columns: minmax(0,1fr) 420px; align-items: start;
   min-height: calc(100vh - 51px); border-bottom: 1px solid var(--line); }
-.mobileWlLink { display: none; }
 .stageWrap { display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 14px; padding: 34px 28px; min-width: 0;
   position: sticky; top: 51px; min-height: calc(100vh - 51px); }
@@ -95,16 +91,9 @@
 .readout { border-left: 1px solid var(--line); padding: 34px 30px; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 .headline { margin: 0; font-size: var(--terminl-heading); line-height: .94; letter-spacing: -.04em; color: #fff; }
 .blurb { margin: 0; color: var(--dim); font-size: 12.5px; line-height: 1.8; }
-.wlInvite { display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-  padding: 18px; border: 1px solid #87436f; background: linear-gradient(135deg, #23101f, #100b11 78%); }
-.wlInviteLabel { color: #ff78d0; font: 700 9px/1.3 ui-monospace, monospace; letter-spacing: .15em; }
-.wlInvite h2 { margin: 0; color: #fff; font: 900 23px/1 ui-monospace, monospace; letter-spacing: -.04em; }
-.wlInvite p { margin: 0; color: #e1c3d7; font: 500 11px/1.5 ui-monospace, monospace; }
-.wlInvite a { display: flex; justify-content: space-between; align-items: center; width: 100%;
-  padding: 12px 13px; background: #ff65c7; color: #160914; text-decoration: none;
-  font: 900 11px/1 ui-monospace, monospace; letter-spacing: .1em; }
-.wlInvite a:hover { background: #ff91d9; }
-.wlInvite small { color: #ae8ea4; font: 500 9px/1.4 ui-monospace, monospace; }
+.accessJump { align-self: flex-start; margin-top: -7px; color: var(--accent); text-decoration: none;
+  font: 700 10px/1.5 ui-monospace, monospace; letter-spacing: .09em; }
+.accessJump:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .score { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
 .score > div { background: var(--panel); padding: 12px 10px; }
@@ -156,11 +145,22 @@
 .strip img:hover { opacity: 1; border-color: var(--accent); }
 @keyframes slide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-/* ---- motto ---- */
-.motto { display: grid; place-items: center; padding: 78px 24px; text-align: center;
-  border-bottom: 1px solid var(--line);
-  background: radial-gradient(ellipse at 50% 50%, rgba(125,255,92,.05), transparent 70%); }
-.motto p { margin: 0; font-size: clamp(20px, 3.1vw, 40px); line-height: 1.24; letter-spacing: -.03em; color: #fff; }
+/* ---- one place for the ways onto the allowlist ---- */
+.access { padding: 72px max(28px, calc((100vw - 1060px) / 2)); border-bottom: 1px solid var(--line);
+  background: radial-gradient(ellipse at 50% 0%, rgba(125,255,92,.045), transparent 70%); scroll-margin-top: 68px; }
+.accessEyebrow { color: var(--accent); font: 700 9px/1 ui-monospace, monospace; letter-spacing: .2em; }
+.access h2 { margin: 12px 0 10px; color: #fff; font-size: clamp(30px, 3.1vw, 44px); line-height: 1; letter-spacing: -.04em; }
+.accessIntro { max-width: 700px; margin: 0; color: var(--dim); font-size: 12px; line-height: 1.7; }
+.accessRoutes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+  margin-top: 26px; border: 1px solid var(--line); background: var(--line); }
+.accessRoutes a { display: flex; flex-direction: column; align-items: flex-start; gap: 11px; min-width: 0;
+  padding: 22px; background: var(--panel); text-decoration: none; transition: background .15s; }
+.accessRoutes a:hover { background: #111c13; }
+.accessRoutes span { color: var(--muted); font: 700 9px/1 ui-monospace, monospace; letter-spacing: .17em; }
+.accessRoutes b { color: var(--accent); font: 800 13px/1.3 ui-monospace, monospace; letter-spacing: .07em; }
+.accessRoutes small { color: var(--dim); font: 500 10px/1.5 ui-monospace, monospace; }
+.accessCheck { margin: 16px 0 0; color: var(--muted); font: 500 10px/1.6 ui-monospace, monospace; }
+.accessCheck a { color: var(--accent); text-underline-offset: 3px; }
 
 /* ---- story ---- */
 .story { display: grid; grid-template-columns: 384px minmax(0, 1fr); gap: 46px;
@@ -244,12 +244,6 @@
 }
 @media (max-width: 1180px) {
   .hero { grid-template-columns: 1fr; }
-  .mobileWlLink { display: flex; justify-content: space-between; align-items: center; gap: 12px;
-    padding: 13px 20px; color: #ff91d9; background: #20101c; border-bottom: 1px solid #87436f;
-    text-decoration: none; font: 700 9px/1.3 ui-monospace, monospace; letter-spacing: .1em; }
-  .mobileWlLink strong { color: #160914; background: #ff65c7; padding: 8px 9px;
-    font: 900 9px/1 ui-monospace, monospace; white-space: nowrap; }
-  .mobileWlLink:hover strong { background: #ff91d9; }
   /* One column: the readout sits UNDER the art, so pinning the art would push
      every word of it a full screen down. */
   .stageWrap { position: static; min-height: 0; }
@@ -283,6 +277,8 @@
   .tileMeta { opacity: 1; transform: none; }
   .tierRow { grid-template-columns: repeat(2,1fr); }
   .navRight a:not(.os) { display: none; }
+  .access { padding: 56px 16px; }
+  .accessRoutes { grid-template-columns: 1fr; }
 }
 /*
  * Set on the shell while the lightbox is open. The marquee and the CRT sweep
@@ -463,7 +459,7 @@
 
 /* "Am I on the list?" — the schedule can say when a stage runs but not whether
    it is yours, so this asks for one address and answers that. */
-.check { margin-top: 10px; padding: 10px; border: 1px solid var(--line); background: var(--panel); }
+.check { margin-top: 10px; padding: 10px; border: 1px solid var(--line); background: var(--panel); scroll-margin-top: 70px; }
 .leaderboardPanel{border:1px solid var(--line);background:#0a110c;padding:22px;max-width:920px;margin:0 auto}
 .leaderboardActions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
 .leaderboardActions a{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 15px;border:1px solid #315c30;color:#b8ff94;text-decoration:none;font:700 11px ui-monospace,monospace;letter-spacing:.07em}
