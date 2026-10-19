@@ -174,6 +174,10 @@ function Site({ data }) {
         </nav>
 
         <section className={styles.hero} id="top">
+          <Link className={styles.mobileWlLink} href="/wl">
+            <span>NO TIME TO GRIND?</span>
+            <strong>APPLY FOR GTD / FCFS ↗</strong>
+          </Link>
           <div
             className={styles.stageWrap}
             onMouseEnter={() => { paused.current = true; }}
@@ -206,6 +210,14 @@ function Site({ data }) {
               {data.supply.toLocaleString('en-US')} pixel machines for people who deleted the exchange app,
               then checked the price in Safari.
             </p>
+
+            <div className={styles.wlInvite}>
+              <span className={styles.wlInviteLabel}>ANOTHER WAY IN / GTD + FCFS</span>
+              <h2>NO TIME TO GRIND?</h2>
+              <p>Skip the high score. Apply for a GTD or FCFS allowlist spot instead.</p>
+              <Link href="/wl">APPLY FOR A SPOT <span aria-hidden="true">↗</span></Link>
+              <small>Applications are reviewed; a spot is not guaranteed.</small>
+            </div>
 
             <div className={styles.score}>
               <div><b>{data.outcomes.winner}</b><span>MADE IT</span></div>

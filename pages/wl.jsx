@@ -31,7 +31,7 @@ export default function WlApplication(){
   };
   return <CampaignShell><Head><title>WL application and checker — TERMINL</title><meta name='description' content='Check your TERMINL GTD or FCFS status, or apply for WL access before mint.'/></Head>
     <span className={s.eyebrow}>TERMINL / PRE-MINT ACCESS</span><h1 className={s.title}>Check your WL status. Apply for access.</h1>
-    <p className={s.lede}>GTD and FCFS lists update as applications are reviewed. Check a public wallet address without connecting it.</p>
+    <p className={s.lede}>The GTD and FCFS lists are updated daily. Don&apos;t see your wallet yet? Check back tomorrow. Check a public wallet address without connecting it.</p>
     <div className={s.wlGrid}>
       <section className={s.card}><span className={s.eyebrow}>01 / WALLET CHECKER</span><h2>Are you on the list?</h2>
         <form onSubmit={check}><label>PUBLIC WALLET ADDRESS<input value={address} onChange={e=>{setAddress(e.target.value);setLookup(null);setReceived(false);}} placeholder='0x…' autoComplete='off' spellCheck={false} required/></label>
