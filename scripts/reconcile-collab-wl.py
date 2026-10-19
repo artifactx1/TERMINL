@@ -34,6 +34,7 @@ def main():
     parser.add_argument("source_dir", type=Path)
     parser.add_argument("workbook", type=Path)
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument("--extra-gtd", type=Path, help="One manually confirmed GTD wallet per line")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     sources = json.loads((args.source_dir / "sources.json").read_text())
@@ -86,6 +87,17 @@ def main():
                     if "0x" in str(cell or "").lower() and len(str(cell).strip()) >= 35 and not wallets(cell):
                         issues.append({"source": source["id"], "tab": sheet.title, "row": row_number,
                                        "column": column, "value": str(cell)[:100], "problem": "invalid wallet"})
+
+    if args.extra_gtd:
+        for row_number, line in enumerate(args.extra_gtd.read_text().splitlines(), 1):
+            address = line.strip().lower()
+            if not address or address.startswith("#"):
+                continue
+            if not WALLET.fullmatch(address):
+                raise ValueError(f"Invalid manual GTD wallet at line {row_number}")
+            evidence.append({"source_id": "manual confirmation", "community": "direct GTD request",
+                             "tab": "", "row": row_number, "column": 1, "address": address,
+                             "kind": "gtd", "classification": "user confirmed"})
 
     unique = {(row["address"], row["kind"]) for row in evidence}
     manifest = {"reason": "2026-10-19 partner sheet and collab workbook reconciliation",
