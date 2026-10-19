@@ -51,15 +51,9 @@
 .wlArt img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
 .wlArt .wlArtMain img{object-fit:contain}
 .wlArt figcaption{position:absolute;left:0;right:0;bottom:0;padding:19px 10px 9px;background:linear-gradient(transparent,#030903ed);color:#f0ffed;font-size:10px;font-weight:700;letter-spacing:.08em}
-.wlFactStrip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:#355032;border:1px solid #355032;margin-bottom:64px}
-.wlFactStrip span{background:#101910;padding:15px 18px;color:#e4f8de;font-size:11px;line-height:1.5;letter-spacing:.07em}
-.wlFactStrip b{color:var(--terminl-accent);margin-right:9px}
-.wlApply{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:52px;align-items:start;scroll-margin-top:28px}
-.wlApplyIntro h2{color:#f5fff7;font-size:clamp(32px,4vw,48px);line-height:1.1;letter-spacing:-.035em;margin:15px 0 20px}
-.wlApplyIntro>p:not(.fine){font-size:15px;line-height:1.8;max-width:420px}
-.wlApplyIntro strong{color:var(--terminl-accent)}
-.wlApplyIntro>.secondary{margin-top:20px;max-width:100%;text-align:center}
+.wlApply{max-width:700px;margin:0 auto;scroll-margin-top:28px}
 .wlFormCard{margin-top:0;padding:28px}
+.wlFormCard>h2{font-size:28px;margin:12px 0 0}
 .wlFormSection{padding:24px 0;border-bottom:1px solid #294029}
 .wlFormSection:last-child{border-bottom:0;padding-bottom:0}
 .wlFormSection h3{font-size:17px;margin:0 0 12px;color:#f1ffeb}
@@ -70,5 +64,5 @@
 .wlSocialLinks>a{text-align:center;font-size:10px;padding:12px 8px}
 .wlFormSection>button.primary{width:100%}
 .wlFormCard .primary:disabled{cursor:not-allowed}
-@media(max-width:900px){.wlHero{gap:24px}.wlApply{gap:25px}}
-@media(max-width:700px){.wlHero,.wlApply{grid-template-columns:1fr}.wlHero{gap:30px}.wlHeroCopy h1{font-size:clamp(42px,10vw,58px)}.wlArt{max-width:580px}.wlFactStrip{grid-template-columns:1fr;margin-bottom:48px}.wlFactStrip span{padding:11px 14px}.wlApply{gap:26px}.wlFormCard{padding:21px}.wlSocialLinks{grid-template-columns:1fr}}
+@media(max-width:900px){.wlHero{gap:24px}}
+@media(max-width:700px){.wlHero{grid-template-columns:1fr;gap:30px}.wlHeroCopy h1{font-size:clamp(42px,10vw,58px)}.wlArt{max-width:580px}.wlFormCard{padding:21px}.wlSocialLinks{grid-template-columns:1fr}}
