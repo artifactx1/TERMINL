@@ -11,6 +11,35 @@ import {createCampaignService} from '../server/arcade/campaign.mjs';
 const WALLET='0x1111111111111111111111111111111111111111';
 const SECOND='0x2222222222222222222222222222222222222222';
 
+test('admin returns every application with a review label without changing its status',async()=>{
+  const directory=await mkdtemp(join(tmpdir(),'terminl-wl-review-'));
+  const store=openCampaignStore(directory),wl=createWlService(store);
+  try{
+    const start=Date.parse('2026-10-19T19:10:00Z'),end=Date.parse('2026-10-19T19:24:00Z');
+    const examples=[
+      [start-1,'','outside_burst'],
+      [start,'','likely_bot'],
+      [end-1,'An actual note','review_during_burst'],
+      [end,'','review_after_protection'],
+    ];
+    store.transaction(()=>{
+      for(let i=0;i<2001;i++){
+        const [at,note]=examples[i%examples.length];
+        store.run(`INSERT INTO wl_applications(id,address,email,requested_kind,note,status,created_at,updated_at)
+          VALUES(?,?,?,'both',?,'pending',?,?)`,i.toString(16).padStart(32,'0'),
+        '0x'+i.toString(16).padStart(40,'0'),`app${i}@example.com`,note,at+i%2,at+i%2);
+      }
+    });
+    const applications=wl.admin().applications;
+    assert.equal(applications.length,2001,'the admin list is not capped at 2,000');
+    for(let i=0;i<examples.length;i++){
+      const row=applications.find(application=>application.id===i.toString(16).padStart(32,'0'));
+      assert.equal(row.review_group,examples[i][2]);
+      assert.equal(row.status,'pending');
+    }
+  }finally{store.close();await rm(directory,{recursive:true,force:true});}
+});
+
 test('applications stay pending until review; rolling entries and Arcade Pass spots appear in the checker',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'terminl-wl-'));
   const store=openCampaignStore(directory),wl=createWlService(store,()=>1800000000000);

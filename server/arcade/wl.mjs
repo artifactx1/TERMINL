@@ -4,6 +4,12 @@ import {normalizeAddress} from './campaign-address.mjs';
 const KINDS=new Set(['gtd','fcfs','both']);
 const parts=kind=>kind==='both'?['gtd','fcfs']:[kind];
 const masterDigest=rows=>createHash('sha256').update(rows.map(row=>`${row.address},${row.kind}`).sort().join('\n')).digest('hex');
+// Review hints for the October 19 application flood. These are not bot verdicts.
+const WL_BURST_START=Date.parse('2026-10-19T19:10:00Z');
+const WL_BURST_END=Date.parse('2026-10-19T19:24:00Z');
+const reviewGroup=row=>row.created_at<WL_BURST_START?'outside_burst':
+  row.created_at>=WL_BURST_END?'review_after_protection':
+  row.note.trim()?'review_during_burst':'likely_bot';
 const fail=(message,status=400)=>{throw Object.assign(new Error(message),{status});};
 const walletAddress=value=>{try{return normalizeAddress(value);}catch(error){fail(error.message);}};
 
@@ -134,9 +140,11 @@ export function createWlService(store,now=Date.now){
   }
 
   function admin(){
-    return {applications:store.all(`SELECT id,address,email,requested_kind,note,status,awarded_kind,
+    const applications=store.all(`SELECT id,address,email,requested_kind,note,status,awarded_kind,
       created_at,updated_at,reviewed_at FROM wl_applications
-      ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END,created_at DESC LIMIT 2000`),
+      ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END,created_at DESC`)
+      .map(row=>({...row,review_group:reviewGroup(row)}));
+    return {applications,
       entries:store.all('SELECT address,kind,source,created_at FROM wl_entries ORDER BY created_at DESC LIMIT 2000'),
       counts:store.all('SELECT kind,count(*) AS count FROM wl_entries GROUP BY kind'),
       masterCounts:store.all('SELECT kind,count(*) AS count FROM wl_master_entries GROUP BY kind ORDER BY kind'),

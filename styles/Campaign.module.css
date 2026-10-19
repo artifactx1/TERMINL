@@ -23,6 +23,9 @@
 .wlGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start;margin:28px 0}
 .header nav{flex-wrap:wrap;justify-content:flex-end}
 .wlGrid>.card{margin-top:0}
+.wlReviewCounts{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 20px}.wlReviewCounts span{border:1px solid #344a36;background:#0d170f;padding:9px 12px;font-size:11px;color:#c7d8c5}.wlReviewCounts b{color:var(--terminl-accent);font-size:14px}
+.wlReviewControls{display:flex;flex-wrap:wrap;gap:14px;margin:20px 0}.wlReviewControls label{display:grid;gap:7px;min-width:220px;font-size:11px;color:#9fb29c}.wlReviewControls input,.wlReviewControls select{box-sizing:border-box;width:100%;min-height:42px;padding:10px;background:#050b05;border:1px solid #405340;color:#eefcec;font:12px monospace}.wlReviewControls label:last-child{flex:1}
+.wlReviewBadge{display:inline-block;border:1px solid #4b5c49;padding:6px 9px;color:#ceddca;font-size:10px;font-weight:700;letter-spacing:.04em}.wlReviewFlag{border-color:var(--terminl-accent);color:var(--terminl-accent);background:#142014}.wlReviewPages{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:18px 0;font-size:11px}.wlReviewPages .secondary{min-height:40px;padding:9px 12px}
 .wlTextarea{box-sizing:border-box;width:100%;min-height:110px;padding:12px;background:#050b05;border:1px solid #405340;color:#eefcec;font:14px monospace;resize:vertical}
 .wlTextarea:focus-visible{outline:2px solid var(--terminl-accent);outline-offset:2px}
 .wlHoneypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
