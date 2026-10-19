@@ -16,11 +16,11 @@ test('applications stay pending until review; rolling entries and Arcade Pass sp
   const store=openCampaignStore(directory),wl=createWlService(store,()=>1800000000000);
   try{
     assert.deepEqual(wl.check(WALLET).lists,[]);
-    assert.throws(()=>wl.submit({address:WALLET,email:'invalid',requestedKind:'gtd',emailConsent:true,socialConfirmed:true}),/email/);
-    assert.throws(()=>wl.submit({address:WALLET,email:'test@example.com',requestedKind:'gtd',emailConsent:true}),/Open the X links/);
-    assert.deepEqual(wl.submit({address:WALLET,email:'Test@Example.com',requestedKind:'both',emailConsent:true,socialConfirmed:true,note:'Arcade fan'}),{received:true});
+    assert.throws(()=>wl.submit({address:WALLET,email:'invalid',requestedKind:'gtd',socialConfirmed:true}),/email/);
+    assert.throws(()=>wl.submit({address:WALLET,email:'test@example.com',requestedKind:'gtd'}),/Open the X links/);
+    assert.deepEqual(wl.submit({address:WALLET,email:'Test@Example.com',requestedKind:'both',socialConfirmed:true,note:'Arcade fan'}),{received:true});
     assert.deepEqual(wl.check(WALLET).lists,[],'an application does not grant a spot');
-    assert.deepEqual(wl.submit({address:WALLET,email:'other@example.com',requestedKind:'gtd',emailConsent:true,socialConfirmed:true}),{received:true},'repeat submissions do not reveal the saved email');
+    assert.deepEqual(wl.submit({address:WALLET,email:'other@example.com',requestedKind:'gtd',socialConfirmed:true}),{received:true},'repeat submissions do not reveal the saved email');
     const application=wl.admin().applications[0];
     assert.equal(application.email,'test@example.com');
     assert.deepEqual(wl.contacts().contacts,[]);
@@ -85,8 +85,8 @@ test('public WL routes stay pending until review and tied leaderboard scores get
     assert.equal((await call('/admin/settings',{config:{wlPostUrl:'https://x.com/TERMINLnet/status/987654321'}},true)).status,200);
     assert.equal((await call('/config')).data.config.wlPostUrl,'https://x.com/TERMINLnet/status/987654321','the post can change without a site build');
     assert.equal((await call('/wl/check/'+WALLET)).data.eligible,false);
-    assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',emailConsent:true})).status,400);
-    assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',emailConsent:true,socialConfirmed:true})).status,200);
+    assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs'})).status,400);
+    assert.equal((await call('/wl/apply',{address:WALLET,email:'winner@example.com',requestedKind:'fcfs',socialConfirmed:true})).status,200);
     assert.equal((await call('/wl/check/'+WALLET)).data.eligible,false);
     assert.equal((await call('/admin/wl')).status,404);
     const application=(await call('/admin/wl',null,true)).data.applications[0];
