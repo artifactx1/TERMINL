@@ -9,7 +9,8 @@ import s from '../styles/Campaign.module.css';
 
 const ADDRESS=/^0x[0-9a-fA-F]{40}$/;
 const X_PROFILE='https://x.com/TERMINLnet';
-const DEFAULT_POST='https://x.com/TERMINLnet/status/2108226120562995498';
+const PREVIOUS_POST='https://x.com/TERMINLnet/status/2108226120562995498';
+const DEFAULT_POST='https://x.com/TERMINLnet/status/2112252357845090799?s=20';
 const SHARE_IMAGE='https://terminl.net/wl-og.png?v=2026-10-19';
 
 export default function WlApplication(){
@@ -23,7 +24,9 @@ export default function WlApplication(){
   },[connectedAddress]);
   useEffect(()=>{
     let active=true;
-    void campaignRequest('/config').then(({config})=>{if(active&&config?.wlPostUrl)setPostUrl(config.wlPostUrl);}).catch(()=>{});
+    void campaignRequest('/config').then(({config})=>{
+      if(active&&config?.wlPostUrl&&config.wlPostUrl!==PREVIOUS_POST)setPostUrl(config.wlPostUrl);
+    }).catch(()=>{});
     return ()=>{active=false;};
   },[]);
   useEffect(()=>{setOpenedPost(false);},[postUrl]);
