@@ -19,26 +19,25 @@ export default function MintLaunch({date}){
   },[]);
   if(!target)return null;
   const eastern=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(target);
+  const badgeDate=`${date.slice(5,7)}.${date.slice(8,10)}.${date.slice(2,4)}`;
+  const badgeTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:true}).format(target).replace(' ','').toUpperCase();
   const local=now===null?null:new Intl.DateTimeFormat(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(target);
   const items=<>
-    <span className={styles.mintTickerLead}>MINT OPENS</span>
+    <span className={styles.mintTickerLead}>MINT ON TERMINL.NET</span>
     <span>{eastern.toUpperCase()}</span>
     <span className={styles.mintTickerSep}>✳</span>
-    <span>YOUR TIME · {local||'LOADING…'}</span>
+    <span>YOUR LOCAL TIME · {local||'LOADING…'}</span>
     <span className={styles.mintTickerSep}>✳</span>
     <span>{now===null?'COUNTDOWN LOADING…':now<target?`OPENS IN · ${timeLeft(target-now)}`:'SCHEDULED TIME REACHED · CHECK MINT STATUS BELOW'}</span>
     <span className={styles.mintTickerSep}>✳</span>
-    <span className={styles.mintTickerJoke}>BUY HIGH BRIAN SET AN ALARM FOR 9:59</span>
-    <span className={styles.mintTickerSep}>✳</span>
-    <span className={styles.mintTickerJoke}>MARGIN CALL MAX IS WATCHING HIS LIQUIDATION PRICE</span>
-    <span className={styles.mintTickerSep}>✳</span>
-    <span className={styles.mintTickerJoke}>EXIT LIQUIDITY ARRIVES FASHIONABLY EARLY</span>
-    <span className={styles.mintTickerSep}>✳</span>
   </>;
-  return <div className={styles.mintTicker} role='region' aria-label={`Mint opens ${eastern}. ${local?`Your local time is ${local}. `:''}${now!==null&&now<target?`Countdown: ${timeLeft(target-now)}.`:''}`}>
-    <div className={styles.mintTickerTrack}>
-      <div className={styles.mintTickerGroup} aria-hidden='true'>{items}</div>
-      <div className={styles.mintTickerGroup} aria-hidden='true'>{items}</div>
+  return <div className={styles.mintTicker} role='region' aria-label={`TERMINL mint on terminl.net opens ${eastern}. ${local?`Your local time is ${local}. `:''}${now!==null&&now<target?`Countdown: ${timeLeft(target-now)}.`:''}`}>
+    <span className={styles.mintTickerBadge} aria-hidden='true'>MINT {badgeDate} · {badgeTime} ET · TERMINL.NET</span>
+    <div className={styles.mintTickerWindow}>
+      <div className={styles.mintTickerTrack}>
+        <div className={styles.mintTickerGroup} aria-hidden='true'>{items}</div>
+        <div className={styles.mintTickerGroup} aria-hidden='true'>{items}</div>
+      </div>
     </div>
   </div>;
 }
