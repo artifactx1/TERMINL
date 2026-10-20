@@ -1,7 +1,7 @@
 import {campaignConfigured,campaignFetch,campaignOrigin} from '../../../lib/server/campaign';
 import {checkBotId} from 'botid/server';
 
-const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|wl\/(?:apply|check-event|check\/0x[0-9a-fA-F]{40})|admin(?:\/(?:settings|review|addresses|gtd|wl(?:\/(?:contacts|review|entry|import|merge))?))?)$/;
+const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|subscribe|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|wl\/(?:apply|check-event|check\/0x[0-9a-fA-F]{40})|admin(?:\/(?:settings|review|addresses|gtd|subscribers|wl(?:\/(?:contacts|review|entry|import|merge))?))?)$/;
 export const maxDuration=30;
 export const config={api:{bodyParser:{sizeLimit:'2mb'}}};
 export default async function handler(req,res){
@@ -10,13 +10,13 @@ export default async function handler(req,res){
   if(!paths.test(path))return res.status(404).json({error:'Not found'});
   if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return res.status(405).end();}
   if(req.method==='POST'&&(req.headers.origin!==campaignOrigin()||!/^application\/json(?:;|$)/i.test(req.headers['content-type']||'')))return res.status(403).json({error:'Request origin rejected'});
-  if(req.method==='POST'&&path==='/wl/apply'){
+  if(req.method==='POST'&&['/wl/apply','/subscribe'].includes(path)){
     try{
       const verification=await checkBotId({advancedOptions:{headers:req.headers,checkLevel:'basic'}});
-      if(verification.isBot)return res.status(403).json({error:'Application could not be verified. Please retry from the WL page.'});
+      if(verification.isBot)return res.status(403).json({error:'Submission could not be verified. Please retry.'});
     }catch(error){
-      console.error('WL BotID verification failed',error);
-      return res.status(503).json({error:'Application verification is temporarily unavailable. Please retry shortly.'});
+      console.error('Campaign BotID verification failed',error);
+      return res.status(503).json({error:'Submission verification is temporarily unavailable. Please retry shortly.'});
     }
   }
   if(!campaignConfigured()){

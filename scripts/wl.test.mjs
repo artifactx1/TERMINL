@@ -138,6 +138,28 @@ test('public WL routes stay pending until review and tied leaderboard scores get
   }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(directory,{recursive:true,force:true});}
 });
 
+test('launch signups are private, normalized, and deduplicated',async()=>{
+  const directory=await mkdtemp(join(tmpdir(),'terminl-subscribers-'));
+  const service=createCampaignService({dataDir:directory,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test'});
+  const server=http.createServer((request,response)=>void service.handle(request,response));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`;
+  const call=async(path,body,admin=false)=>{
+    const response=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json','X-Campaign-Client':'subscribe-test',...(admin?{'X-Campaign-Admin':'admin'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    return {status:response.status,data:await response.json()};
+  };
+  try{
+    assert.equal((await call('/subscribe',{email:'bad'})).status,400);
+    assert.equal((await call('/subscribe',{email:'bot@example.com',website:'filled'})).status,200);
+    assert.deepEqual((await call('/subscribe',{email:'  Fan@Example.com '})).data,{received:true});
+    assert.deepEqual((await call('/subscribe',{email:'fan@example.com'})).data,{received:true});
+    assert.equal((await call('/admin/subscribers')).status,404);
+    const exported=(await call('/admin/subscribers',null,true));
+    assert.equal(exported.status,200);
+    assert.deepEqual(exported.data.subscribers.map(row=>row.email),['fan@example.com']);
+  }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(directory,{recursive:true,force:true});}
+});
+
 test('wallet checks count distinct browsers and searched wallets only in private admin metrics',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'terminl-wl-tracking-'));
   const service=createCampaignService({dataDir:directory,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',now:()=>1800000000000});

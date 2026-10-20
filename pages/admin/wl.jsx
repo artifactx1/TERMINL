@@ -39,11 +39,19 @@ export default function WlAdmin(){
     const url=URL.createObjectURL(new Blob([rows.join('\n')+'\n'],{type:'text/csv'}));const a=document.createElement('a');a.href=url;a.download='terminl-wl-approved-contacts.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     setNotice(`${contacts.length} approved contacts exported. Send the decision email before mint; export does not send it.`);
   }catch(e){setError(e.message);}finally{setBusy(false);}};
+  const exportSubscribers=async()=>{setBusy(true);setError('');try{
+    const response=await fetch('/api/campaign/admin/subscribers',{headers:{'X-Campaign-Admin':token}});
+    const result=await response.json();if(!response.ok)throw new Error(result.error||'Export failed');
+    const cell=value=>'"'+String(value).replaceAll('"','""')+'"';
+    const rows=['email,subscribed_at',...result.subscribers.map(row=>[cell(row.email),cell(new Date(row.created_at).toISOString())].join(','))];
+    const url=URL.createObjectURL(new Blob([rows.join('\n')+'\n'],{type:'text/csv'}));const a=document.createElement('a');a.href=url;a.download='terminl-launch-subscribers.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    setNotice(`${result.subscribers.length} launch subscribers exported. Exporting does not send email.`);
+  }catch(e){setError(e.message);}finally{setBusy(false);}};
   return <CampaignShell><Head><title>WL applications — TERMINL admin</title><meta name='robots' content='noindex,nofollow'/></Head>
     <span className={s.eyebrow}>TERMINL / CAMPAIGN ADMIN</span><h1 className={s.title}>WL applications.</h1>
     <p className={s.fine}>Review applications, update the WL, and export approved email contacts. <Link href='/admin/campaign'>Arcade campaign controls →</Link></p>
     {!data?<form className={s.card} onSubmit={e=>{e.preventDefault();void load();}}><label>CAMPAIGN ADMIN TOKEN<input type='password' value={token} onChange={e=>setToken(e.target.value)} autoComplete='off' required/></label><button className={s.primary} disabled={busy}>OPEN APPLICATIONS</button><p className={s.fine}>The token stays in memory and is never saved in browser storage.</p></form>:<>
-      <div className={s.actions}><button className={s.secondary} onClick={load} disabled={busy}>REFRESH</button><button className={s.secondary} onClick={exportContacts} disabled={busy}>EXPORT APPROVED EMAILS</button></div>
+      <div className={s.actions}><button className={s.secondary} onClick={load} disabled={busy}>REFRESH</button><button className={s.secondary} onClick={exportContacts} disabled={busy}>EXPORT APPROVED EMAILS</button><button className={s.secondary} onClick={exportSubscribers} disabled={busy}>EXPORT LAUNCH SUBSCRIBERS</button></div>
       <p className={s.fine}>Master workbook loaded: {data.masterCounts?.find(row=>row.kind==='gtd')?.count||0} GTD and {data.masterCounts?.find(row=>row.kind==='fcfs')?.count||0} FCFS entries. Admin exclusions: {data.excludedCounts?.reduce((total,row)=>total+row.count,0)||0}. These totals are private to this dashboard.</p>
       <p className={s.fine}>The WL draw is October 26, 2026. Review and approve selected applications, then export approved contacts and send winner emails. Exporting the CSV does not send email. An approved application adds its wallet to the current WL; mint phases and final terms are published separately.</p>
       <div className={s.wlGrid}>

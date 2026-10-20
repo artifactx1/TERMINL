@@ -6,6 +6,7 @@ import styles from "../styles/Terminl.module.css";
 import Mint from "../components/Mint";
 import MintLaunch from "../components/MintLaunch";
 import SiteNavMenu from "../components/SiteNavMenu";
+import LaunchSignup from "../components/LaunchSignup";
 import Leaderboard from "../components/arcade/Leaderboard";
 import { loreFor } from "../data/degen-lore";
 import ChainBadge from "../components/ChainBadge";
@@ -248,6 +249,8 @@ function Site({ data }) {
           </div>
           <p className={styles.accessCheck}>Already applied? <a href="#allowlist-checker">Check your wallet</a>. The lists are updated daily.</p>
         </section>
+
+        <LaunchSignup />
 
         <section className={styles.section} id="leaderboard">
           <div className={styles.sectionHead}>

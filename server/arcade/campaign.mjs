@@ -191,6 +191,11 @@ export function createCampaignService(options){
           const result=wl.contacts();store.audit('admin','wl_contacts_export',{count:result.contacts.length},now());
           return json(response,200,result);
         }
+        if(path==='/admin/subscribers'&&request.method==='GET'){
+          const subscribers=store.all('SELECT email,created_at FROM launch_subscribers ORDER BY created_at,email');
+          store.audit('admin','launch_subscribers_export',{count:subscribers.length},now());
+          return json(response,200,{subscribers});
+        }
         if(path==='/admin/addresses'&&request.method==='GET'){
           const addresses=store.all(`SELECT w.address,w.chain_id,w.updated_at,sp.route FROM wallets w
             JOIN spots sp ON sp.user_id=w.user_id JOIN users u ON u.id=w.user_id JOIN runs r ON r.id=sp.run_id
@@ -272,6 +277,15 @@ export function createCampaignService(options){
         const c=config(),open=campaignOpen(c,now())&&authReady;
         const {capacity:privateCapacity,...publicConfig}=c;
         return json(response,200,{config:publicConfig,open,routes:Object.fromEntries(OPEN_ROUTES.map(route=>[route,open&&routeOpen(c,route,now())])),authReady,providers,bot:BARRY,serverTime:now(),gtd:gtdInfo()});
+      }
+      if(path==='/subscribe'&&request.method==='POST'){
+        rate('subscribe:'+network,5,3600000);
+        const body=await readJson(request,1000);
+        if(body.website)return json(response,200,{received:true});
+        const email=typeof body.email==='string'?body.email.trim().toLowerCase():'';
+        if(email.length>254||!/^[a-z0-9][a-z0-9._%+-]{0,63}@[a-z0-9.-]+\.[a-z]{2,}$/.test(email))fail('Enter a valid email address.');
+        store.run('INSERT OR IGNORE INTO launch_subscribers(email,created_at,updated_at) VALUES(?,?,?)',email,now(),now());
+        return json(response,200,{received:true});
       }
       if(path.startsWith('/wl/check/')&&request.method==='GET'){
         rate('wl-check:'+network,90,60000);

@@ -92,14 +92,15 @@ export default function Mint() {
     refreshing.current = true;
     fetchDropFacts()
       .then((f) => { setFacts(f); setNow(Date.now()); setReadError(null); })
-      .catch((e) => setReadError(readableError(e)))
+      .catch((e) => { setFacts(null); setReadError(readableError(e)); })
       .finally(() => { refreshing.current = false; });
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
 
   /* Refresh schedules even before publication, and recover automatically when
-   * a tab returns or the connection comes back. Keep the last successful data. */
+   * a tab returns or the connection comes back. A failed refresh clears stale
+   * mint terms instead of leaving an old stage visible. */
   const [phases, setPhases] = useState(null);
   useEffect(() => {
     let on = true;
@@ -108,7 +109,7 @@ export default function Mint() {
       if (loading || document.visibilityState === "hidden") return;
       loading = true;
       const p = await fetchPhases();
-      if (on && !p.failed) setPhases(p);
+      if (on) setPhases(p);
       loading = false;
     };
     load();

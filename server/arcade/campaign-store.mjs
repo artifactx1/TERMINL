@@ -59,6 +59,8 @@ export function openCampaignStore(directory){
       awarded_kind TEXT CHECK(awarded_kind IN ('gtd','fcfs','both')),
       created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, reviewed_at INTEGER);
     CREATE INDEX IF NOT EXISTS wl_applications_status ON wl_applications(status,created_at);
+    CREATE TABLE IF NOT EXISTS launch_subscribers (
+      email TEXT PRIMARY KEY, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS wl_entries (
       address TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('gtd','fcfs')),
       source TEXT NOT NULL CHECK(source IN ('manual','application')),
