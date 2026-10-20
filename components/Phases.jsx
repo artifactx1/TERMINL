@@ -84,6 +84,8 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
       if (currentRequest === requestId.current) setState({ address, ...result, mode: "mint", source });
       void campaignRequest('/wl/check-event',{
         address,source,outcome:result.failed?'failed':result.stages.length?'listed':'not_listed',
+      }).then(({recorded})=>{
+        if(recorded&&currentRequest===requestId.current)setState(previous=>previous?.address===address?{...previous,recorded:true}:previous);
       }).catch(()=>{});
     } else {
       try {
@@ -117,7 +119,7 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
   return (
     <form id="allowlist-checker" className={styles.check} onSubmit={check}>
       <div className={styles.checkHead}>{onchain ? "AM I ON THE MINT LIST?" : "CHECK YOUR WL STATUS"}</div>
-      {!onchain && <p className={styles.checkNote}>The GTD and FCFS lists are updated daily. Don&apos;t see your wallet yet? Check back tomorrow. No wallet connection needed.{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>}
+      <p className={styles.checkNote}>{onchain ? "Missing wallets checked before mint are saved for FCFS review." : "The GTD and FCFS lists are updated daily. Missing wallets checked before mint are saved for FCFS review. No wallet connection needed."}{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>
       <div className={styles.checkRow}>
         <input
           className={styles.checkInput}
@@ -154,7 +156,7 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
               <em>{entry.source === "arcade" ? "ARCADE PASS" : "APPROVED"}</em>
             </div>)}
             <p className={styles.checkNote}>Mint access follows the published phase and its final terms.</p>
-          </div> : <p className={styles.checkNote}>{short(state.address)} is not on the current list. <Link href="/wl">Apply for WL →</Link></p>
+          </div> : <p className={styles.checkNote}>{short(state.address)} is not on the current list. {state.recorded && <>We saved this check for the pre-mint FCFS review. </>}<Link href="/wl">Apply for WL →</Link></p>
         ) : state.stages.length ? (
           <div className={styles.checkOk}>
             <b>{short(state.address)} is on the list</b>
@@ -180,6 +182,7 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
               : state.reason === "no_allowlist"
                 ? "this drop has no allowlist"
                 : `${short(state.address)} is not on the list for this drop`}
+            {state.recorded && <> We saved this check for the pre-mint FCFS review.</>}
           </p>
         )
       )}

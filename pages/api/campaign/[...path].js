@@ -1,7 +1,7 @@
 import {campaignConfigured,campaignFetch,campaignOrigin} from '../../../lib/server/campaign';
 import {checkBotId} from 'botid/server';
 
-const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|subscribe|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|wl\/(?:apply|check-event|check\/0x[0-9a-fA-F]{40})|admin(?:\/(?:settings|review|addresses|gtd|subscribers|wl(?:\/(?:contacts|review|entry|import|merge))?))?)$/;
+const paths=/^\/(?:config|session|me|leaderboard|runs|runs\/[a-f0-9]{32}|results\/[A-Za-z0-9_-]{16}|prepare-result|submit|subscribe|auth\/(?:start|complete|callback)|claim|profile|wallet|events|logout|wl\/(?:apply|check-event|check\/0x[0-9a-fA-F]{40})|admin(?:\/(?:settings|review|addresses|gtd|subscribers|wl(?:\/(?:contacts|candidates|review|entry|import|merge))?))?)$/;
 export const maxDuration=30;
 export const config={api:{bodyParser:{sizeLimit:'2mb'}}};
 export default async function handler(req,res){

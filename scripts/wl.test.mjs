@@ -189,3 +189,38 @@ test('wallet checks count distinct browsers and searched wallets only in private
     assert.ok(!details.includes(WALLET)&&!details.includes(SECOND),'events never store searched wallet addresses');
   }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(directory,{recursive:true,force:true});}
 });
+
+test('missing wallet checks are saved privately for the pre-mint FCFS review',async()=>{
+  const directory=await mkdtemp(join(tmpdir(),'terminl-wl-candidates-'));
+  let current=Date.parse('2026-10-20T12:00:00Z');
+  const service=createCampaignService({dataDir:directory,serviceToken:'service',adminToken:'admin',siteOrigin:'https://terminl.test',now:()=>current});
+  const server=http.createServer((request,response)=>void service.handle(request,response));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${server.address().port}/campaign`;
+  const call=async(path,{body,cookie,admin=false}={})=>{
+    const response=await fetch(base+path,{method:body?'POST':'GET',headers:{Authorization:'Bearer service',Origin:'https://terminl.test','Content-Type':'application/json','X-Campaign-Client':'candidate-test',...(cookie?{Cookie:cookie}:{}),...(admin?{'X-Campaign-Admin':'admin'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    return {status:response.status,cookie:response.headers.get('set-cookie')?.split(';')[0],data:await response.json()};
+  };
+  try{
+    const first=await call('/wl/check/'+WALLET+'?source=mint');
+    assert.equal(first.data.recorded,true);
+    assert.equal(first.data.eligible,false);
+    assert.equal((await call('/wl/check/'+WALLET+'?source=mint',{cookie:first.cookie})).data.recorded,true);
+    assert.equal((await call('/wl/check/'+SECOND+'?source=direct',{cookie:first.cookie})).data.recorded,false,'API-only checks do not enter the FCFS queue');
+    assert.equal((await call('/admin/wl/candidates')).status,404);
+    let candidates=(await call('/admin/wl/candidates',{admin:true})).data.candidates;
+    assert.deepEqual(candidates.map(row=>[row.address,row.check_count,row.status]),[[WALLET,2,'pending']]);
+    service.store.run('INSERT INTO wl_exclusions(address,kind,created_at) VALUES(?,?,?)',SECOND,'fcfs',current);
+    assert.equal((await call('/wl/check-event',{cookie:first.cookie,body:{address:SECOND,source:'connected',outcome:'not_listed'}})).data.recorded,true);
+    candidates=(await call('/admin/wl/candidates',{admin:true})).data.candidates;
+    assert.equal(candidates.find(row=>row.address===SECOND).status,'review','excluded wallets require review');
+    assert.equal((await call('/admin/wl/import',{admin:true,body:{entries:[{address:WALLET,kind:'gtd'}],reason:'Candidate becomes listed'}})).status,200);
+    assert.equal((await call('/wl/check/'+WALLET+'?source=mint',{cookie:first.cookie})).data.recorded,false);
+    assert.equal((await call('/wl/check-event',{cookie:first.cookie,body:{address:WALLET,source:'mint',outcome:'not_listed'}})).data.recorded,false,'a claimed missing result cannot queue an already listed wallet');
+    candidates=(await call('/admin/wl/candidates',{admin:true})).data.candidates;
+    assert.equal(candidates.find(row=>row.address===WALLET).status,'listed');
+    current=Date.parse('2026-10-29T14:00:00Z');
+    assert.equal((await call('/wl/check/'+SECOND+'?source=mint',{cookie:first.cookie})).data.recorded,false,'capture closes when mint opens');
+    assert.equal(service.store.get('SELECT check_count FROM wl_check_candidates WHERE address=?',SECOND).check_count,1);
+  }finally{await new Promise(resolve=>server.close(resolve));service.close();await rm(directory,{recursive:true,force:true});}
+});

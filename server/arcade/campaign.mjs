@@ -15,6 +15,7 @@ import {FIGHT_SEGMENT_TICKS,rumbleSnapshot,rumbleProgress} from '../../lib/arcad
 import {CHARACTERS} from '../../lib/arcade/rumble-sim.mjs';
 
 const DAY=86400000,MINUTE=60000;
+const MINT_START=Date.parse('2026-10-29T14:00:00Z');
 /** Official runs stay open while segments keep arriving, within an overall limit. */
 const RUN_IDLE=30*MINUTE,RUN_LIMIT=3*60*MINUTE;
 const SEGMENT_TICKS={cup:CUP_SEGMENT_TICKS,rumble:FIGHT_SEGMENT_TICKS};
@@ -62,6 +63,12 @@ export function createCampaignService(options){
   function recordWlCheck(s,address,source,mode,outcome){
     const walletHash=createHmac('sha256',serviceToken).update(address).digest('hex');
     store.event('wl_check',{anonId:s.anon_id,userId:s.user_id,detail:{walletHash,source,mode,outcome}},now());
+    if(outcome!=='not_listed'||!['mint','wl','connected'].includes(source)||now()>=MINT_START||wl.check(address).eligible)return false;
+    const at=now();
+    store.run(`INSERT INTO wl_check_candidates(address,first_seen_at,last_seen_at,check_count,last_source)
+      VALUES(?,?,?,1,?) ON CONFLICT(address) DO UPDATE SET
+      last_seen_at=excluded.last_seen_at,check_count=check_count+1,last_source=excluded.last_source`,address,at,at,source);
+    return true;
   }
   const progressSummary=row=>{const progress=row.progress?deserialize(row.progress):null;return row.kind==='cup'?cupProgress(progress):row.kind==='rumble'?rumbleProgress(progress):null;};
   const qualifiedSpots=()=>store.get("SELECT count(*) AS n FROM spots WHERE status='qualified'").n;
@@ -187,6 +194,15 @@ export function createCampaignService(options){
         rate('admin:'+network,20,60000);
         if(!adminToken||!equal(request.headers['x-campaign-admin'],adminToken))fail('Not found',404);
         if(path==='/admin/wl'&&request.method==='GET')return json(response,200,wl.admin());
+        if(path==='/admin/wl/candidates'&&request.method==='GET'){
+          const candidates=store.all('SELECT * FROM wl_check_candidates ORDER BY first_seen_at DESC').map(row=>{
+            const listed=wl.check(row.address).eligible;
+            const flagged=!!store.get('SELECT 1 FROM wl_exclusions WHERE address=? LIMIT 1',row.address)||
+              !!store.get("SELECT 1 FROM wl_applications WHERE address=? AND status='rejected' LIMIT 1",row.address);
+            return {...row,status:listed?'listed':flagged?'review':'pending'};
+          });
+          return json(response,200,{candidates});
+        }
         if(path==='/admin/wl/contacts'&&request.method==='GET'){
           const result=wl.contacts();store.audit('admin','wl_contacts_export',{count:result.contacts.length},now());
           return json(response,200,result);
@@ -291,8 +307,8 @@ export function createCampaignService(options){
         rate('wl-check:'+network,90,60000);
         const result=wl.check(path.slice('/wl/check/'.length));
         const s=session(request,response,true);
-        recordWlCheck(s,result.address,['mint','wl','connected'].includes(url.searchParams.get('source'))?url.searchParams.get('source'):'direct','rolling',result.eligible?'listed':'not_listed');
-        return json(response,200,result);
+        const recorded=recordWlCheck(s,result.address,['mint','wl','connected'].includes(url.searchParams.get('source'))?url.searchParams.get('source'):'direct','rolling',result.eligible?'listed':'not_listed');
+        return json(response,200,{...result,recorded});
       }
       if(path==='/wl/check-event'&&request.method==='POST'){
         const body=await readJson(request,1000);
@@ -300,8 +316,8 @@ export function createCampaignService(options){
         let address;try{address=normalizeAddress(body.address);}catch(error){fail(error.message);}
         const s=session(request,response,true);
         rate('wl-check-event:'+s.anon_id,30,60000);
-        recordWlCheck(s,address,body.source,'published',body.outcome);
-        return json(response,200,{ok:true});
+        const recorded=recordWlCheck(s,address,body.source,'published',body.outcome);
+        return json(response,200,{ok:true,recorded});
       }
       if(path==='/wl/apply'&&request.method==='POST'){
         rate('wl-apply:'+network,4,3600000);

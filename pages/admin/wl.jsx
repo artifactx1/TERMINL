@@ -12,6 +12,7 @@ const reviewLabels={likely_bot:'LIKELY BOT',review_during_burst:'REVIEW: DURING 
 
 export default function WlAdmin(){
   const [token,setToken]=useState(''),[data,setData]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+  const [candidates,setCandidates]=useState(null);
   const [review,setReview]=useState({id:'',status:'',awardedKind:'fcfs',reason:''});
   const [entry,setEntry]=useState({address:'',kind:'fcfs',action:'add',reason:''});
   const [group,setGroup]=useState('all'),[search,setSearch]=useState(''),[page,setPage]=useState(1);
@@ -47,11 +48,29 @@ export default function WlAdmin(){
     const url=URL.createObjectURL(new Blob([rows.join('\n')+'\n'],{type:'text/csv'}));const a=document.createElement('a');a.href=url;a.download='terminl-launch-subscribers.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     setNotice(`${result.subscribers.length} launch subscribers exported. Exporting does not send email.`);
   }catch(e){setError(e.message);}finally{setBusy(false);}};
+  const loadCandidates=async()=>{setBusy(true);setError('');try{
+    const result=await request('/candidates');setCandidates(result.candidates);
+  }catch(e){setError(e.message);}finally{setBusy(false);}};
+  const exportCandidates=()=>{
+    const pending=(candidates||[]).filter(row=>row.status==='pending');
+    const rows=['address,first_checked,last_checked,checks,last_source',...pending.map(row=>[
+      row.address,new Date(row.first_seen_at).toISOString(),new Date(row.last_seen_at).toISOString(),row.check_count,row.last_source,
+    ].join(','))];
+    const url=URL.createObjectURL(new Blob([rows.join('\n')+'\n'],{type:'text/csv'}));const a=document.createElement('a');a.href=url;a.download='terminl-fcfs-check-candidates.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    setNotice(`${pending.length} pending checked wallets exported. Exporting does not add them to FCFS.`);
+  };
   return <CampaignShell><Head><title>WL applications — TERMINL admin</title><meta name='robots' content='noindex,nofollow'/></Head>
     <span className={s.eyebrow}>TERMINL / CAMPAIGN ADMIN</span><h1 className={s.title}>WL applications.</h1>
     <p className={s.fine}>Review applications, update the WL, and export approved email contacts. <Link href='/admin/campaign'>Arcade campaign controls →</Link></p>
     {!data?<form className={s.card} onSubmit={e=>{e.preventDefault();void load();}}><label>CAMPAIGN ADMIN TOKEN<input type='password' value={token} onChange={e=>setToken(e.target.value)} autoComplete='off' required/></label><button className={s.primary} disabled={busy}>OPEN APPLICATIONS</button><p className={s.fine}>The token stays in memory and is never saved in browser storage.</p></form>:<>
-      <div className={s.actions}><button className={s.secondary} onClick={load} disabled={busy}>REFRESH</button><button className={s.secondary} onClick={exportContacts} disabled={busy}>EXPORT APPROVED EMAILS</button><button className={s.secondary} onClick={exportSubscribers} disabled={busy}>EXPORT LAUNCH SUBSCRIBERS</button></div>
+      <div className={s.actions}><button className={s.secondary} onClick={load} disabled={busy}>REFRESH</button><button className={s.secondary} onClick={exportContacts} disabled={busy}>EXPORT APPROVED EMAILS</button><button className={s.secondary} onClick={exportSubscribers} disabled={busy}>EXPORT LAUNCH SUBSCRIBERS</button><button className={s.secondary} onClick={loadCandidates} disabled={busy}>VIEW MISSING CHECKS</button></div>
+      {candidates&&<section className={s.card}>
+        <h2>Wallets checked while unlisted</h2>
+        <p>{candidates.filter(row=>row.status==='pending').length} pending FCFS candidates · {candidates.filter(row=>row.status==='review').length} need review · {candidates.filter(row=>row.status==='listed').length} listed since checking.</p>
+        <p className={s.fine}>A wallet check does not prove ownership. Review this list before adding wallets to FCFS; excluded and rejected application wallets are held for review.</p>
+        <div className={s.actions}><button className={s.secondary} onClick={loadCandidates} disabled={busy}>REFRESH CHECKS</button><button className={s.secondary} onClick={exportCandidates} disabled={!candidates.some(row=>row.status==='pending')}>EXPORT PENDING FCFS CSV</button></div>
+        <details><summary>SHOW CHECKED WALLETS</summary><div className={s.tableWrap}><table className={s.table}><thead><tr><th>WALLET</th><th>STATUS</th><th>CHECKS</th><th>FIRST CHECKED</th><th>LAST CHECKED</th><th>SOURCE</th></tr></thead><tbody>{candidates.slice(0,100).map(row=><tr key={row.address}><td>{row.address}</td><td>{row.status.toUpperCase()}</td><td>{row.check_count}</td><td>{date(row.first_seen_at)}</td><td>{date(row.last_seen_at)}</td><td>{row.last_source}</td></tr>)}</tbody></table></div>{candidates.length>100&&<p className={s.fine}>Showing the newest 100 here. The CSV includes every pending wallet.</p>}</details>
+      </section>}
       <p className={s.fine}>Master workbook loaded: {data.masterCounts?.find(row=>row.kind==='gtd')?.count||0} GTD and {data.masterCounts?.find(row=>row.kind==='fcfs')?.count||0} FCFS entries. Admin exclusions: {data.excludedCounts?.reduce((total,row)=>total+row.count,0)||0}. These totals are private to this dashboard.</p>
       <p className={s.fine}>The WL draw is October 26, 2026. Review and approve selected applications, then export approved contacts and send winner emails. Exporting the CSV does not send email. An approved application adds its wallet to the current WL; mint phases and final terms are published separately.</p>
       <div className={s.wlGrid}>

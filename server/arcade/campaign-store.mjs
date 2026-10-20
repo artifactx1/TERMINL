@@ -71,6 +71,10 @@ export function openCampaignStore(directory){
     CREATE TABLE IF NOT EXISTS wl_exclusions (
       address TEXT NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('gtd','fcfs')),
       created_at INTEGER NOT NULL, PRIMARY KEY(address,kind));
+    CREATE TABLE IF NOT EXISTS wl_check_candidates (
+      address TEXT PRIMARY KEY, first_seen_at INTEGER NOT NULL,
+      last_seen_at INTEGER NOT NULL, check_count INTEGER NOT NULL DEFAULT 1,
+      last_source TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS audit (
       id INTEGER PRIMARY KEY, at INTEGER NOT NULL, actor TEXT NOT NULL,
       action TEXT NOT NULL, detail TEXT NOT NULL);

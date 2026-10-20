@@ -22,7 +22,7 @@ for(const [index,row] of body.entries.entries()){
   if(keys.has(key))throw new Error(`Duplicate tier entry at row ${index+1}.`);
   keys.add(key);counts[row.kind]++;
 }
-if(!counts.gtd||!counts.fcfs)throw new Error('Both GTD and FCFS tiers are required for a master snapshot.');
+if(!merge&&(!counts.gtd||!counts.fcfs))throw new Error('Both GTD and FCFS tiers are required for a master snapshot.');
 const snapshotDigest=createHash('sha256').update([...keys].map(key=>{
   const separator=key.lastIndexOf(':');return key.slice(0,separator)+','+key.slice(separator+1);
 }).sort().join('\n')).digest('hex');
