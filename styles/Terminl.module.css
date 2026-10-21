@@ -116,7 +116,7 @@
 .mintTickerGroup { display: flex; flex: none; align-items: center; gap: 24px; padding-right: 24px; white-space: nowrap; font: 800 10px/1 ui-monospace, monospace; letter-spacing: .11em; }
 .mintTickerLead { color: #fff; }
 .mintTickerSep { color: #568149; font-size: 13px; }
-.mintTicker:hover .mintTickerTrack { animation-play-state: paused; }
+@media (hover: hover) { .mintTicker:hover .mintTickerTrack { animation-play-state: paused; } }
 @keyframes mintTicker { to { transform: translateX(-50%); } }
 .accessJump { align-self: flex-start; margin-top: -7px; color: var(--accent); text-decoration: none;
   font: 700 10px/1.5 ui-monospace, monospace; letter-spacing: .09em; }
@@ -327,7 +327,8 @@
   .wordmark span { font-size: 8px; }
   .navRight { gap: 8px; font-size: 9px; }
   .os, .wallet { padding: 7px 9px; }
-  .mintTickerBadge { padding: 0 8px; }
+  .mintTickerBadge { display: none; }
+  .mintTickerWindow { width: 100%; }
 
   .section { padding: 56px 16px; }
   .stageWrap { padding: 20px 16px; }
