@@ -10,38 +10,38 @@
     {
       "name": "Mythic",
       "target": 10,
-      "assigned": 9,
-      "percent": 0.439
+      "assigned": 10,
+      "percent": 0.488
     },
     {
       "name": "Legendary",
       "target": 42,
-      "assigned": 40,
-      "percent": 1.953
+      "assigned": 41,
+      "percent": 2.002
     },
     {
       "name": "Epic",
       "target": 102,
-      "assigned": 103,
-      "percent": 5.029
+      "assigned": 95,
+      "percent": 4.639
     },
     {
       "name": "Rare",
       "target": 256,
-      "assigned": 271,
-      "percent": 13.232
+      "assigned": 246,
+      "percent": 12.012
     },
     {
       "name": "Uncommon",
       "target": 614,
-      "assigned": 708,
-      "percent": 34.57
+      "assigned": 659,
+      "percent": 32.178
     },
     {
       "name": "Standard",
       "target": 1024,
-      "assigned": 917,
-      "percent": 44.775
+      "assigned": 997,
+      "percent": 48.682
     }
   ],
   "outcomes": {
@@ -50,7 +50,7 @@
     "rekt": 757
   },
   "storyFacts": {
-    "regulars": 150,
+    "regulars": 156,
     "mostCommon": {
       "name": "Margin Call Max",
       "count": 77,
@@ -64,9 +64,9 @@
     "Background": 16,
     "Chassis": 7,
     "Chassis Finish": 17,
-    "Screen / Face": 96,
+    "Screen / Face": 101,
     "Primary Prop": 18,
-    "Companion": 150,
+    "Companion": 156,
     "Effect": 6
   },
   "traitCategories": {
@@ -83,8 +83,8 @@
       },
       {
         "name": "After Hours Office",
-        "count": 213,
-        "percent": 10.4
+        "count": 212,
+        "percent": 10.352
       },
       {
         "name": "Warehouse Loading Bay",
@@ -130,8 +130,8 @@
       },
       {
         "name": "Night Desk",
-        "count": 391,
-        "percent": 19.092
+        "count": 390,
+        "percent": 19.043
       },
       {
         "name": "Block Party",
@@ -162,8 +162,8 @@
     "Chassis Finish": [
       {
         "name": "Industrial Grey",
-        "count": 714,
-        "percent": 34.863
+        "count": 711,
+        "percent": 34.717
       },
       {
         "name": "Bone",
@@ -172,8 +172,8 @@
       },
       {
         "name": "Matte Black",
-        "count": 225,
-        "percent": 10.986
+        "count": 223,
+        "percent": 10.889
       },
       {
         "name": "Terminal Green",
@@ -187,8 +187,8 @@
       },
       {
         "name": "Emergency Red",
-        "count": 135,
-        "percent": 6.592
+        "count": 134,
+        "percent": 6.543
       },
       {
         "name": "Oxidized Copper",
@@ -214,18 +214,18 @@
     "Screen / Face": [
       {
         "name": "Bitcoin",
-        "count": 94,
-        "percent": 4.59
+        "count": 93,
+        "percent": 4.541
       },
       {
         "name": "Glorp Coin",
-        "count": 78,
-        "percent": 3.809
+        "count": 77,
+        "percent": 3.76
       },
       {
         "name": "Dogecoin",
-        "count": 72,
-        "percent": 3.516
+        "count": 71,
+        "percent": 3.467
       },
       {
         "name": "Ethereum",
@@ -234,8 +234,8 @@
       },
       {
         "name": "Solana",
-        "count": 70,
-        "percent": 3.418
+        "count": 69,
+        "percent": 3.369
       },
       {
         "name": "Bonk",
@@ -244,8 +244,8 @@
       },
       {
         "name": "REKT",
-        "count": 59,
-        "percent": 2.881
+        "count": 57,
+        "percent": 2.783
       },
       {
         "name": "WAGMI",
@@ -266,8 +266,8 @@
     "Primary Prop": [
       {
         "name": "Glass Bong",
-        "count": 246,
-        "percent": 12.012
+        "count": 245,
+        "percent": 11.963
       },
       {
         "name": "Loaded Rolling Tray",
@@ -328,8 +328,8 @@
       },
       {
         "name": "Paper Hands Paul",
-        "count": 63,
-        "percent": 3.076
+        "count": 62,
+        "percent": 3.027
       },
       {
         "name": "Chain-Smoking Pigeon",
@@ -338,13 +338,13 @@
       },
       {
         "name": "Bagholder Barry",
-        "count": 54,
-        "percent": 2.637
+        "count": 53,
+        "percent": 2.588
       },
       {
         "name": "Buy-High Brian",
-        "count": 51,
-        "percent": 2.49
+        "count": 50,
+        "percent": 2.441
       },
       {
         "name": "Liquidation Vulture",
@@ -624,5 +624,5 @@
     "2c4ab743c2315576",
     "5bd1525b1227c04d"
   ],
-  "generatedAt": "2026-10-08T17:10:25.499Z"
+  "generatedAt": "2026-10-22T01:09:47.297Z"
 }

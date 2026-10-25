@@ -4,10 +4,10 @@
   "private": true,
   "description": "Mint site for TERMINL \u2014 2048 generative CRT terminals, stored permanently on Arweave.",
   "scripts": {
-    "dev": "next dev -p 4000",
-    "build": "next build",
+    "dev": "next dev --webpack -p 4000",
+    "build": "next build --webpack",
     "start": "next start -p 4000",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test:campaign:invite:browser": "node scripts/campaign-invite-browser.mjs",
     "test:mint": "node --test scripts/mint-quantity.test.mjs scripts/mint-reliability.test.mjs",
     "test:mint:browser": "node scripts/mint-quantity-browser.mjs",
@@ -18,7 +18,7 @@
     "test:rug-or-bond": "node --test scripts/rug-or-bond.test.mjs",
     "test:rug-or-bond:browser": "node scripts/rug-or-bond-browser.mjs",
     "test:moon:browser": "node scripts/moon-browser.mjs",
-    "dev:arcade": "ARCADE_LABS=1 next dev -p 4000",
+    "dev:arcade": "ARCADE_LABS=1 next dev --webpack -p 4000",
     "arcade:server": "node server/arcade/index.mjs",
     "test:arcade": "node --test scripts/mall-contact.test.mjs scripts/mall-spots.test.mjs scripts/mall-career.test.mjs scripts/mall-session.test.mjs scripts/mall-directional.test.mjs scripts/mall-heading.test.mjs scripts/mall-navigation.test.mjs scripts/mall-grinds.test.mjs scripts/mall-rails.test.mjs scripts/mall-camera.test.mjs scripts/mall-upgrade.test.mjs scripts/after-hours.test.mjs scripts/rumble-finishers.test.mjs scripts/arcade-transport.test.mjs scripts/rumble-sim.test.mjs scripts/rumble-roster.test.mjs scripts/race-sim.test.mjs scripts/race-rival.test.mjs scripts/race-art.test.mjs scripts/race-visibility.test.mjs scripts/touch-input.test.mjs scripts/rumble-controls.test.mjs scripts/arcade-server.test.mjs scripts/rumble-circuit.test.mjs",
     "test:touch:browser": "node scripts/touch-browser.mjs",
@@ -49,31 +49,37 @@
   "dependencies": {
     "@base-org/account": "^2.5.8",
     "@farcaster/auth-kit": "^0.8.2",
-    "@metamask/connect-evm": "^1.0.0",
+    "@metamask/connect-evm": "2.1.0",
     "@reown/appkit": "^1.8.23",
     "@reown/appkit-adapter-wagmi": "^1.8.23",
     "@tanstack/react-query": "^5.101.4",
     "@walletconnect/ethereum-provider": "^2.23.10",
-    "accounts": "^0.8.10",
+    "accounts": "0.18.4",
     "botid": "^1.5.11",
-    "next": "14.2.35",
-    "porto": "^0.2.37",
+    "next": "16.4.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "sharp": "^0.35.4",
+    "sharp": "0.35.5",
     "three": "0.180.0",
     "viem": "^2.48.4",
-    "wagmi": "^3.6.8",
+    "wagmi": "3.7.9",
     "ws": "8.21.3"
   },
   "devDependencies": {
     "@google-cloud/storage": "^7.22.0",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.35",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.4.2",
     "playwright": "1.63.0"
   },
   "overrides": {
-    "@wagmi/core": "3.4.7",
-    "@wagmi/connectors": "8.0.8"
+    "@wagmi/core": "3.6.7",
+    "@wagmi/connectors": "8.2.2",
+    "uuid@<11.1.1": "11.1.1",
+    "bn.js@^5.0.0": "5.2.3",
+    "brace-expansion@^1.0.0": "1.1.21",
+    "brace-expansion@^5.0.0": "5.0.12"
+  },
+  "engines": {
+    "node": ">=24.22.1 <25"
   }
 }

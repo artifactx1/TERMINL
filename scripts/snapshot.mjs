@@ -188,9 +188,11 @@ async function portraits(showcase) {
     }
     // trim() drops the transparent margin so the figure is framed on itself
     // rather than on whatever padding its sprite happened to carry.
+    // Paul's completed smoke curl needs a little clear space above its tip.
+    const topInset = slug === "paper-hands-paul" ? 14 : 0;
     const figure = await sharp(file)
       .trim()
-      .resize({ width: DEGEN_W, height: DEGEN_H, fit: "inside", withoutEnlargement: true })
+      .resize({ width: DEGEN_W, height: DEGEN_H - topInset, fit: "inside", withoutEnlargement: true })
       .toBuffer();
     const meta = await sharp(figure).metadata();
 
