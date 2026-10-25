@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Link from 'next/link';
+import {useRouter} from 'next/router';
 import {useMemo,useState} from 'react';
 import CampaignShell from '../../components/arcade/CampaignShell';
 import s from '../../styles/Campaign.module.css';
@@ -11,6 +12,7 @@ const EMPTY_APPLICATIONS=[];
 const reviewLabels={likely_bot:'LIKELY BOT',review_during_burst:'REVIEW: DURING BURST',outside_burst:'BEFORE BURST',review_after_protection:'AFTER PROTECTION'};
 
 export default function WlAdmin(){
+  const router=useRouter();
   const [token,setToken]=useState(''),[data,setData]=useState(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
   const [candidates,setCandidates]=useState(null);
   const [review,setReview]=useState({id:'',status:'',awardedKind:'fcfs',reason:''});
@@ -21,10 +23,11 @@ export default function WlAdmin(){
     result[row.review_group]=(result[row.review_group]||0)+1;return result;
   },{}),[applications]);
   const filtered=useMemo(()=>{
-    const query=search.trim().toLowerCase();
+    const linkedAddress=typeof router.query.address==='string'&&/^0x[0-9a-fA-F]{40}$/.test(router.query.address)?router.query.address.toLowerCase():'';
+    const query=(search||linkedAddress).trim().toLowerCase();
     return applications.filter(row=>(group==='all'||row.review_group===group)&&
       (!query||[row.address,row.email,row.id].some(value=>value.toLowerCase().includes(query))));
-  },[applications,group,search]);
+  },[applications,group,search,router.query.address]);
   const pageCount=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE)),currentPage=Math.min(page,pageCount);
   const visible=filtered.slice((currentPage-1)*PAGE_SIZE,currentPage*PAGE_SIZE);
   const request=async(path,body)=>{
@@ -61,7 +64,7 @@ export default function WlAdmin(){
   };
   return <CampaignShell><Head><title>WL applications — TERMINL admin</title><meta name='robots' content='noindex,nofollow'/></Head>
     <span className={s.eyebrow}>TERMINL / CAMPAIGN ADMIN</span><h1 className={s.title}>WL applications.</h1>
-    <p className={s.fine}>Review applications, update the WL, and export approved email contacts. <Link href='/admin/campaign'>Arcade campaign controls →</Link></p>
+    <p className={s.fine}>Review applications, update the WL, and export approved email contacts. <Link href='/admin/campaign'>Arcade campaign controls →</Link> · <Link href='/admin/mint-intelligence'>Mint intelligence →</Link></p>
     {!data?<form className={s.card} onSubmit={e=>{e.preventDefault();void load();}}><label>CAMPAIGN ADMIN TOKEN<input type='password' value={token} onChange={e=>setToken(e.target.value)} autoComplete='off' required/></label><button className={s.primary} disabled={busy}>OPEN APPLICATIONS</button><p className={s.fine}>The token stays in memory and is never saved in browser storage.</p></form>:<>
       <div className={s.actions}><button className={s.secondary} onClick={load} disabled={busy}>REFRESH</button><button className={s.secondary} onClick={exportContacts} disabled={busy}>EXPORT APPROVED EMAILS</button><button className={s.secondary} onClick={exportSubscribers} disabled={busy}>EXPORT LAUNCH SUBSCRIBERS</button><button className={s.secondary} onClick={loadCandidates} disabled={busy}>VIEW MISSING CHECKS</button></div>
       {candidates&&<section className={s.card}>
@@ -89,6 +92,7 @@ export default function WlAdmin(){
         </form>
       </div>
       <div className={s.sectionHeading}><h2>Applications ({applications.length})</h2></div>
+      {typeof router.query.address==='string'&&/^0x[0-9a-fA-F]{40}$/.test(router.query.address)&&<p className={s.fine}>Opened for wallet {router.query.address}. <Link href='/admin/wl'>Clear linked-wallet filter</Link></p>}
       <p className={s.fine}>Review labels mark the October 19 traffic burst. They do not change WL status or automatically reject an application.</p>
       <div className={s.wlReviewCounts}>{Object.entries(reviewLabels).map(([key,label])=><span key={key}><b>{counts[key]||0}</b> {label}</span>)}</div>
       <div className={s.wlReviewControls}>

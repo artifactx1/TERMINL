@@ -1,0 +1,87 @@
+TERMINL MINT INTELLIGENCE
+
+Admin page: /admin/mint-intelligence
+Private API: GET /api/admin/wallet-intelligence
+Authentication: existing campaign admin token, held only in browser memory.
+
+This is a completed-snapshot dashboard, not a live balance polling service.
+The page shows chain block timestamps and the allowlist/application timestamp.
+Reload retrieves the latest completed snapshot and compares current application
+and allocation metadata against it. It does not start a blockchain scan.
+
+DATA AND PUBLICATION
+
+The initial October 25 scan contains 8,442 unique addresses: 5,846 eligible
+wallets and 2,596 additional application wallets. There are 2,635 applications;
+39 overlap the eligible list. Application inclusion does not grant eligibility.
+Only public addresses and minimal application status/context are included.
+Emails, application notes, social identities and credentials are not included.
+
+Raw inputs, the read-only Railway metadata exporter, RPC checkpoint scanners,
+and verification evidence for this run are retained locally under:
+  private/wallet-dashboard-2026-10-25/
+
+For a fresh scan, create a new scan directory with a new metadata snapshot,
+new finalized anchors, and new balance/nonce results. Reusing checkpoints in
+the same directory resumes its old snapshot; it does not update its balances.
+Keep both chains' 30-day windows and all account reads pinned to their anchors.
+Include every current eligible wallet and application address, then deduplicate.
+Use the live WL service's check() result to respect earned entries/exclusions.
+
+Once the scan is complete, build the compact dashboard payload:
+  node scripts/build-wallet-intelligence-snapshot.mjs <scan-directory> <live-metadata.json> [prior-wallet-report.json]
+
+The metadata exporter supplies wallets with effective tier lists, applications,
+recorded checks, source timestamps, masterDigest, entries and excludedCounts.
+The scanner supplies ethereum-results.json, robinhood-results.json,
+robinhood-token-balances.json and both *-anchor.json files. The builder rejects
+incomplete coverage, duplicate addresses and inconsistent Robinhood balances.
+
+Publish through an operator environment with the existing
+CAMPAIGN_SERVICE_TOKEN and GCS_SERVICE_ACCOUNT_JSON securely injected:
+  node scripts/publish-wallet-intelligence.mjs <scan-directory>/dashboard-snapshot.json --dry-run
+  node scripts/publish-wallet-intelligence.mjs <scan-directory>/dashboard-snapshot.json
+
+Publication writes an encrypted history object and atomically replaces:
+  gs://curent-marketplace/terminl/admin-wallet-intelligence/latest.enc
+
+The bucket may be public; its snapshot object is encrypted with AES-256-GCM.
+A domain-separated key is derived from the existing campaign service secret.
+The API authenticates the admin with the campaign backend before decrypting.
+Plaintext snapshots, browser cookies and credentials must remain out of Git and
+public assets. No additional Vercel environment variables are required.
+After rotating CAMPAIGN_SERVICE_TOKEN, republish with the new service secret.
+Snapshot publication updates the dashboard without redeploying the website.
+
+MODEL
+
+The default 0.01 ETH price is illustrative; it does not publish mint terms.
+Total per-wallet caps apply once, with GTD taking precedence for both-tier
+wallets. Affordable units are capped individually, so wallets able to buy fewer
+than the cap still contribute those units. Reserved supply is deducted first.
+
+Native readiness uses Robinhood ETH after a configurable fee reserve. Bridging
+adds Ethereum native ETH after a separate reserve. WETH conversion additionally
+requires native gas on the relevant chain. Stablecoins are shown in token units
+and are excluded from modeled ETH purchasing power. Contract balances are
+excluded on the relevant funding route because control/compatibility is unknown.
+
+GTD exposure counts every GTD wallet regardless of current funding. Do not use
+low balances to silently revoke guarantees. Pending applications are hypothetical
+prospects, not allocated inventory. Participation is an assumption, not a forecast.
+
+Activity is account nonce change, not full transfer history. It can include failed
+transactions and EIP-7702 authorizations and miss inbound/smart-account activity.
+Contract activity is unknown. One wallet is not necessarily one person.
+
+VERIFICATION
+
+  node --test scripts/wallet-intelligence.test.mjs
+  node scripts/wallet-intelligence-browser.mjs <site-origin>
+
+The browser check needs CAMPAIGN_ADMIN_TOKEN securely injected. Protected staging
+may use a short-lived, origin-scoped VERCEL_TEST_COOKIES JSON array from the
+existing authenticated Vercel CLI. Never print, persist or commit those cookies.
+The browser check uses the October 25 snapshot counts and must be updated when
+testing a later snapshot. It makes read-only admin requests and exports a CSV;
+it never approves applications, changes allocations or submits transactions.
