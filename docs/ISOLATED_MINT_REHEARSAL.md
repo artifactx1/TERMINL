@@ -1,4 +1,4 @@
-# Private mint rehearsal
+# Isolated mint rehearsal
 
 The live site remains available. This branch tests production source commit
 `5b9e6084ee8dcb5584327a73c2446299877da75b` in an ephemeral GitHub Actions runner.
