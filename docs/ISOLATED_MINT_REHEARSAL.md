@@ -50,4 +50,27 @@ their results must not be described as proven production capacity.
 
 ## Results
 
-Pending execution. See the branch's `Isolated mint rehearsal` Actions run.
+**PASS — October 27, 2026, 18:37 UTC.**
+
+[GitHub Actions run 40561113946](https://github.com/artifactx1/TERMINL/actions/runs/40561113946)
+tested rehearsal commit `b9bd44a26d80a8fa6400aae81bda52cbba0efc57`:
+
+- Production-mode Next.js build: passed.
+- Loopback-target and environment-isolation guard tests: 2 passed, 0 failed.
+- Chromium desktop (1440 × 1000): all 13 scenarios passed.
+- WebKit mobile viewport (390 × 844): all 13 scenarios passed.
+- The runner verified that its network namespace contained only loopback.
+- GitHub `main` remained at `5b9e6084ee8dcb5584327a73c2446299877da75b`.
+
+The initial browser run passed eight scenarios before encountering incorrect
+test-clock initialization in the late-configuration scenario. Installing the
+clock before page navigation, as required by
+[Playwright's clock documentation](https://playwright.dev/docs/clock), resolved
+it. All cases then passed; no application runtime code needed changing.
+
+The rehearsal's branch-only Vercel exclusion uses the documented
+[`git.deploymentEnabled` setting](https://vercel.com/docs/project-configuration/git-configuration).
+The workflow, test harness and results are committed on
+`testing/isolated-mint-rehearsal-2026-10-27`; they are not merged into `main`.
+These results improve UI confidence but do not change the audit's outstanding
+contract-configuration, provider-capacity or real-wallet verification requirements.
