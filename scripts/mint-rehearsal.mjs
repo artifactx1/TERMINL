@@ -1,14 +1,15 @@
 // Run only in a disposable Linux network namespace with loopback enabled.
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import http from 'node:http';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { rehearsalEnv } from './mint-rehearsal-safety.mjs';
 
 assert.equal(process.platform, 'linux', 'Use the isolated GitHub Actions runner');
-assert.deepEqual(readdirSync('/sys/class/net').sort(), ['lo'], 'Refusing to run with an external network interface');
+const links = JSON.parse(execFileSync('ip', ['-j', 'link', 'show'], { encoding: 'utf8' }));
+assert.deepEqual(links.map(link => link.ifname).sort(), ['lo'], 'Refusing to run with an external network interface');
 assert.ok(Object.values(networkInterfaces()).flat().every(i => i.internal));
 for (const file of ['.env', '.env.local', '.env.production.local', '.env.development.local', '.env.test.local']) assert.ok(!existsSync(file), `Remove private environment file before rehearsing: ${file}`);
 
