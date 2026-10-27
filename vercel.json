@@ -1,0 +1,7 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "testing/isolated-mint-rehearsal-2026-10-27": false
+    }
+  }
+}

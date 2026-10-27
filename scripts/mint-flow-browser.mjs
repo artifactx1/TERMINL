@@ -3,10 +3,11 @@
 import assert from 'node:assert/strict';
 import { chromium, webkit } from 'playwright';
 import nextEnv from '@next/env';
+import { localTestUrl } from './mint-rehearsal-safety.mjs';
 nextEnv.loadEnvConfig(process.cwd(), false);
 const contract = process.env.NEXT_PUBLIC_TERMINL_CONTRACT;
 assert.match(contract || '', /^0x[0-9a-f]{40}$/i);
-const base = process.env.MINT_TEST_URL || 'http://127.0.0.1:4007';
+const base = localTestUrl(process.env.MINT_TEST_URL || 'http://127.0.0.1:4007');
 const wallet = '0x1111111111111111111111111111111111111111';
 const hash = '0x' + 'ab'.repeat(32);
 const currency = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
@@ -16,7 +17,8 @@ const browser = await engine.launch({ headless: true });
 const scenarios = ['public success', 'last token', 'allowlist success', 'wallet rejection', 'simulation revert', 'failed receipt', 'late configuration', 'allowlist recovery', 'wrong chain', 'slow receipt', 'reload pending'];
 try {
   for (const name of scenarios) {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const context = await browser.newContext({ serviceWorkers: 'block', viewport: process.env.MINT_TEST_DESKTOP === '1' ? { width: 1440, height: 1000 } : { width: 390, height: 844 } });
+    await context.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort('blockedbyclient'));
     const page = await context.newPage();
     page.setDefaultTimeout(20_000);
     const errors = [];
@@ -70,7 +72,7 @@ try {
     } }));
     await page.route('**/api/phases', route => route.fulfill({ json: { published: stageMode, stages: stageMode ? [{ ...params, name: 'GTD' }] : [] } }));
     await page.route('**/api/allowlist/*', route => route.fulfill(allowFailed ? { status: 503, json: { error: 'Temporary failure' } } : { json: { eligible: stageMode, stages: stageMode ? [stage] : [], reason: stageMode ? null : 'no_allowlist' } }));
-    await page.route(/\/api\/mint-rpc$|https:\/\/rpc\.(mainnet|testnet)\.chain\.robinhood\.com/, async route => {
+    await page.route(url => url.pathname === '/api/mint-rpc' || url.origin === process.env.NEXT_PUBLIC_RPC_URL || /^https:\/\/rpc\.(mainnet|testnet)\.chain\.robinhood\.com/.test(url.href), async route => {
       const answer = call => {
         let result = '0x';
         if (call.method === 'eth_chainId') result = '0x1237';
