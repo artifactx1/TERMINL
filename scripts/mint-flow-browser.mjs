@@ -14,6 +14,7 @@ const currency = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const word = n => '0x' + BigInt(n).toString(16).padStart(64, '0');
 const engine = process.env.MINT_TEST_BROWSER === 'webkit' ? webkit : chromium;
 const browser = await engine.launch({ headless: true });
+const failures = [];
 const scenarios = ['public success', 'last token', 'allowlist success', 'allowlist GTD paid', 'allowlist FCFS paid', 'wallet rejection', 'simulation revert', 'failed receipt', 'late configuration', 'allowlist recovery', 'wrong chain', 'slow receipt', 'reload pending'];
 try {
   for (const name of scenarios) {
@@ -99,10 +100,12 @@ try {
       return route.fulfill({ json: Array.isArray(call) ? call.map(answer) : answer(call) });
     });
     try {
+      // Install before the page creates timers; replacing live timers is undefined.
+      if (['late configuration', 'slow receipt'].includes(name)) await page.clock.install();
       await page.goto(base, { waitUntil: 'domcontentloaded' });
       if (name === 'late configuration') {
         await page.getByText('MINT NOT OPEN YET', { exact: true }).waitFor();
-        await page.clock.install(); configured = true;
+        configured = true;
         await page.clock.fastForward(21_000);
         await page.clock.resume();
         await page.getByRole('button', { name: 'CONNECT WALLET', exact: true }).first()
@@ -131,7 +134,6 @@ try {
       await mint.waitFor();
       for (let i = 0; i < 50 && simulations === 0; i++) await page.waitForTimeout(100);
       assert.ok(simulations > 0, 'Preflight ran');
-      if (name === 'slow receipt') await page.clock.install();
       // Deliberately trigger two clicks in one JS turn, before React can render.
       await mint.evaluate(button => { button.click(); button.click(); });
       if (name === 'wallet rejection') {
@@ -175,8 +177,10 @@ try {
       assert.deepEqual(errors, []);
       console.log('PASS ' + name);
     } catch (error) {
-      console.error(name, (await page.locator('body').innerText()).slice(0, 5000));
-      throw error;
+      console.error('FAIL ' + name, error.message, (await page.locator('body').innerText()).slice(0, 2200));
+      console.error('Page errors:', errors);
+      failures.push(new Error(name, { cause: error }));
     } finally { await context.close(); }
   }
 } finally { await browser.close(); }
+if (failures.length) throw new AggregateError(failures, `${failures.length} rehearsal scenarios failed`);

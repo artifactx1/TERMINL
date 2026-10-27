@@ -52,9 +52,13 @@ try {
     await sleep(250);
   }
   assert.ok(ready, 'Test server did not start');
+  const failures = [];
   for (const engine of ['chromium', 'webkit']) {
     console.log(`REHEARSAL: ${engine} / ${engine === 'chromium' ? 'desktop' : 'mobile viewport'}`);
-    await run(['scripts/mint-flow-browser.mjs'], { MINT_TEST_BROWSER: engine, MINT_TEST_DESKTOP: engine === 'chromium' ? '1' : '0' });
+    try {
+      await run(['scripts/mint-flow-browser.mjs'], { MINT_TEST_BROWSER: engine, MINT_TEST_DESKTOP: engine === 'chromium' ? '1' : '0' });
+    } catch (error) { failures.push(error); }
   }
+  if (failures.length) throw new AggregateError(failures, 'Mint rehearsal failed');
   console.log('PASS: both browser engines completed all mint scenarios');
 } finally { cleanup(); }
