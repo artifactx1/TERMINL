@@ -2,6 +2,7 @@ name: Isolated mint rehearsal
 on:
   push:
     branches: [testing/isolated-mint-rehearsal-2026-10-27]
+    paths-ignore: ['docs/**']
 permissions:
   contents: read
 concurrency:

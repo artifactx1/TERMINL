@@ -18,7 +18,8 @@ transaction hash without signing or broadcasting. Browser targets must be local.
 ## Coverage
 
 Chromium desktop and WebKit at a mobile viewport exercise the actual mint page:
-public mint, last token, allowlist mint, rejected wallet request, simulation
+public mint, last token, allowlist mint, GTD at 0.004 ETH and FCFS at 0.005 ETH,
+rejected wallet request, simulation
 revert, failed receipt, configuration refresh, allowlist outage/recovery, wrong
 chain, delayed confirmation and reload during a pending transaction. Duplicate
 clicks must not create duplicate transaction requests. Optional services are
@@ -28,7 +29,8 @@ This checks UI behavior with controlled fixtures. It does **not** certify a real
 iPhone, wallet application, WalletConnect relay, the deployed Merkle tree,
 production RPC availability, Vercel WAF or production capacity. Reown is disabled
 in this isolated environment, so these runs cover the injected-wallet path.
-The test prices are zero fixtures and do not validate production mint economics.
+Displayed prices and fake-wallet transaction values are compared for both paid
+phases. These fixtures do not validate the deployed contract's mint economics.
 
 ## Before launch
 

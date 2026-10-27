@@ -14,7 +14,7 @@ const currency = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const word = n => '0x' + BigInt(n).toString(16).padStart(64, '0');
 const engine = process.env.MINT_TEST_BROWSER === 'webkit' ? webkit : chromium;
 const browser = await engine.launch({ headless: true });
-const scenarios = ['public success', 'last token', 'allowlist success', 'wallet rejection', 'simulation revert', 'failed receipt', 'late configuration', 'allowlist recovery', 'wrong chain', 'slow receipt', 'reload pending'];
+const scenarios = ['public success', 'last token', 'allowlist success', 'allowlist GTD paid', 'allowlist FCFS paid', 'wallet rejection', 'simulation revert', 'failed receipt', 'late configuration', 'allowlist recovery', 'wrong chain', 'slow receipt', 'reload pending'];
 try {
   for (const name of scenarios) {
     const context = await browser.newContext({ serviceWorkers: 'block', viewport: process.env.MINT_TEST_DESKTOP === '1' ? { width: 1440, height: 1000 } : { width: 390, height: 844 } });
@@ -64,13 +64,16 @@ try {
     let receiptReady = !['slow receipt', 'reload pending'].includes(name);
     let simulations = 0;
     const stageMode = name.startsWith('allowlist');
-    const params = { pricePerToken: '0', currency, maxMintableByWallet: '10', maxSupplyForStage: '2048', startTime: String(now - 10), endTime: String(now + 3600), stageIndex: 1 };
-    const stage = { stageIndex: 1, name: 'GTD', kind: 'gtd', params, proof: [] };
+    const price = name === 'allowlist GTD paid' ? '4000000000000000' : name === 'allowlist FCFS paid' ? '5000000000000000' : '0';
+    const mintLabel = price === '0' ? 'MINT 1 — FREE' : `MINT 1 — ${price === '4000000000000000' ? '0.004' : '0.005'} ETH`;
+    const stageName = name === 'allowlist FCFS paid' ? 'FCFS' : 'GTD';
+    const params = { pricePerToken: price, currency, maxMintableByWallet: '10', maxSupplyForStage: '2048', startTime: String(now - 10), endTime: String(now + 3600), stageIndex: 1 };
+    const stage = { stageIndex: 1, name: stageName, kind: stageName.toLowerCase(), params, proof: [] };
     await page.route('**/api/drop', route => route.fulfill({ json: {
       condition: { startsAt: String(stageMode ? now + 7200 : now - 10), maxClaimable: configured ? '2048' : '0', claimed: confirmed ? '1' : '0', perWallet: '10', price: '0', currency },
       endsAt: '0', minted: name === 'last token' ? confirmed ? '2048' : '2047' : confirmed ? '1' : '0', lazySupply: '2048', chainNow: String(Math.floor(Date.now() / 1000)),
     } }));
-    await page.route('**/api/phases', route => route.fulfill({ json: { published: stageMode, stages: stageMode ? [{ ...params, name: 'GTD' }] : [] } }));
+    await page.route('**/api/phases', route => route.fulfill({ json: { published: stageMode, stages: stageMode ? [{ ...params, name: stageName }] : [] } }));
     await page.route('**/api/allowlist/*', route => route.fulfill(allowFailed ? { status: 503, json: { error: 'Temporary failure' } } : { json: { eligible: stageMode, stages: stageMode ? [stage] : [], reason: stageMode ? null : 'no_allowlist' } }));
     await page.route(url => url.pathname === '/api/mint-rpc' || url.origin === process.env.NEXT_PUBLIC_RPC_URL || /^https:\/\/rpc\.(mainnet|testnet)\.chain\.robinhood\.com/.test(url.href), async route => {
       const answer = call => {
@@ -124,7 +127,7 @@ try {
         // Some connectors switch during connection; both paths must work.
         if (await switchButton.isVisible()) await switchButton.click();
       }
-      const mint = page.getByRole('button', { name: 'MINT 1 — FREE', exact: true }).first();
+      const mint = page.getByRole('button', { name: mintLabel, exact: true }).first();
       await mint.waitFor();
       for (let i = 0; i < 50 && simulations === 0; i++) await page.waitForTimeout(100);
       assert.ok(simulations > 0, 'Preflight ran');
@@ -167,6 +170,7 @@ try {
       if (sends.length) {
         assert.equal(sends[0].to.toLowerCase(), contract.toLowerCase());
         assert.equal(sends[0].data.slice(0, 10), stageMode ? '0x1ba84308' : '0x84bb1e42');
+        assert.equal(BigInt(sends[0].value || '0x0'), BigInt(price), 'Wallet request uses the displayed fixture price');
       }
       assert.deepEqual(errors, []);
       console.log('PASS ' + name);
