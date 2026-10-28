@@ -66,8 +66,8 @@
     "Chassis Finish": 17,
     "Screen / Face": 101,
     "Primary Prop": 18,
-    "Companion": 156,
-    "Effect": 6
+    "Effect": 6,
+    "Degen": 156
   },
   "traitCategories": {
     "Background": [
@@ -315,7 +315,39 @@
         "percent": 2.393
       }
     ],
-    "Companion": [
+    "Effect": [
+      {
+        "name": "Orderflow Codefall",
+        "count": 155,
+        "percent": 7.568
+      },
+      {
+        "name": "Pixel Sparks",
+        "count": 139,
+        "percent": 6.787
+      },
+      {
+        "name": "Liquidation Fire",
+        "count": 120,
+        "percent": 5.859
+      },
+      {
+        "name": "Leverage Arcs",
+        "count": 89,
+        "percent": 4.346
+      },
+      {
+        "name": "Rug-Pull Glitch",
+        "count": 62,
+        "percent": 3.027
+      },
+      {
+        "name": "Analog Tracking Tear",
+        "count": 60,
+        "percent": 2.93
+      }
+    ],
+    "Degen": [
       {
         "name": "Margin Call Max",
         "count": 77,
@@ -365,38 +397,6 @@
         "name": "Leverage Larry",
         "count": 41,
         "percent": 2.002
-      }
-    ],
-    "Effect": [
-      {
-        "name": "Orderflow Codefall",
-        "count": 155,
-        "percent": 7.568
-      },
-      {
-        "name": "Pixel Sparks",
-        "count": 139,
-        "percent": 6.787
-      },
-      {
-        "name": "Liquidation Fire",
-        "count": 120,
-        "percent": 5.859
-      },
-      {
-        "name": "Leverage Arcs",
-        "count": 89,
-        "percent": 4.346
-      },
-      {
-        "name": "Rug-Pull Glitch",
-        "count": 62,
-        "percent": 3.027
-      },
-      {
-        "name": "Analog Tracking Tear",
-        "count": 60,
-        "percent": 2.93
       }
     ]
   },

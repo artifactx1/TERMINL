@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import styles from "../styles/Terminl.module.css";
 
-export default function SiteNavMenu({ contractUrl }) {
+export default function SiteNavMenu({ contractUrl, openseaUrl }) {
   const [open, setOpen] = useState(false);
   const root = useRef(null);
   const button = useRef(null);
@@ -57,6 +57,7 @@ export default function SiteNavMenu({ contractUrl }) {
       </div>
       <div className={styles.menuGroup}>
         <span className={styles.menuHeading}>THE COLLECTION</span>
+        {openseaUrl && <a href={openseaUrl} target="_blank" rel="noopener noreferrer" onClick={close}>OFFICIAL OPENSEA <span>↗</span></a>}
         <Link href="/#story" onClick={close}>STORY <span>↗</span></Link>
         <Link href="/#art" onClick={close}>ART <span>↗</span></Link>
         <Link href="/#degens" onClick={close}>DEGENS <span>↗</span></Link>
