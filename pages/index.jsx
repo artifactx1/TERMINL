@@ -14,6 +14,7 @@ import WalletButton from "../components/WalletButton";
 import { CHAIN, CONTRACT } from "../lib/mint";
 
 const HERO_ROTATE_MS = 5200;
+const OPENSEA_URL = "https://opensea.io/collection/terminl";
 
 /* The snapshot commits the published art and portraits with the site. Serve
  * those same files in every environment so a stale bucket cannot hide updates. */
@@ -163,7 +164,7 @@ function Site({ data }) {
           <div className={styles.navRight}>
             <Link className={`${styles.os} ${styles.arcadeNav}`} href="/os">ARCADE ↗</Link>
             <WalletButton />
-            <SiteNavMenu contractUrl={CONTRACT ? `${CHAIN.explorer}/address/${CONTRACT}` : null} />
+            <SiteNavMenu contractUrl={CONTRACT ? `${CHAIN.explorer}/address/${CONTRACT}` : null} openseaUrl={OPENSEA_URL} />
           </div>
         </nav>
         <MintLaunch date="2026-10-29" />
@@ -334,6 +335,7 @@ function Site({ data }) {
 
         <footer className={styles.foot}>
           <a className={styles.footCta} href="#top">MINT TERMINL</a>
+          <div><a href={OPENSEA_URL} target="_blank" rel="noopener noreferrer">OFFICIAL OPENSEA ↗</a></div>
           <div>{data.name} · {data.symbol} · {data.counts.uniqueDna} unique of {data.supply}</div>
           <div><code>{data.imageTx ? `ar://${data.imageTx}` : "arweave manifest pending upload"}</code></div>
         </footer>
