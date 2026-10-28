@@ -315,7 +315,7 @@ function Site({ data }) {
             <p><Link href="/os">Play the arcade ↗</Link></p>
             <p>
               Here for the art? {data.supply.toLocaleString('en-US')} pixel machines,
-              {" "}{data.traitTotals.Companion} degens, and at least one character
+              {" "}{data.traitTotals.Degen} degens, and at least one character
               you&rsquo;ll insist is based on your friend.
             </p>
           </div>
@@ -466,7 +466,7 @@ function Story({ data }) {
           The pigeon doesn&rsquo;t trade. Best performer in the room.
         </p>
         <p>
-          TERMINL puts {f.regulars ?? data.traitTotals.Companion} of these people beside
+          TERMINL puts {f.regulars ?? data.traitTotals.Degen} of these people beside
           glowing screens in dead malls, garages and rooms that need airing out.
           Someone brought a bong. Nobody brought an exit strategy.
         </p>
@@ -488,7 +488,7 @@ function Story({ data }) {
  * Everyone else stays behind the mint.
  */
 function Degens({ data }) {
-  const rest = data.traitTotals.Companion - data.degens.length;
+  const rest = data.traitTotals.Degen - data.degens.length;
 
   /* Which degen is open, by index, so the arrows can walk the cast. */
   const [meeting, setMeeting] = useState(null);
@@ -503,7 +503,7 @@ function Degens({ data }) {
       <div className={styles.sectionHead}>
         <h2>The group chat, unfortunately.</h2>
         <p>
-          Most machines come with a degen. There are {data.traitTotals.Companion} of them.
+          Most machines come with a degen. There are {data.traitTotals.Degen} of them.
           Tap a face to read their excuses. If none of them remind you of a friend,
           we have some uncomfortable news.
         </p>
@@ -599,7 +599,7 @@ function DegenCard({ degen, at, total, onClose, onStep }) {
 }
 
 function Tape({ data }) {
-  const order = ["Screen / Face", "Companion", "Background", "Chassis", "Chassis Finish", "Primary Prop", "Effect"];
+  const order = ["Screen / Face", "Degen", "Background", "Chassis", "Chassis Finish", "Primary Prop", "Effect"];
   const cats = order.filter((c) => data.traitCategories[c]);
 
   return (

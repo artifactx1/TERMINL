@@ -88,8 +88,8 @@ async function main() {
     traits[category]?.find((v) => v.name === name)?.count ?? null;
 
   const storyFacts = {
-    regulars: traits.Companion?.length ?? null,
-    mostCommon: traits.Companion?.[0] ?? null,
+    regulars: traits.Degen?.length ?? null,
+    mostCommon: traits.Degen?.[0] ?? null,
     gasFeeReceipt: countOf("Primary Prop", "Gas Fee Receipt"),
     emptyWallet: countOf("Primary Prop", "Empty Wallet"),
     bagholderTrophy: countOf("Primary Prop", "Bagholder Trophy"),
@@ -120,7 +120,7 @@ async function main() {
       finish: t["Chassis Finish"] || null,
       room: t.Background || null,
       prop: t["Primary Prop"] || null,
-      companion: t.Companion || null,
+      companion: t.Degen || null,
     });
     process.stdout.write(`  ${slug}.webp  ${(fs.statSync(out).size / 1024).toFixed(0)} kB\n`);
   }
