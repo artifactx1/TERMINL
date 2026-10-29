@@ -96,7 +96,7 @@ try {
     }
     await input.waitFor({ state: 'visible' });
     assert.equal(await page.getByRole('button', { name: /Mint the maximum/ }).count(), 0);
-    assert.doesNotMatch(await page.getByLabel('Mint schedule and wallet checker').locator('..').innerText(), /up to \d+ minted|MAX \d/i);
+    assert.doesNotMatch(await page.getByLabel('Mint schedule and wallet checker').locator('..').innerText(), /up to \d+ minted/i);
 
     assert.ok((await page.getByLabel('Mint schedule and wallet checker').locator('..').innerText()).includes(`max ${scenario.cap} per wallet this phase`));
 

@@ -133,7 +133,7 @@ try {
       const mint = page.getByRole('button', { name: mintLabel, exact: true }).first();
       await mint.waitFor();
       const mintPanel = page.getByLabel('Mint schedule and wallet checker').locator('..');
-      assert.doesNotMatch(await mintPanel.innerText(), /up to \d+ minted|MAX \d/i);
+      assert.doesNotMatch(await mintPanel.innerText(), /up to \d+ minted/i);
       assert.ok((await mintPanel.innerText()).includes('max 10 per wallet this phase'));
       assert.ok((await page.getByLabel('Mint schedule and wallet checker').innerText()).includes('max 10 per wallet'));
       if (stageMode) {
