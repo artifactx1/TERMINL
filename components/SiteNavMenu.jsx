@@ -45,7 +45,7 @@ export default function SiteNavMenu({ contractUrl, openseaUrl }) {
       <div className={styles.menuGroup}>
         <span className={styles.menuHeading}>MINT &amp; WL</span>
         <Link href="/#top" onClick={close}>MINT HOME <span>↗</span></Link>
-        <Link href="/wl" onClick={close}>APPLY FOR WL <span>↗</span></Link>
+        <Link href="/#allowlist-checker" onClick={close}>CHECK WL STATUS <span>↗</span></Link>
         <Link href="/#updates" onClick={close}>LAUNCH UPDATES <span>↗</span></Link>
         {contractUrl && <a href={contractUrl} target="_blank" rel="noreferrer" onClick={close}>CONTRACT <span>↗</span></a>}
       </div>

@@ -27,7 +27,7 @@ export default async function handler(request){
         <div style={{display:'flex',fontSize:54,marginTop:12}}>{c.claim}</div>
         <div style={{display:'flex',fontSize:104,lineHeight:1.3,color:'#7dff5c'}}>{c.big}</div>
         <div style={{display:'flex',fontSize:20,color:'#a2b39b',marginTop:8}}>{c.line}</div>
-        <div style={{display:'flex',alignItems:'center',fontSize:18,borderTop:'1px solid #49643c',paddingTop:24,marginTop:36}}>{run.qualified?'SERVER-VERIFIED · FCFS WL SPOT':'SERVER-VERIFIED ARCADE RESULT'}</div>
+        <div style={{display:'flex',alignItems:'center',fontSize:18,borderTop:'1px solid #49643c',paddingTop:24,marginTop:36}}>SERVER-VERIFIED ARCADE RESULT</div>
         <div style={{display:'flex',fontSize:26,marginTop:20}}>YOUR TURN. →</div>
       </div>
       {c.figure&&<div style={{display:'flex',position:'absolute',right:0,top:0,width:390,height:630,background:'linear-gradient(180deg,#162a16,#080e09)',alignItems:'flex-end',justifyContent:'center'}}>

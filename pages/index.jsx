@@ -202,7 +202,7 @@ function Site({ data }) {
               {data.supply.toLocaleString('en-US')} pixel machines for people who deleted the exchange app,
               then checked the price in Safari.
             </p>
-            <a className={styles.accessJump} href="#access">PLAY OR APPLY FOR THE ALLOWLIST ↓</a>
+            <a className={styles.accessJump} href="#allowlist-checker">CHECK YOUR WL STATUS ↓</a>
 
             <div className={styles.score}>
               <div><b>{data.outcomes.winner}</b><span>MADE IT</span></div>
@@ -232,24 +232,6 @@ function Site({ data }) {
           </div>
         </div>
 
-        <section className={styles.access} id="access">
-          <span className={styles.accessEyebrow}>THE ALLOWLIST</span>
-          <h2>Pick your way in.</h2>
-          <p className={styles.accessIntro}>Play the official Arcade challenges for a shot at FCFS, or apply for a WL spot if you don&rsquo;t have time to grind.</p>
-          <div className={styles.accessRoutes}>
-            <Link href="/beat-the-bots">
-              <span>01 / PLAY</span>
-              <b>PLAY FOR A SPOT ↗</b>
-              <small>See the verified challenges and how Arcade spots work.</small>
-            </Link>
-            <Link href="/wl">
-              <span>02 / APPLY</span>
-              <b>APPLY FOR WL ↗</b>
-              <small>Enter the October 26 draw. Selected applicants will be emailed.</small>
-            </Link>
-          </div>
-          <p className={styles.accessCheck}>Already applied? <a href="#allowlist-checker">Check your wallet</a>. The lists are updated daily.</p>
-        </section>
 
         <LaunchSignup />
 

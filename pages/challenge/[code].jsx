@@ -24,12 +24,12 @@ export default function Challenge({run,origin,unavailable}){
   useEffect(()=>{if(run)campaignRequest('/session').then(()=>campaignEvent('challenge_link_opened',run.code)).catch(()=>{});},[run]);
   if(unavailable)return <CampaignShell><h1 className={s.title}>The timing desk is offline.</h1><p>Try this challenge link again shortly. Saved results have not changed.</p><Link className={s.primary} href='/os'>PLAY THE ARCADE →</Link></CampaignShell>;
   const {headline,detail,play}=claim(run),title=`${headline} Your turn.`;
-  return <CampaignShell><ArcadeMeta card='beat-the-bots' title={`${title} — TERMINL`} description='Beat the bots for an FCFS WL spot. No wallet required.' path={`/challenge/${run.code}`} image={`${origin}/api/challenge-card/${run.code}`} alt={title}/>
+  return <CampaignShell><ArcadeMeta card='beat-the-bots' title={`${title} — TERMINL`} description='A verified TERMINL arcade result. Allowlist qualification has closed.' path={`/challenge/${run.code}`} image={`${origin}/api/challenge-card/${run.code}`} alt={title}/>
     <span className={s.eyebrow}>{(ROUTES[run.kind]?.game||'TERMINL ARCADE').toUpperCase()} / SERVER-VERIFIED RUN</span><h1 className={s.title}>{headline}<br/>Now it’s your turn.</h1>
     <p className={s.lede}>{detail} {run.result&&<b>{resultSummary(run.kind,run.result)}</b>}</p>
-    <div className={s.actions}>{run.kind!=='sprint'&&<Link className={s.primary} href={play}>ACCEPT CHALLENGE →</Link>}<Link className={run.kind==='sprint'?s.primary:s.secondary} href='/beat-the-bots'>HOW TO EARN A WL SPOT</Link></div>
+    <div className={s.actions}>{run.kind!=='sprint'&&<Link className={s.primary} href={play}>ACCEPT CHALLENGE →</Link>}<Link className={run.kind==='sprint'?s.primary:s.secondary} href='/#allowlist-checker'>CHECK WL STATUS</Link></div>
     {run.kind!=='sprint'&&<ResultShareActions run={run} origin={origin} publicCard/>}
-    <p className={s.fine}>This card shows server-verified progress. Completing a route earns an FCFS WL spot of your own. No wallet or sign-in needed to play.</p>
+    <p className={s.fine}>This card shows server-verified progress. Allowlist qualification has closed; new games do not earn mint access. No wallet or sign-in needed to play.</p>
     {/* A regular image lets players save the exact card that link previews use. */}
     {/* eslint-disable-next-line @next/next/no-img-element */}
     <img className={s.shareCard} src={`/api/challenge-card/${run.code}`} width='1200' height='630' alt={title}/>

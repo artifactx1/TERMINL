@@ -295,7 +295,7 @@ export default function Mint() {
     inputMode: "numeric",
     pattern: "[0-9]*",
     "aria-label": "Mint quantity",
-    title: `Quantity: 1 to ${max}`,
+    title: "Mint quantity",
     value: quantityDraft ?? String(quantity),
     disabled: busy,
     onFocus: (event) => event.currentTarget.select(),
@@ -731,7 +731,7 @@ export default function Mint() {
    * question it answers is "how much of the collection is gone". */
   const progress = facts && facts.lazySupply > 0n
     ? { minted: facts.minted, supply: facts.lazySupply }
-    : (drop?.configured ? drop : null);
+    : null;
 
   /* Why this wallet is being shown a closed door rather than a stage. Only ever
    * about the allowlist — the public phase explains itself below. */
@@ -840,7 +840,7 @@ export default function Mint() {
     const stageName = (s) => (s?.name || `stage ${s?.stageIndex}`).toLowerCase();
 
     if (stage?.spent) {
-      return shell(`YOU'VE MINTED YOUR ${String(stage.capPerWallet)}`, `${stageName(stage)} · your allocation is spent`);
+      return shell("WALLET ALLOCATION USED", `${stageName(stage)} · your allocation is spent`);
     }
     if (stage?.soldOut) return shell("STAGE SOLD OUT", `${stageName(stage)} has nothing left`);
     if (stage?.nobodyMayMint) return shell("STAGE CLOSED", `${stageName(stage)} is live but claiming is closed`);
@@ -888,16 +888,16 @@ export default function Mint() {
       return shell("COULD NOT CHECK THE ALLOWLIST", "retrying automatically");
     }
     if (!drop.configured) return shell("MINT NOT OPEN YET", listNote || "the drop is deployed, the phase is not live");
-    if (drop.soldOut) return shell("SOLD OUT", `all ${String(drop.supply)} gone`);
+    if (drop.soldOut) return shell("SOLD OUT");
     if (drop.nobodyMayMint) return shell("MINT NOT OPEN YET", "the phase is live but claiming is closed");
     if (!drop.started) {
       return shell(
         opensIn ? `OPENS IN ${opensIn}` : "OPENING…",
-        listNote || `${String(drop.supply)} pieces · ${formatEth(drop.price)} each`,
+        listNote || `${formatEth(drop.price)} each`,
       );
     }
     /* Open on chain, closed to this wallet: it has taken its per-wallet cap. */
-    return shell(`YOU'VE MINTED YOUR ${String(drop.capPerWallet)}`, listNote);
+    return shell("WALLET ALLOCATION USED", listNote);
   }
 
   const wrongChain = isConnected && chainId !== CHAIN.id;
@@ -926,7 +926,7 @@ export default function Mint() {
         <div><b>{String(shownMinted)}</b><span>MINTED</span></div>
         {/* null = the drop's total could not be read, which is not the same as
             nothing left. Say nothing rather than a number that is wrong. */}
-        <div><b>{active.remaining === null ? "—" : String(active.remaining)}</b><span>LEFT</span></div>
+        <div><b>{progress ? String(progress.supply > progress.minted ? progress.supply - progress.minted : 0n) : "—"}</b><span>TOTAL LEFT</span></div>
         <div><b>{formatEth(active.price)}</b><span>EACH</span></div>
       </div>
       <Progress drop={progress} />
@@ -944,27 +944,14 @@ export default function Mint() {
             SWITCH TO {CHAIN.name.toUpperCase()}
           </button>
         ) : cap && active.claimed >= cap ? (
-          <div className={styles.mintClosed}>YOU&rsquo;VE MINTED YOUR {String(cap)}</div>
+          <div className={styles.mintClosed}>WALLET ALLOCATION USED</div>
         ) : (
           <>
             <div className={styles.qty}>
               <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
               <input {...quantityInputProps} />
               <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
-              {/* Stepping to a per-wallet cap of fifty one press at a time is
-                  not a thing anyone should be asked to do. Hidden when the cap
-                  is one, where it would be a button that does nothing. */}
-              {max > 1 && (
-                <button
-                  type="button"
-                  className={styles.qtyMax}
-                  onClick={() => setQuantity(max)}
-                  disabled={busy || quantity >= max}
-                  aria-label={`Mint the maximum, ${max}`}
-                >
-                  MAX {max}
-                </button>
-              )}
+
             </div>
             <button type="button" className={styles.cta} onClick={mint} disabled={busy}>{cta}</button>
           </>
@@ -973,7 +960,6 @@ export default function Mint() {
 
       {transactionStatus}
       <p className={styles.note}>
-        {cap ? `max ${String(cap)} per wallet · ` : ""}
         {onStage
           ? (stageEndsIn ? `stage ends in ${stageEndsIn} · ` : "")
           : (endsIn ? `ends in ${endsIn} · ` : "")}
@@ -1008,7 +994,6 @@ export default function Mint() {
           <div className={styles.barInner}>
           <div className={styles.barFacts}>
             {onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}
-            {active.remaining === null ? " · allowlist mint" : ` · ${String(active.remaining)} left`}
             {onStage && stageEndsIn ? ` · ends in ${stageEndsIn}` : ""}
             {!onStage && endsIn ? ` · ends in ${endsIn}` : ""}
           </div>
@@ -1023,9 +1008,6 @@ export default function Mint() {
                 <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={busy || quantity <= 1} aria-label="One fewer">−</button>
                 <input {...quantityInputProps} />
                 <button type="button" onClick={() => setQuantity((q) => Math.min(max, q + 1))} disabled={busy || quantity >= max} aria-label="One more">+</button>
-                <button type="button" className={styles.barMax} onClick={() => setQuantity(max)} disabled={busy || quantity >= max} aria-label={`Mint the maximum, ${max}`}>
-                  MAX
-                </button>
               </div>
             )}
 

@@ -1,16 +1,11 @@
 import Link from 'next/link';
 import {useEffect,useState} from 'react';
 import {campaignRequest,campaignEvent} from '../../lib/arcade/campaign-client';
-import {GTD_NOTE} from '../../lib/arcade/campaign-rules.mjs';
 import s from '../../styles/Campaign.module.css';
 
-const when=ms=>new Date(ms).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
-/** How the top of the board becomes GTD spots, and when. */
-export function GtdBanner({gtd}){
-  if(!gtd?.slots)return null;
-  return <p className={s.notice}>{gtd.closed?<>The leaderboard has closed. The top {gtd.slots} hold GTD WL spots{gtd.submitOpen?' and can add their mint address on the Arcade Pass':''}.</>
-    :gtd.scheduled?<>The top {gtd.slots} when the leaderboard closes on <b>{when(gtd.endsAt)}</b> get GTD WL spots.</>
-    :<>The top {gtd.slots} when the leaderboard closes get GTD WL spots. The closing time will be announced.</>} {GTD_NOTE}</p>;
+/** Qualification is closed; public notices never disclose phase allocations. */
+export function GtdBanner(){
+  return <p className={s.notice}>Allowlist qualification has closed. <Link href='/#allowlist-checker'>Check your existing mint eligibility →</Link></p>;
 }
 /** Public points leaderboard. Names are shown only for players who opted in. */
 export default function Leaderboard({limit=100,compact=false,banner=false,quietOnError=false}){
