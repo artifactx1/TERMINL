@@ -198,7 +198,7 @@ export default function Rumble({assetLabEnabled=false}){
     {mode==="menu"?<main className={s.menu}>
       {incoming&&<IncomingRoomInvite game='Rekt Rumble' watch={incoming.watch} onJoin={online}/>}
       <OfficialPanel official={official} portrait={roster.portrait} eyebrow='OFFICIAL / REKT RUMBLE CIRCUIT / FCFS WL'
-        title='Six fights. Your FCFS WL spot.' startLabel={`START AS ${roster.name.toUpperCase()} →`} onStart={startOfficial}
+        title='Six fights. One circuit.' startLabel={`START AS ${roster.name.toUpperCase()} →`} onStart={startOfficial}
         action={official.attempt&&!official.result?<button className={s.primary} onClick={continueOfficial}>CONTINUE · FIGHT {(official.progress?.index||0)+1}/6 →</button>:null}>
         <p>Win all six circuit fights in one official run. Lose a fight and you retry that fight; the circuit keeps your progress for 30 minutes between fights.</p>
         <small>Pick your fighter below first. The finale is a mirror match.</small>

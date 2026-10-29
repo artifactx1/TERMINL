@@ -21,9 +21,9 @@ import s from '../../styles/Racing.module.css';
 const FRAME=1000/60;
 function CupPanel({official,onStart}){
   const c=official.campaign?.config;if(!c)return null;
-  return <OfficialPanel official={official} portrait={BARRY.portrait} eyebrow='OFFICIAL / BARRY CUP / FCFS WL' title='Barry thinks you can’t drive.' startLabel='START THE BARRY CUP →' onStart={onStart}>
+  return <OfficialPanel official={official} portrait={BARRY.portrait} eyebrow='OFFICIAL / BARRY CUP' title='Barry thinks you can’t drive.' startLabel='START THE BARRY CUP →' onStart={onStart}>
     <p>Beat {BARRY.name} on points across all {CUP_TRACKS.length} courses, starting at {TRACKS[c.track].name}. 1st place: 10 pts · 2nd: 6.</p>
-    <small>Everyone drives the {VEHICLES[c.vehicle].name}. Each race win earns verified leaderboard points; take the whole cup for an FCFS WL spot.</small>
+    <small>Everyone drives the {VEHICLES[c.vehicle].name}. Allowlist qualification has closed.</small>
   </OfficialPanel>;
 }
 const seconds=ticks=>ticks===null?'DNF':`${(ticks/60).toFixed(2)}s`;

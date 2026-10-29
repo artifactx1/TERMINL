@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import styles from "../styles/Terminl.module.css";
 import { formatEth } from "../lib/mint";
 import { buildSchedule, whenLabel, windowStatus } from "../lib/phases";
@@ -27,8 +26,6 @@ export default function Phases({ drop, phases, chainNow, account }) {
       {rows.map((r) => {
         const terms = [
           formatEth(r.price) + (r.native ? "" : " (token)"),
-          r.perWallet !== null ? `max ${String(r.perWallet)} per wallet` : "no wallet cap",
-          r.supplyCap !== null ? `up to ${String(r.supplyCap)} minted` : null,
         ].filter(Boolean);
         const when = r.status === "upcoming"
           ? `opens ${whenLabel(r.startsAt)}${r.countdown ? ` · in ${r.countdown}` : ""}`
@@ -119,7 +116,7 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
   return (
     <form id="allowlist-checker" className={styles.check} onSubmit={check}>
       <div className={styles.checkHead}>{onchain ? "AM I ON THE MINT LIST?" : "CHECK YOUR WL STATUS"}</div>
-      <p className={styles.checkNote}>{onchain ? "Missing wallets checked before mint are saved for FCFS review." : "The GTD and FCFS lists are updated daily. Missing wallets checked before mint are saved for FCFS review. No wallet connection needed."}{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>
+      <p className={styles.checkNote}>Check your existing mint eligibility. Allowlist applications and game qualification are closed. No wallet connection needed.{phasesFailed ? " Mint phase data is temporarily unavailable." : ""}</p>
       <div className={styles.checkRow}>
         <input
           className={styles.checkInput}
@@ -156,7 +153,7 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
               <em>{entry.source === "arcade" ? "ARCADE PASS" : "APPROVED"}</em>
             </div>)}
             <p className={styles.checkNote}>Mint access follows the published phase and its final terms.</p>
-          </div> : <p className={styles.checkNote}>{short(state.address)} is not on the current list. {state.recorded && <>We saved this check for the pre-mint FCFS review. </>}<Link href="/wl">Apply for WL →</Link></p>
+          </div> : <p className={styles.checkNote}>{short(state.address)} is not on the current list. Applications are closed.</p>
         ) : state.stages.length ? (
           <div className={styles.checkOk}>
             <b>{short(state.address)} is on the list</b>
@@ -169,7 +166,7 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
                   <span>{(s.name || `STAGE ${s.stageIndex}`).toUpperCase()}</span>
                   <em>{status === "live" ? "LIVE NOW" : status === "upcoming" ? `opens ${whenLabel(start)}` : "ended"}</em>
                   <span className={styles.checkTerms}>
-                    {formatEth(BigInt(s.params.pricePerToken || 0))} · max {String(s.params.maxMintableByWallet)} per wallet
+                    {formatEth(BigInt(s.params.pricePerToken || 0))}
                   </span>
                 </div>
               );
@@ -182,7 +179,6 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
               : state.reason === "no_allowlist"
                 ? "this drop has no allowlist"
                 : `${short(state.address)} is not on the list for this drop`}
-            {state.recorded && <> We saved this check for the pre-mint FCFS review.</>}
           </p>
         )
       )}

@@ -9,6 +9,8 @@ export default async function handler(req,res){
   const path='/'+(Array.isArray(req.query.path)?req.query.path:[]).join('/');
   if(!paths.test(path))return res.status(404).json({error:'Not found'});
   if(!['GET','POST'].includes(req.method)){res.setHeader('Allow','GET, POST');return res.status(405).end();}
+  // Reject stale application forms after the enrollment deadline.
+  if(req.method==='POST'&&path==='/wl/apply')return res.status(410).json({error:'Allowlist applications are closed.'});
   if(req.method==='POST'&&(req.headers.origin!==campaignOrigin()||!/^application\/json(?:;|$)/i.test(req.headers['content-type']||'')))return res.status(403).json({error:'Request origin rejected'});
   if(req.method==='POST'&&['/wl/apply','/subscribe'].includes(path)){
     try{

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { localTestUrl } from './mint-rehearsal-safety.mjs';
 
 // Fixture-only wallet and RPC: this check never signs or broadcasts a transaction.
-const base = process.env.MINT_TEST_URL || 'http://localhost:4001';
+const base = localTestUrl(process.env.MINT_TEST_URL || 'http://127.0.0.1:4007');
 const wallet = '0x1111111111111111111111111111111111111111';
 const currency = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const word = n => `0x${BigInt(n).toString(16).padStart(64, '0')}`;
@@ -19,6 +20,7 @@ try {
   ]) {
     const context = await browser.newContext({ viewport: scenario.mobile
       ? { width: 390, height: 844 } : { width: 1280, height: 900 } });
+    await context.route('**/*', route => new URL(route.request().url()).origin === base ? route.continue() : route.abort('blockedbyclient'));
     const page = await context.newPage();
     const errors = [];
     const simulated = [];
@@ -65,7 +67,7 @@ try {
     await page.route('**/api/allowlist/*', route => route.fulfill({ json: {
       eligible: !scenario.public, stages: scenario.public ? [] : [stage],
     } }));
-    await page.route(/\/api\/mint-rpc$|https:\/\/rpc\.(mainnet|testnet)\.chain\.robinhood\.com/, route => {
+    await page.route(url => url.pathname === '/api/mint-rpc' || url.origin === process.env.NEXT_PUBLIC_RPC_URL, route => {
       const answer = call => {
         let result = '0x';
         if (call.method === 'eth_chainId') result = '0x1237';
@@ -83,20 +85,25 @@ try {
     });
 
     await page.goto(base, { waitUntil: 'domcontentloaded' });
-    const max = page.getByRole('button', { name: `Mint the maximum, ${scenario.expected}`, exact: true }).first();
+    const input = page.getByRole('textbox', { name: 'Mint quantity', exact: true }).first();
     const connect = page.getByRole('button', { name: 'CONNECT WALLET', exact: true }).first();
-    await max.or(connect).first().waitFor({ state: 'visible' });
-    if (!await max.isVisible()) await connect.click();
-    // Reown presents the injected test wallet; the no-project-ID fallback connects directly.
-    if (!await max.isVisible()) await page.getByText('TERMINL Test Wallet', { exact: true }).last().click();
-    await max.waitFor({ state: 'visible' });
+    await input.or(connect).first().waitFor({ state: 'visible' });
+    if (!await input.isVisible()) await connect.click();
+    if (!await input.isVisible()) {
+      const chooser = page.getByText('TERMINL Test Wallet', { exact: true }).last();
+      await chooser.or(input).first().waitFor();
+      if (await chooser.isVisible()) await chooser.click();
+    }
+    await input.waitFor({ state: 'visible' });
+    assert.equal(await page.getByRole('button', { name: /Mint the maximum/ }).count(), 0);
+    assert.doesNotMatch(await page.getByLabel('Mint schedule and wallet checker').locator('..').innerText(), /per wallet|wallet cap|up to \d+ minted|MAX \d/i);
 
     const mintedCount = page.getByText('MINTED', { exact: true }).locator('..').locator('b');
     const progress = page.getByRole('progressbar');
     assert.equal(await mintedCount.innerText(), String(totalMinted));
     assert.ok((await progress.innerText()).includes(`${totalMinted} / 10000`), 'Mint counter and progress must use the same collection total');
 
-    const input = page.getByRole('textbox', { name: 'Mint quantity', exact: true }).first();
+
     await input.fill('17');
     await page.getByRole('button', { name: 'MINT 17 — FREE', exact: true }).first().waitFor();
     for (let i = 0; i < 50 && !simulated.includes(17); i++) await page.waitForTimeout(100);
@@ -122,7 +129,7 @@ try {
     await input.press('Tab');
     assert.equal(await input.inputValue(), '1', 'An unfinished empty edit resets to one');
 
-    await max.click();
+    await input.fill(String(scenario.expected));
     await page.getByRole('button', { name: `MINT ${scenario.expected} — FREE`, exact: true }).first().waitFor();
     for (let i = 0; i < 50 && !simulated.includes(scenario.expected); i++) await page.waitForTimeout(100);
     assert.ok(simulated.includes(scenario.expected), `Preflight must encode quantity ${scenario.expected}`);
@@ -135,7 +142,6 @@ try {
     assert.equal(await stickyInput.inputValue(), '23');
     await page.getByRole('button', { name: 'MINT 23 — FREE', exact: true }).last().waitFor();
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), 'Quantity controls must not overflow the viewport');
-    if (scenario.mobile) await page.screenshot({ path: '/private/tmp/terminl-quantity-mobile.png' });
 
     if (scenario.refreshTotals) {
       // A mint on another site updates both displays when this tab is revisited.
@@ -144,12 +150,12 @@ try {
       await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
       await mintedCount.filter({ hasText: /^1900$/ }).waitFor({ state: 'attached' });
       assert.ok((await progress.innerText()).includes('1900 / 10000'));
-      const leftCount = page.getByText('LEFT', { exact: true }).locator('..').locator('b');
+      const leftCount = page.getByText('TOTAL LEFT', { exact: true }).locator('..').locator('b');
       assert.equal(await leftCount.innerText(), '8100');
       console.log('PASS external mint refresh: 1900 minted in both displays, 8100 left');
     }
     assert.deepEqual(errors, []);
-    console.log(`PASS ${scenario.name}: typed quantity, validation, sticky sync, and MAX ${scenario.expected}`);
+    console.log(`PASS ${scenario.name}: typed quantity, validation, sticky sync, and enforced allocation ${scenario.expected}`);
     await context.close();
   }
 } finally {
