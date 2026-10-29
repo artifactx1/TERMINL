@@ -136,20 +136,31 @@ export default function Mint() {
     if (!account) { setAllow(EMPTY_ALLOWLIST); return undefined; }
     let on = true;
     let loading = false;
+    let failures = 0;
+    let retry = null;
     setAllow(EMPTY_ALLOWLIST);
     const load = async () => {
       if (loading || document.visibilityState === "hidden") return;
       loading = true;
+      clearTimeout(retry);
       const a = await fetchAllowlist(account);
       if (on) setAllow(previous => a.failed && previous.stages.length ? previous : a);
       loading = false;
+      /* A busy backend answers 503 in milliseconds. Waiting the full 30s poll
+       * would park an FCFS minter on "retrying"; back off with jitter instead
+       * so a crowd that failed together does not retry together. */
+      failures = a.failed ? failures + 1 : 0;
+      if (on && failures) {
+        const base = Math.min(2_000 * 2 ** (failures - 1), 16_000);
+        retry = setTimeout(load, base + Math.random() * base);
+      }
     };
     const onVisible = () => { if (document.visibilityState === "visible") load(); };
     load();
     const timer = setInterval(load, 30_000);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("online", load);
-    return () => { on = false; clearInterval(timer); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("online", load); };
+    return () => { on = false; clearInterval(timer); clearTimeout(retry); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("online", load); };
   }, [account]);
 
   /* Counted against chain time, corrected for however wrong this machine's
@@ -433,12 +444,14 @@ export default function Mint() {
   const run = useRef(0);
 
   const follow = useCallback(async (sent, tx, id) => {
+    let submitted = false;
     try {
       const hash = await sent;
       /* The watcher below already saw this land on chain and moved on. The
        * response arriving afterwards is just late news. */
       if (run.current !== id) return;
       if (!/^0x[0-9a-f]{64}$/i.test(hash)) throw new Error("The wallet did not return a transaction hash. Check your wallet before retrying.");
+      submitted = true;
       savePendingMint(CHAIN.id, CONTRACT, tx, hash);
       setTxHash(hash);
 
@@ -472,6 +485,9 @@ export default function Mint() {
     } catch (e) {
       if (run.current !== id) return;
       setError(readableError(e));
+      // Once a hash exists, a receipt/provider failure is uncertainty, never
+      // permission to submit again. Keep the saved hash and the recheck control.
+      if (submitted) { setPhase("slow"); return; }
       setPhase("idle");
       pending.current = null;
     }
