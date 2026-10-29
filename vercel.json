@@ -1,0 +1,7 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "verification/launch-ui-closure-2026-10-28": false
+    }
+  }
+}

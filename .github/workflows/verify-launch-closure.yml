@@ -1,0 +1,48 @@
+name: Verify closed enrollment release
+on:
+  push:
+    branches: [verification/launch-ui-closure-2026-10-28]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.22.1'
+      - name: Read public pages after release
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { createHash } from 'node:crypto';
+          const get = async path => {
+            const response = await fetch(new URL(path, 'https://terminl.net'), { signal: AbortSignal.timeout(15000), cache: 'no-store' });
+            assert.equal(response.status, 200);
+            return response.text();
+          };
+          const hash = text => createHash('sha256').update(text).digest('hex');
+          const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
+          const html = await get('/?release-check=closure-20261028');
+          const payload = JSON.parse(html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)[1]);
+          const data = payload.props.pageProps.data;
+          const pagePath = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => match[1]).find(path => path.includes('/pages/index-'));
+          assert.ok(pagePath);
+          const page = await get(pagePath);
+          const expected = 'https://opensea.io/collection/terminl';
+          const footerLink = html.includes('href="' + expected + '" target="_blank" rel="noopener noreferrer">OFFICIAL OPENSEA');
+          const menuLabel = page.includes('OFFICIAL OPENSEA');
+          console.log(JSON.stringify({ buildId: payload.buildId, dataSha256: hash(JSON.stringify(canonical(data))), traitTotalKeys: Object.keys(data.traitTotals), pagePath, pageSha256: hash(page), footerLink, menuLabel }));
+          assert.ok(footerLink && menuLabel, 'Official OpenSea link remains available');
+          assert.equal(hash(JSON.stringify(canonical(data))), 'c3413721c9a4265f434eb3c732cc42b9860e0727dd5ae7936594fb54d8898ac7', 'Collection data must remain unchanged');
+          assert.ok(page.includes('TOTAL LEFT') && page.includes('WALLET ALLOCATION USED'));
+          assert.ok(!page.includes('Mint the maximum') && !page.includes('PLAY OR APPLY') && !page.includes('APPLY FOR WL'));
+          for (const path of ['/wl', '/beat-the-bots']) {
+            const closed = await get(path + '?release-check=closure-20261028');
+            assert.ok(closed.includes('The entry window has closed.'));
+            assert.ok(closed.includes('href="/#allowlist-checker"'));
+            assert.ok(!closed.includes('<form'), 'No expired application form');
+          }
+          console.log('PASS: live homepage release, official OpenSea link, unchanged collection data, closed entry pages');
+          JS
