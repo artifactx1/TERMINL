@@ -26,6 +26,7 @@ export default function Phases({ drop, phases, chainNow, account }) {
       {rows.map((r) => {
         const terms = [
           formatEth(r.price) + (r.native ? "" : " (token)"),
+          r.perWallet !== null ? `max ${String(r.perWallet)} per wallet` : "no wallet cap",
         ].filter(Boolean);
         const when = r.status === "upcoming"
           ? `opens ${whenLabel(r.startsAt)}${r.countdown ? ` · in ${r.countdown}` : ""}`
@@ -166,7 +167,7 @@ function Eligibility({ chainNow, onchain, phasesFailed, account }) {
                   <span>{(s.name || `STAGE ${s.stageIndex}`).toUpperCase()}</span>
                   <em>{status === "live" ? "LIVE NOW" : status === "upcoming" ? `opens ${whenLabel(start)}` : "ended"}</em>
                   <span className={styles.checkTerms}>
-                    {formatEth(BigInt(s.params.pricePerToken || 0))}
+                    {formatEth(BigInt(s.params.pricePerToken || 0))} · max {String(s.params.maxMintableByWallet)} per wallet
                   </span>
                 </div>
               );

@@ -976,6 +976,7 @@ export default function Mint() {
 
       {transactionStatus}
       <p className={styles.note}>
+        {cap !== null ? `max ${String(cap)} per wallet this phase · ` : "no wallet cap this phase · "}
         {onStage
           ? (stageEndsIn ? `stage ends in ${stageEndsIn} · ` : "")
           : (endsIn ? `ends in ${endsIn} · ` : "")}
@@ -1010,6 +1011,7 @@ export default function Mint() {
           <div className={styles.barInner}>
           <div className={styles.barFacts}>
             {onStage ? `${active.name} · ${formatEth(active.price)}` : `${formatEth(active.price)} each`}
+            {cap !== null ? ` · max ${String(cap)} per wallet this phase` : " · no wallet cap this phase"}
             {onStage && stageEndsIn ? ` · ends in ${stageEndsIn}` : ""}
             {!onStage && endsIn ? ` · ends in ${endsIn}` : ""}
           </div>
