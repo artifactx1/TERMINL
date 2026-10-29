@@ -12,7 +12,7 @@ const pass = { display: 'FIXTURE PLAYER', provider: 'discord', status: 'active',
   points: 73, rank: 12, shareXp: 0, runs: [], spots: [], wallet: { address: wallet },
   fcfs: { status: 'qualified', route: 'cup', at: Date.now() },
   gtd: { held: true, slots: 137, rank: 12, submitOpen: false } };
-const forbidden = /APPLY FOR WL|PLAY FOR WL|EARN WL|WL APPLY|PLAY OR APPLY|top\s+137|137\s+(?:GTD|spots)|per wallet|up to \d+ minted/i;
+const forbidden = /APPLY FOR WL|PLAY FOR WL|EARN WL|WL APPLY|PLAY OR APPLY|top\s+137|137\s+(?:GTD|spots)|up to \d+ minted/i;
 
 for (const [name, engine, viewport] of [
   ['desktop Chromium', chromium, { width: 1440, height: 1000 }],

@@ -133,7 +133,13 @@ try {
       const mint = page.getByRole('button', { name: mintLabel, exact: true }).first();
       await mint.waitFor();
       const mintPanel = page.getByLabel('Mint schedule and wallet checker').locator('..');
-      assert.doesNotMatch(await mintPanel.innerText(), /per wallet|wallet cap|up to \d+ minted|MAX \d|\d+ \/ WALLET/i);
+      assert.doesNotMatch(await mintPanel.innerText(), /up to \d+ minted|MAX \d/i);
+      assert.ok((await mintPanel.innerText()).includes('max 10 per wallet this phase'));
+      assert.ok((await page.getByLabel('Mint schedule and wallet checker').innerText()).includes('max 10 per wallet'));
+      if (stageMode) {
+        await page.locator('#allowlist-checker').getByRole('button', { name: 'CHECK', exact: true }).click();
+        await page.locator('#allowlist-checker').getByText('max 10 per wallet', { exact: false }).waitFor();
+      }
       assert.equal(await page.getByRole('button', { name: /Mint the maximum/ }).count(), 0);
       assert.equal(await page.getByTitle(/^Quantity: 1 to/).count(), 0);
       for (let i = 0; i < 50 && simulations === 0; i++) await page.waitForTimeout(100);

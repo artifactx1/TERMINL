@@ -1,7 +1,7 @@
 name: Isolated mint rehearsal
 on:
   push:
-    branches: [fix/launch-ui-closure-2026-10-28]
+    branches: [fix/launch-ui-closure-2026-10-28, fix/wallet-limit-labels-2026-10-28]
     paths-ignore: ['docs/**']
 permissions:
   contents: read

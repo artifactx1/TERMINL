@@ -96,7 +96,9 @@ try {
     }
     await input.waitFor({ state: 'visible' });
     assert.equal(await page.getByRole('button', { name: /Mint the maximum/ }).count(), 0);
-    assert.doesNotMatch(await page.getByLabel('Mint schedule and wallet checker').locator('..').innerText(), /per wallet|wallet cap|up to \d+ minted|MAX \d/i);
+    assert.doesNotMatch(await page.getByLabel('Mint schedule and wallet checker').locator('..').innerText(), /up to \d+ minted|MAX \d/i);
+
+    assert.ok((await page.getByLabel('Mint schedule and wallet checker').locator('..').innerText()).includes(`max ${scenario.cap} per wallet this phase`));
 
     const mintedCount = page.getByText('MINTED', { exact: true }).locator('..').locator('b');
     const progress = page.getByRole('progressbar');
@@ -137,6 +139,8 @@ try {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const stickyInput = page.getByRole('textbox', { name: 'Mint quantity', exact: true }).nth(1);
     await stickyInput.waitFor({ state: 'visible' });
+    const stickyBar = stickyInput.locator('..').locator('..').locator('..');
+    assert.ok((await stickyBar.innerText()).includes(`max ${scenario.cap} per wallet this phase`));
     await stickyInput.fill('23');
     assert.equal(await input.inputValue(), '23', 'The sticky bar and main input share the same quantity');
     assert.equal(await stickyInput.inputValue(), '23');
