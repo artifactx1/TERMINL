@@ -18,9 +18,13 @@ export default function MintLaunch({date}){
     return ()=>clearInterval(timer);
   },[]);
   if(!target)return null;
-  const eastern=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(target);
+  // Server-rendered text, so join the parts ourselves: Node and Safari disagree
+  // on the literals (", " vs " at ", U+202F before AM/PM) and React rejects the
+  // mismatch on hydration.
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZoneName:'short'}).formatToParts(target).map(part=>[part.type,part.value]));
+  const eastern=`${p.month} ${p.day}, ${p.year}, ${p.hour}:${p.minute} ${p.dayPeriod} ${p.timeZoneName}`;
   const badgeDate=`${date.slice(5,7)}.${date.slice(8,10)}.${date.slice(2,4)}`;
-  const badgeTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:true}).format(target).replace(' ','').toUpperCase();
+  const badgeTime=`${p.hour}${p.dayPeriod}`.toUpperCase();
   const local=now===null?null:new Intl.DateTimeFormat(undefined,{weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(target);
   const items=<>
     <span className={styles.mintTickerLead}>MINT ON TERMINL.NET</span>

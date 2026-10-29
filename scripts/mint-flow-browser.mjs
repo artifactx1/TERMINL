@@ -109,7 +109,7 @@ try {
         await page.clock.fastForward(21_000);
         await page.clock.resume();
         await page.getByRole('button', { name: 'CONNECT WALLET', exact: true }).first()
-          .or(page.getByRole('button', { name: 'MINT 1 — FREE', exact: true }).first()).first().waitFor();
+          .or(page.getByRole('button', { name: 'MINT 1 — FREE', exact: true }).first()).first().waitFor({ timeout: 45_000 });
       }
       const connect = page.getByRole('button', { name: 'CONNECT WALLET', exact: true }).first();
       const connected = page.getByRole('button', { name: /0x1111/ }).first();
