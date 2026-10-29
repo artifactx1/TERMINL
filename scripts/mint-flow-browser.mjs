@@ -100,8 +100,10 @@ try {
         await page.clock.install(); configured = true;
         await page.clock.fastForward(21_000);
         await page.clock.resume();
+        // The clock is installed after the page's 20s poll was armed on real
+        // timers, so the fast-forward cannot fire it; allow one real poll.
         await page.getByRole('button', { name: 'CONNECT WALLET', exact: true }).first()
-          .or(page.getByRole('button', { name: 'MINT 1 — FREE', exact: true }).first()).first().waitFor();
+          .or(page.getByRole('button', { name: 'MINT 1 — FREE', exact: true }).first()).first().waitFor({ timeout: 45_000 });
       }
       const connect = page.getByRole('button', { name: 'CONNECT WALLET', exact: true }).first();
       const connected = page.getByRole('button', { name: /0x1111/ }).first();
